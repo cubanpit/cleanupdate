@@ -6,7 +6,7 @@
 # / /___ / /___ / /___ / ___ | / /|  // /_/ // ____// /_/ // ___ | / /  / /___
 # \____//_____//_____//_/  |_|/_/ |_/ \____//_/    /_____//_/  |_|/_/  /_____/
 #
-# by cubanpit at github.com/cubanpit/cleanupdate
+# Written by cubanpit at github.com.
 #
 # This script should help you to mantain an ArchLinux-based system.
 #
@@ -22,8 +22,6 @@
 # - clean thumbnails file; (rm -rfv ~/.thumbnails/*)
 # - search and clean residual file;
 # - clean trash file; (rm -rfv ~/.local/share/Trash/*)
-#
-# Enjoy it!
 #
 
 echo
