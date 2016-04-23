@@ -19,7 +19,7 @@
 # - clean the cache of uninstalled packages; (paccache -ruk0)
 # - optimize (defragment) pacman database (NO SSD); (pacman-optimize)
 # - clean temp file; (rm -fr /tmp/*)
-# - clean thumbnails file; (rm -rfv ~/.thumbnails/*)
+# - clean thumbnails file; (rm -rf ~/.thumbnails/*)
 # - search and clean residual file;
 # - clean trash file; (rm -rfv ~/.local/share/Trash/*)
 #
