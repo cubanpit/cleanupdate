@@ -6,25 +6,24 @@
 # / /___ / /___ / /___ / ___ | / /|  // /_/ // ____// /_/ // ___ | / /  / /___
 # \____//_____//_____//_/  |_|/_/ |_/ \____//_/    /_____//_/  |_|/_/  /_____/
 #
-# Written by cubanpit at github.com.
+# Written by cubanpit at github.
 #
 # This script should help you to mantain an ArchLinux-based system.
 #
 # Features:
 # - update local database; (pacman -Syy)
 # - update packages from repositories; (pacman -Syu)
-# - update packages from AUR; (yaourt -Sua)
+# - update packages from AUR (pacaur or yaourt); (pacaur -Sua || yaourt -Sua)
 # - search and uninstall orphaned packages; (pacman -Rs $(pacman -Qdtq))
 # - clean the cache of installed packages; (paccache -rk2)
 # - clean the cache of uninstalled packages; (paccache -ruk0)
 # - optimize (defragment) pacman database (NO SSD); (pacman-optimize)
 # - clean temp file; (rm -fr /tmp/*)
 # - clean thumbnails file; (rm -rf ~/.thumbnails/*)
-# - search and clean residual file;
+# - search and clean residual files;
 # - clean trash file; (rm -rfv ~/.local/share/Trash/*)
 #
 
-echo
 echo "********************** SYSTEM UPDATE AND PACKAGES UPGRADE **********************"
 echo
 echo -n "# Do you want to update local database [Y/n]? "
@@ -49,8 +48,22 @@ echo -n "# Do you want to upgrade AUR packages [Y/n]? "
 read sure
 if [[ $sure != "n" && $sure != "N" ]]
     then
-    yaourt -Syua --nocolor
-    echo "* AUR upgrade ...[OK]"
+		PAC=$(pacman -Qi pacaur)
+		YAU=$(pacman -Qi yaourt)
+		if [[ -n $PAC ]]
+		then
+			pacaur -Sua
+    		echo "* AUR upgrade ...[OK]"
+		elif [[ -n $YAU ]]
+		then
+			yaourt -Sua --nocolor
+    		echo "* AUR upgrade ...[OK]"
+		else
+			echo "You don't have neither 'yaourt' nor 'pacaur' installed, you can't"\
+				"access AUR updates through this script."
+			echo
+			echo "* AUR upgrade ...[NOT EXECUTED]"
+		fi
 else echo "* AUR upgrade ...[NOT EXECUTED]"
 fi
 echo
