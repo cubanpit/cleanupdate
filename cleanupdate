@@ -18,7 +18,7 @@
 # - clean the cache of installed packages; (paccache -rk2)
 # - clean the cache of uninstalled packages; (paccache -ruk0)
 # - optimize (defragment) pacman database (NO SSD); (pacman-optimize)
-# - clean temp file; (rm -fr /tmp/*)
+# - clean temp file; (rm -rf /tmp/*)
 # - clean thumbnails file; (rm -rf ~/.thumbnails/*)
 # - search and clean residual files;
 # - clean trash file; (rm -rfv ~/.local/share/Trash/*)
