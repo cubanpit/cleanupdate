@@ -48,8 +48,8 @@ echo -n "# Do you want to upgrade AUR packages [Y/n]? "
 read sure
 if [[ $sure != "n" && $sure != "N" ]]
     then
-		PAC=$(pacman -Qi pacaur)
-		YAU=$(pacman -Qi yaourt)
+		PAC=$(pacman -Qi pacaur 2> /dev/null)
+		YAU=$(pacman -Qi yaourt 2> /dev/null)
 		if [[ -n $PAC ]]
 		then
 			pacaur -Sua
