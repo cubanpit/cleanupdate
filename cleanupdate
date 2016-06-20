@@ -26,126 +26,197 @@
 # Enjoy it!
 #
 
-echo
-echo "********************** SYSTEM UPDATE AND PACKAGES UPGRADE **********************"
-echo
-echo -n "# Do you want to update local database [Y/n]? "
-read sure
-if [[ $sure != "n" && $sure != "N" ]]
+bold_txt=$(tput bold)
+normal_txt=$(tput sgr0)
+
+function sys_update {
+	echo " ${bold_txt}::System update::${normal_txt} "
+	echo
+	echo -n "# Do you want to update local database [Y/n]? "
+	read sure
+	if [[ $sure != "n" && $sure != "N" ]]
+	then
+		sudo pacman -Syy --color never
+		echo "* Local database update ...[OK]"
+	else echo "* Local database update ...[NOT EXECUTED]"
+	fi
+	echo
+	echo -n "# Do you want to upgrade official packages [Y/n]? "
+	read sure
+	if [[ $sure != "n" && $sure != "N" ]]
     then
-    sudo pacman -Syy --color never
-    echo "* Local database update ...[OK]"
-else echo "* Local database update ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to upgrade official packages [Y/n]? "
-read sure
-if [[ $sure != "n" && $sure != "N" ]]
+    	sudo pacman -Syu --color never
+    	echo "* Official packages upgrade ...[OK]"
+	else echo "* Official packages upgrade ...[NOT EXECUTED]"
+	fi
+	echo
+	echo -n "# Do you want to upgrade AUR packages [Y/n]? "
+	read sure
+	if [[ $sure != "n" && $sure != "N" ]]
+	then
+		yaourt -Syua --nocolor
+		echo "* AUR upgrade ...[OK]"
+	else echo "* AUR upgrade ...[NOT EXECUTED]"
+	fi
+}
+
+function clean_pkg {
+	echo " ${bold_txt}::Clean packages::${normal_txt} "
+	echo
+	echo -n "# Do you want search for orphaned packages [y/N]? "
+	read sure
+	if [[ $sure = "y" || $sure = "Y" ]]
     then
-    sudo pacman -Syu --color never
-    echo "* Official packages upgrade ...[OK]"
-else echo "* Official packages upgrade ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to upgrade AUR packages [Y/n]? "
-read sure
-if [[ $sure != "n" && $sure != "N" ]]
+    	sudo pacman --color never -Rs $(pacman -Qdtq)
+    	echo "* Orphaned packages ...[OK]"
+	else echo "* Orphaned packages ...[NOT EXECUTED]"
+	fi
+	echo
+	echo -n "# Do you want to clean the cache of installed packages (keeping 2"\
+		"versions) [Y/n]? "
+	read sure
+	if [[ $sure != "n" && $sure != "N" ]]
     then
-    yaourt -Syua --nocolor
-    echo "* AUR upgrade ...[OK]"
-else echo "* AUR upgrade ...[NOT EXECUTED]"
-fi
-echo
-echo
-echo "********************************* SYSTEM CLEAN  ********************************"
-echo
-echo -n "# Do you want search for orphaned packages [y/N]? "
-read sure
-if [[ $sure = "y" || $sure = "Y" ]]
+    	sudo paccache -rk2 --nocolor
+    	echo "* Installed pkgs cache clean ...[OK]"
+	else echo "* Installed pkgs ache clean ...[NOT EXECUTED]"
+	fi
+	echo
+	echo -n "# Do you want to completely clean the cache of uninstalled packages"\
+		"[Y/n]? "
+	read sure
+	if [[ $sure != "n" && $sure != "N" ]]
     then
-    sudo pacman --color never -Rs $(pacman -Qdtq)
-    echo "* Orphaned packages ...[OK]"
-else echo "* Orphaned packages ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to clean the cache of installed packages (keeping 2"\
-	"versions) [Y/n]? "
-read sure
-if [[ $sure != "n" && $sure != "N" ]]
+    	sudo paccache -ruk0 --nocolor
+    	echo "* Uninstalled pkgs cache clean ...[OK]"
+	else echo "* Uninstalled pkgs cache clean ...[NOT EXECUTED]"
+	fi
+	echo
+	echo -n "# Do you want to optimize (defragment) pacman database (NO SSD)"\
+		"[y/N]? "
+	read sure
+	if [[ $sure = "y" || $sure = "Y" ]]
     then
-    sudo paccache -rk2 --nocolor
-    echo "* Installed pkgs cache clean ...[OK]"
-else echo "* Installed pkgs ache clean ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to completely clean the cache of uninstalled packages"\
-	"[Y/n]? "
-read sure
-if [[ $sure != "n" && $sure != "N" ]]
+    	sudo pacman-optimize --nocolor
+    	echo "* Database optimization ...[OK]"
+	else echo "* Database optimization ...[NOT EXECUTED]"
+	fi
+}
+
+function clean_file {
+	echo " ${bold_txt}::Clean files::$normal_txt} "
+	echo
+	echo -n "# Do you want to clean every /tmp file [y/N]? "
+	read sure
+	if [[ $sure = "y" || $sure = "Y" ]]
     then
-    sudo paccache -ruk0 --nocolor
-    echo "* Uninstalled pkgs cache clean ...[OK]"
-else echo "* Uninstalled pkgs cache clean ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to optimize (defragment) pacman database (NO SSD) [y/N]? "
-read sure
-if [[ $sure = "y" || $sure = "Y" ]]
-    then
-    sudo pacman-optimize --nocolor
-    echo "* Database optimization ...[OK]"
-else echo "* Database optimization ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to clean every /tmp file [y/N]? "
-read sure
-if [[ $sure = "y" || $sure = "Y" ]]
-    then
-    sudo rm -fr /tmp/*
-    echo "* Tmp files clean ...[OK]"
-else echo "* Tmp files clean ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to clean thumbnails cache [Y/n]? "
-read sure
-if [[ $sure != "n" && $sure != "N" ]]
-   then
-   sudo rm -rf ~/.thumbnails/*
-   echo "* Thumbs cache clean ...[OK]"
-else echo "* Thumbs cache clean ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to search for residual files [Y/n]? "
-read sure
-if [[ $sure != "n" && $sure != "N" ]]
-    then
-    find $HOME -name "*~"
-    find $HOME -name "Desktop.ini"
-    find $HOME -name "Thumbs.db"
-    echo -n "# Do you want to remove these files [y/N]? "
-    read sure
-    if [[ $sure = "y" || $sure = "Y" ]]
+    	sudo rm -fr /tmp/*
+    	echo "* Tmp files clean ...[OK]"
+	else echo "* Tmp files clean ...[NOT EXECUTED]"
+	fi
+	echo
+	echo -n "# Do you want to clean thumbnails cache [Y/n]? "
+	read sure
+	if [[ $sure != "n" && $sure != "N" ]]
+   		then
+   		sudo rm -rf ~/.thumbnails/*
+   		echo "* Thumbs cache clean ...[OK]"
+	else echo "* Thumbs cache clean ...[NOT EXECUTED]"
+	fi
+	echo
+	echo -n "# Do you want to search for residual files [Y/n]? "
+	read sure
+	if [[ $sure != "n" && $sure != "N" ]]
+    	then
+    	find $HOME -name "*~"
+    	find $HOME -name "Desktop.ini"
+    	find $HOME -name "Thumbs.db"
+    	echo -n "# Do you want to remove these files [y/N]? "
+    	read sure
+    	if [[ $sure = "y" || $sure = "Y" ]]
         then
-        find $HOME -name "*~" -print0 | xargs -0 /bin/rm -f
-        find $HOME -name "Desktop.ini" -print0 | xargs -0 /bin/rm -f
-        find $HOME -name "Thumbs.db" -print0 | xargs -0 /bin/rm -f
-        echo "* Residual files clean ...[OK]"
-    else echo "* Residual files clean ...[NOT EXECUTED]"
-    fi
-else echo "* Residual files search ...[NOT EXECUTED]"
-fi
-echo
-echo -n "# Do you want to clean trash [y/N]? "
-read sure
-if [[ $sure = "y" || $sure = "Y" ]]
+        	find $HOME -name "*~" -print0 | xargs -0 /bin/rm -f
+        	find $HOME -name "Desktop.ini" -print0 | xargs -0 /bin/rm -f
+        	find $HOME -name "Thumbs.db" -print0 | xargs -0 /bin/rm -f
+        	echo "* Residual files clean ...[OK]"
+    	else echo "* Residual files clean ...[NOT EXECUTED]"
+    	fi
+	else echo "* Residual files search ...[NOT EXECUTED]"
+	fi
+	echo
+	echo -n "# Do you want to clean trash [y/N]? "
+	read sure
+	if [[ $sure = "y" || $sure = "Y" ]]
     then
-    sudo rm -rfv ~/.local/share/Trash/*
-    echo "* Trash clean ...[OK]"
-else echo "* Trash clean ...[NOT EXECUTED]"
-fi
-echo
-read -p "Press <Enter> to exit"
-echo
-echo "Finished! Bye bye!"
-echo
-exit
+    	sudo rm -rfv ~/.local/share/Trash/*
+    	echo "* Trash clean ...[OK]"
+	else echo "* Trash clean ...[NOT EXECUTED]"
+	fi
+}
+
+function main {
+	while true; do
+	clear
+	echo
+	echo "        ${bold_txt}::Clean and update system::${normal_txt}       "
+	echo " ┌───────────────────────────────────────┐"
+	echo " │    1  Update and clean everything     │"
+	echo " │    2  Update system                   │"
+	echo " │    3  Clean packages                  │"
+	echo " │    4  Clean files                     │"
+	echo " │    9  Explain options                 │"
+	echo " └───────────────────────────────────────┘"
+	echo "  Select an option                0  Exit "
+	echo
+	read -s -n1 ans
+	case $ans in
+		1)
+			echo
+			sys_update
+			echo
+			clean_pkg
+			echo
+			clean_file
+			echo
+			echo "Finished! Press any key to continue."
+			read -s -n1
+			;;
+		2)
+			echo
+			sys_update
+			echo
+			echo "Finished! Press any key to continue."
+			read -s -n1
+			;;
+		3)
+			echo
+			clean_pkg
+			echo
+			echo "Finished! Press any key to continue."
+			read -s -n1
+			;;
+		4)
+			echo
+			clean_file
+			echo
+			echo "Finished! Press any key to continue."
+			read -s -n1
+			;;
+		9)
+			echo "Not documented yet. Press any key to continue."
+			read -s -n1
+			;;
+		0)
+			clear && exit 0
+			;;
+		*)
+			echo "There is no $ans option. Press any key to continue."
+			read -s -n1
+			;;
+	esac
+	done
+}
+
+main
+
+exit 1
