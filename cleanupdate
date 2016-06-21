@@ -158,7 +158,8 @@ function clean_file {
 }
 
 function doc_eng {
-cat << EOF
+less -R << EOF
+Press 'q' to quit documentation
 
  ${bold_txt}::Update system::${normal_txt}
  - update local database; (pacman -Syy)
@@ -176,6 +177,8 @@ cat << EOF
  - clean thumbnails file; (rm -rfv ~/.thumbnails/*)
  - search and clean residual file;
  - clean trash file; (rm -rfv ~/.local/share/Trash/*)
+
+Press 'q' to quit documentation 
 EOF
 }
 
@@ -233,9 +236,6 @@ function main {
 		9)
 			clear
 			doc_eng
-			echo
-			echo "Finished! Press any key to continue."
-			read -s -n1
 			;;
 		0)
 			clear && exit 0
