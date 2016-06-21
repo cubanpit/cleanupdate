@@ -183,6 +183,9 @@ function main {
 	while true; do
 	clear
 	echo
+	echo "     ┌─┐┬  ┌─┐┌─┐┌┐┌┬ ┬┌─┐┌┬┐┌─┐┌┬┐┌─┐    "
+	echo "     │  │  ├┤ ├─┤││││ │├─┘ ││├─┤ │ ├┤     "
+	echo "     └─┘┴─┘└─┘┴ ┴┘└┘└─┘┴  ─┴┘┴ ┴ ┴ └─┘    "
 	echo "        ${bold_txt}::Clean and update system::${normal_txt}       "
 	echo " ┌───────────────────────────────────────┐"
 	echo " │    1  Update and clean everything     │"
@@ -190,9 +193,9 @@ function main {
 	echo " │    3  Clean packages                  │"
 	echo " │    4  Clean files                     │"
 	echo " │    9  Explain options                 │"
+	echo " │    0  Quit                            │"
 	echo " └───────────────────────────────────────┘"
-	echo "  Select an option                0  Exit "
-	echo
+	echo "  Select an option                        "
 	read -s -n1 ans
 	case $ans in
 		1)
@@ -238,7 +241,7 @@ function main {
 			clear && exit 0
 			;;
 		*)
-			echo "There is no $ans option. Press any key to continue."
+			echo "There is no '$ans' option. Press any key to continue."
 			read -s -n1
 			;;
 	esac
