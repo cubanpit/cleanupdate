@@ -107,7 +107,7 @@ function clean_pkg {
 }
 
 function clean_file {
-	echo " ${bold_txt}::Clean files::$normal_txt} "
+	echo " ${bold_txt}::Clean files::${normal_txt} "
 	echo
 	echo -n "# Do you want to clean every /tmp file [y/N]? "
 	read sure
@@ -157,6 +157,28 @@ function clean_file {
 	fi
 }
 
+function doc_eng {
+cat << EOF
+
+ ${bold_txt}::Update system::${normal_txt}
+ - update local database; (pacman -Syy)
+ - update packages from repositories; (pacman -Syu)
+ - update packages from AUR; (yaourt -Sua)
+
+ ${bold_txt}::Clean packages::${normal_txt}
+ - search and uninstall orphaned packages; (pacman -Rs $(pacman -Qdtq))
+ - clean the cache of installed packages; (paccache -rk2)
+ - clean the cache of uninstalled packages; (paccache -ruk0)
+ - optimize (defragment) pacman database (NO SSD); (pacman-optimize)
+
+ ${bold_txt}::Clean files::${normal_txt}
+ - clean temp file; (rm -fr /tmp/*)
+ - clean thumbnails file; (rm -rfv ~/.thumbnails/*)
+ - search and clean residual file;
+ - clean trash file; (rm -rfv ~/.local/share/Trash/*)
+EOF
+}
+
 function main {
 	while true; do
 	clear
@@ -174,7 +196,7 @@ function main {
 	read -s -n1 ans
 	case $ans in
 		1)
-			echo
+			clear
 			sys_update
 			echo
 			clean_pkg
@@ -185,28 +207,31 @@ function main {
 			read -s -n1
 			;;
 		2)
-			echo
+			clear
 			sys_update
 			echo
 			echo "Finished! Press any key to continue."
 			read -s -n1
 			;;
 		3)
-			echo
+			clear
 			clean_pkg
 			echo
 			echo "Finished! Press any key to continue."
 			read -s -n1
 			;;
 		4)
-			echo
+			clear
 			clean_file
 			echo
 			echo "Finished! Press any key to continue."
 			read -s -n1
 			;;
 		9)
-			echo "Not documented yet. Press any key to continue."
+			clear
+			doc_eng
+			echo
+			echo "Finished! Press any key to continue."
 			read -s -n1
 			;;
 		0)
