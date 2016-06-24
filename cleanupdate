@@ -79,8 +79,14 @@ function clean_pkg {
 	read sure
 	if [[ $sure = "y" || $sure = "Y" ]]
     then
-    	sudo pacman --color never -Rs $(pacman -Qdtq)
-    	echo "* Orphaned packages ...[OK]"
+		ORP=$(pacman -Qdtq)
+		if [[ -n $ORP ]]
+		then
+			sudo pacman --color never -Rs $ORP
+		else
+			echo "There isn't any orphaned packages."
+		fi
+		echo "* Orphaned packages ...[OK]"
 	else echo "* Orphaned packages ...[NOT EXECUTED]"
 	fi
 	echo
