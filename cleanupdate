@@ -52,8 +52,22 @@ function sys_update {
 	read sure
 	if [[ $sure != "n" && $sure != "N" ]]
 	then
-		yaourt -Syua --nocolor
+		PAC=$(pacman -Qi pacaur 2> /dev/null)
+		YAU=$(pacman -Qi yaourt 2> /dev/null)
+		if [[ -n $PAC ]]
+		then
+			pacaur -Sua
 		echo "* AUR upgrade ...[OK]"
+		elif [[ -n $YAU ]]
+		then
+			yaourt -Sua --nocolor
+			echo "* AUR upgrade ...[OK]"
+		else
+			echo "You don't have neither 'yaourt' nor 'pacaur' installed,"\
+				"you can't access AUR updates through this script."
+			echo
+			echo "* AUR upgrade ...[NOT EXECUTED]"
+		fi
 	else echo "* AUR upgrade ...[NOT EXECUTED]"
 	fi
 }
