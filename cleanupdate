@@ -269,22 +269,44 @@ function doc_eng {
 less -R << EOF
 Press 'q' to quit documentation
 
- ${BOLD}::Update system::${NORMAL}
- - update local database; (pacman -Syy)
- - update packages from repositories; (pacman -Syuu)
- - update packages from AUR; (yaourt -Sua)
+${BOLD}${YELLOW}::Update system::${NORMAL}
 
- ${BOLD}::Clean packages::${NORMAL}
- - search and uninstall orphaned packages; (pacman -Rs $(pacman -Qdtq))
- - clean the cache of installed packages; (paccache -rk2)
- - clean the cache of uninstalled packages; (paccache -ruk0)
- - optimize (defragment) pacman database (NO SSD); (pacman-optimize)
+${BOLD}Update local database (pacman -Syy)${NORMAL}
+Sync local database with online repositories, force the sync also if local database seems up to date. Repositories are configured in '/etc/pacman.conf'.
 
- ${BOLD}::Clean files::${NORMAL}
- - clean temp files; (rm -fr /tmp/*)
- - clean old cache and thumbnail files;
- - search and clean residual files;
- - clean trash files; (rm -rfv ~/.local/share/Trash/*)
+${BOLD}Update packages from repositories (pacman -Syuu)${NORMAL}
+Check that local database is up to date with online repositories, check packages version between database and installed packages, if versions are different runs update or downgrade.
+
+${BOLD}Update packages from AUR (yaourt -Sua)${NORMAL}
+Update packages from AUR repository, if needed. It can use different tools for that: 'pacaur' or 'yaourt'.
+
+${BOLD}${YELLOW}::Clean packages::${NORMAL}
+
+${BOLD}Search and uninstall orphaned packages (pacman -Qdtq)${NORMAL}
+Search for packages installed as dependencies and no longer required, if there are some it asks before unistalling them.
+
+${BOLD}Clean the cache of installed packages (paccache -rk2)${NORMAL}
+By default pacman keeps forever a backup of every version of every installed package, this backups can grow and fill the hard disk, so it must be cleaned sometimes. This command removes all backups for all installed packages keeping only two version, just in case it is necessary to perform a downgrade.
+
+${BOLD}Clean the cache of uninstalled packages (paccache -ruk0)${NORMAL}
+See previous command explanation. This works with unisnstalled packages and doesn't keep any backup version.
+
+${BOLD}Optimize (defragment) pacman database (NO SSD) (pacman-optimize)${NORMAL}
+This command simply optimize access to pacman database, defragmenting it. For SSD it doesn't change anything in performances and it does a lot of writes, so it's not recommended.
+
+${BOLD}${YELLOW}::Clean files::${NORMAL}
+
+${BOLD}Clean temp files (rm -fr /tmp/*)${NORMAL}
+All files in '/tmp' will be deleted, so it's a good choiche to close all applications before executing it. It's not recommended by default, because is useful in few cases, like big AUR compile files or big downloads from browser.
+
+${BOLD}Clean old cache and thumbnail files${NORMAL}
+Search in '~/.cache' and '~/.thumbnails' for files with last access more than 30 days ago and delete them. Cache and thumbnail files are not necessary and are used by user applications to load faster images thumbnails or informations.
+
+${BOLD}Search and clean residual files${NORMAL}
+Search for files with names matching 'Thumbs.db', 'Desktop.ini' and '*~'. This files are temporary files from Windows (first and second one) and from Linux (last one) application, that store them to save some informations during work; they're important when you're using some applications, but they should disappears few seconds later, sometimes they don't.
+
+${BOLD}Clean trash files (rm -rfv ~/.local/share/Trash/*)${NORMAL}
+Simply clean the user trash, printing all file names so the user at first glance can check deleted files and their number.
 
 Press 'q' to quit documentation
 EOF
@@ -303,7 +325,7 @@ ${BOLD}Aggiornamento dei pacchetti dai repository ufficiali (pacman -Syuu)${NORM
 Controlla che il database locale sia aggiornato, se ci sono differenze tra le versioni dei pacchetti installati e di quelli presenti nel database effettua l'upgrade (innalzamento di versione) o il downgrade (abbassamento di versione).
 
 ${BOLD}Aggiornamento dei pacchetti di AUR (pacaur -Sua || yaourt -Sua)${NORMAL}
-Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se necessario. Può utilizzare come strumenti (in ordine di priorità) pacaur oppure yaourt.
+Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se necessario. Può utilizzare come strumenti (in ordine di priorità) 'pacaur' oppure 'yaourt'.
 
 ${BOLD}${YELLOW}::Pulizia pacchetti::${NORMAL}
 
