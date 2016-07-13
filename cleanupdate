@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # 'cleanupdate' by cubanpit at github.com
 #
@@ -19,6 +18,11 @@ PURPLE=$(tput setaf 5)
 LNG="eng"
 [[ "$LANG" =~ "it_IT" ]] && LNG="ita"
 
+#
+# Function to print a message after a transaction, communicating the success
+#  or the failure.
+# Usage: end_msg "ok||no" "message"
+#
 function end_msg {
 	mod=$1
 	msg=$2
@@ -36,6 +40,10 @@ function end_msg {
 	fi
 }
 
+#
+# Function to print a question, setting the default answer.
+# Usage: qst_msg "yes||no" "question"
+#
 function qst_msg {
 	mod=$1
 	msg=$2
@@ -53,6 +61,10 @@ function qst_msg {
 	fi
 }
 
+#
+# Function containing all system update operation.
+# Database sync, package upgrade, AUR upgrade.
+#
 function sys_update {
 	[[ $LNG = ita ]] && echo " ${BOLD}::Aggiornamento del sistema::${NORMAL} "
 	[[ $LNG = eng ]] && echo " ${BOLD}::System update::${NORMAL} "
@@ -115,6 +127,10 @@ function sys_update {
 	fi
 }
 
+#
+# Function containing all package clean operation.
+# Orphaned packages cleaing, cache cleaning, database optimization.
+#
 function clean_pkg {
 	[[ $LNG = ita ]] && echo " ${BOLD}::Pulizia pacchetti::${NORMAL} "
 	[[ $LNG = eng ]] && echo " ${BOLD}::Clean packages::${NORMAL} "
@@ -181,6 +197,10 @@ function clean_pkg {
 	fi
 }
 
+#
+# Function containing all file clean operation.
+# Tmp file clean, cache & thumbs clean, residual file clean, trash clean.
+#
 function clean_file {
 	[[ $LNG = ita ]] && echo " ${BOLD}::Pulizia file::${NORMAL} "
 	[[ $LNG = eng ]] && echo " ${BOLD}::Clean files::${NORMAL} "
@@ -265,6 +285,9 @@ function clean_file {
 	fi
 }
 
+#
+# Function containing english documentation text.
+#
 function doc_eng {
 less -R << EOF
 Press 'q' to quit documentation
@@ -312,6 +335,9 @@ Press 'q' to quit documentation
 EOF
 }
 
+#
+# Function containing italian documentation text.
+#
 function doc_ita {
 less -R << EOF
 Premere 'q' per uscire dalla documentazione
@@ -359,6 +385,9 @@ Premere 'q' per uscire dalla documentazione
 EOF
 }
 
+#
+# This function prints the menu and handles choice of different options.
+#
 function main {
 	while true; do
 	clear
