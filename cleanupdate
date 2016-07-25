@@ -144,7 +144,7 @@ function clean_pkg {
 		ORP=$(pacman -Qdtq)
 		if [[ -n $ORP ]]
 		then
-			sudo pacman --color never -Rs "$ORP"
+			sudo pacman --color never -Rs $ORP
 		else
 			[[ $LNG = ita ]] && echo "Non è presente alcun pacchetto orfano."
 			[[ $LNG = eng ]] && echo "There isn't any orphaned packages."
