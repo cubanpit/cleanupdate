@@ -87,7 +87,7 @@ function sys_update {
 	read -r sure
 	if [[ $sure != "n" && $sure != "N" ]]
     then
-    	sudo pacman -Syuu --color never
+    	sudo pacman -Syu --color never
     	[[ $LNG = ita ]] && end_msg "ok" "Aggiornamento pacchetti ufficiali"
     	[[ $LNG = eng ]] && end_msg "ok" "Official packages upgrade"
 	else
@@ -297,8 +297,8 @@ ${BOLD}${YELLOW}::Update system::${NORMAL}
 ${BOLD}Update local database (pacman -Syy)${NORMAL}
 Sync local database with online repositories, force the sync also if local database seems up to date. Repositories are configured in '/etc/pacman.conf'.
 
-${BOLD}Update packages from repositories (pacman -Syuu)${NORMAL}
-Check that local database is up to date with online repositories, check packages version between database and installed packages, if versions are different runs update or downgrade.
+${BOLD}Update packages from repositories (pacman -Syu)${NORMAL}
+Check that local database is up to date with online repositories, check packages version between database and installed packages, if versions are different runs update. It will print a warning if a package is newer than repository, in that case it's possible to downgrade with 'pacman -Syuu'.
 
 ${BOLD}Update packages from AUR (yaourt -Sua)${NORMAL}
 Update packages from AUR repository, if needed. It can use different tools for that: 'pacaur' or 'yaourt'.
@@ -347,8 +347,8 @@ ${BOLD}${YELLOW}::Aggiornamento del sistema::${NORMAL}
 ${BOLD}Aggiornamento del database locale (pacman -Syy)${NORMAL}
 Sincronizza il database locale di pacman con i repository online, in particolare forza la sincronizzazione effettuandola anche se il database locale risulta aggiornato. I repository possono essere aggiunti e configurati nel file '/etc/pacman.conf'.
 
-${BOLD}Aggiornamento dei pacchetti dai repository ufficiali (pacman -Syuu)${NORMAL}
-Controlla che il database locale sia aggiornato, se ci sono differenze tra le versioni dei pacchetti installati e di quelli presenti nel database effettua l'upgrade (innalzamento di versione) o il downgrade (abbassamento di versione).
+${BOLD}Aggiornamento dei pacchetti dai repository ufficiali (pacman -Syu)${NORMAL}
+Controlla che il database locale sia aggiornato, se ci sono differenze tra le versioni dei pacchetti installati e di quelli presenti nel database effettua l'upgrade (innalzamento di versione). Il comando notifica se la versione installata di un pacchetto è più recente di quella nei repository, in questo caso può essere utile eseguire un downgrade (abbassamento di versione) tramite il comando 'pacman -Syuu'.
 
 ${BOLD}Aggiornamento dei pacchetti di AUR (pacaur -Sua || yaourt -Sua)${NORMAL}
 Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se necessario. Può utilizzare come strumenti (in ordine di priorità) 'pacaur' oppure 'yaourt'.
