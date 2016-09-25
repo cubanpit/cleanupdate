@@ -240,10 +240,10 @@ function clean_file {
 	read -r sure
 	if [[ $sure != "n" && $sure != "N" ]]
    	then
-   		_OLD=$( find ~/.thumbnails -type f -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 )
-		_OLD+=$( find ~/.cache -type f -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 )
-		_OLD+=$( find ~/.thumbnails -empty -type d -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 )
-		_OLD+=$( find ~/.cache -empty -type d -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 )
+		_OLD=$( find ~/.thumbnails -type f -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 )
+		(( _OLD+=$( find ~/.cache -type f -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 ) ))
+		(( _OLD+=$( find ~/.thumbnails -empty -type d -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 ) ))
+		(( _OLD+=$( find ~/.cache -empty -type d -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 ) ))
 		if [[ $_OLD -gt 0 ]]
 		then
 			[[ $_LNG = ita ]] && qst_msg "yes" "L'eliminazione di questi file libererà $_OLD kb di spazio su disco, vuoi procedere"
