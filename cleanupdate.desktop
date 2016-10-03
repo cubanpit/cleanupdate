@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=0.2.2
+Name=cleanupdate
+Type=Application
+Comment=Clean and Update System
+Comment[it]=Aggiorna e Pulisce il Sistema
+Terminal=true
+Exec=cleanupdate
+Icon=terminal
+Categories=ConsoleOnly;System;
+GenericName=System Mantainance Helper
+GenericName[it]=Manutenzione del Sistema
+Keywords=system;clean;
