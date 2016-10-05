@@ -35,21 +35,51 @@ _LNG="eng"
 [[ "$LANG" =~ "it_IT" ]] && _LNG="ita"
 
 #
+# Function to convert file size in a format easier to read, it receives file
+#  size in bytes.
+# Usage: human_size "size in bytes"
+#
+function human_size {
+	_NUM=$1
+	if [[ _NUM -ge 1000000000 ]]
+	then
+		_NUM="$(( _NUM / 1000000000 )) GB"
+	elif [[ _NUM -ge 1000000 ]]
+	then
+		_NUM="$(( _NUM / 1000000 )) MB"
+	elif [[ _NUM -ge 1000 ]]
+	then
+		_NUM="$(( _NUM / 1000 )) kB"
+	elif [[ _NUM -gt 0 ]]
+	then
+		_NUM="$_NUM B"
+	elif [[ _NUM -eq 0 ]]
+	then
+		[[ $_LNG = ita ]] && _NUM="meno di 1 byte"
+		[[ $_LNG = eng ]] && _NUM="less than 1 byte"
+	else
+		[[ $_LNG = ita ]] && echo "ERRORE: impossibile convertire numeri negativi."
+		[[ $_LNG = eng ]] && echo "ERROR: it's not possible to convert negative numbers."
+	fi
+	echo "$_NUM"
+}
+
+#
 # Function to print a message after a transaction, communicating the success
 #  or the failure.
 # Usage: end_msg "ok||no" "message"
 #
 function end_msg {
-	mod=$1
-	msg=$2
-	if [[ $mod = ok ]]
+	_MOD=$1
+	_MSG=$2
+	if [[ $_MOD = ok ]]
 	then
-		[[ $_LNG = ita ]] && echo "${_BOLD}[${_GREEN}FINITO${_NORMAL}${_BOLD}] $msg ${_NORMAL}"
-		[[ $_LNG = eng ]] && echo "${_BOLD}[${_GREEN}DONE${_NORMAL}${_BOLD}] $msg ${_NORMAL}"
-	elif [[ $mod = no ]]
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_GREEN}FINITO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_GREEN}DONE${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+	elif [[ $_MOD = no ]]
 	then
-		[[ $_LNG = ita ]] && echo "${_BOLD}[${_RED}NON ESEGUITO${_NORMAL}${_BOLD}] $msg ${_NORMAL}"
-		[[ $_LNG = eng ]] && echo "${_BOLD}[${_RED}NOT EXECUTED${_NORMAL}${_BOLD}] $msg ${_NORMAL}"
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_RED}NON ESEGUITO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_RED}NOT EXECUTED${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
 	else
 		[[ $_LNG = ita ]] && echo "ERRORE: modalità sconosciuta, vedere funzione end_msg()."
 		[[ $_LNG = eng ]] && echo "ERROR: unknown option, see end_msg() function."
@@ -61,16 +91,16 @@ function end_msg {
 # Usage: qst_msg "yes||no" "question"
 #
 function qst_msg {
-	mod=$1
-	msg=$2
-	if [[ $mod = yes ]]
+	_MOD=$1
+	_MSG=$2
+	if [[ $_MOD = yes ]]
 	then
-		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $msg [S/n]?${_NORMAL} "
-		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $msg [Y/n]?${_NORMAL} "
-	elif [[ $mod = no ]]
+		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [S/n]?${_NORMAL} "
+		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [Y/n]?${_NORMAL} "
+	elif [[ $_MOD = no ]]
 	then
-		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $msg [s/N]?${_NORMAL} "
-		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $msg [y/N]?${_NORMAL} "
+		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [s/N]?${_NORMAL} "
+		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [y/N]?${_NORMAL} "
 	else
 		[[ $_LNG = ita ]] && echo "ERRORE: risposta predefinita sconosciuta, vedere funzione qst_msg()."
 		[[ $_LNG = eng ]] && echo "ERROR: unknown default answer, see qst_msg() function."
@@ -87,8 +117,8 @@ function sys_update {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri aggiornare il database locale"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to update local database"
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]
+	read -r _SURE
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
 	then
 		sudo pacman -Syy --color never
 		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento database locale"
@@ -100,8 +130,8 @@ function sys_update {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri aggiornare i pacchetti ufficiali"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to upgrade official packages"
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]
+	read -r _SURE
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
     	sudo pacman -Syu --color never
     	[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento pacchetti ufficiali"
@@ -113,8 +143,8 @@ function sys_update {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri aggiornare i pacchetti di AUR"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to upgrade AUR packages"
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]
+	read -r _SURE
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
 	then
 		_PAC=$(pacman -Qi pacaur 2> /dev/null)
 		_YAU=$(pacman -Qi yaourt 2> /dev/null)
@@ -153,9 +183,9 @@ function clean_pkg {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "no" "Desideri cercare pacchetti orfani?"
 	[[ $_LNG = eng ]] && qst_msg "no" "Do you want search for orphaned packages"
-	read -r sure
-	if [[ ( $_LNG = eng && ( $sure = y || $sure = Y ) ) || \
-		  ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]
+	read -r _SURE
+	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
+		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
     then
 		_ORP=$(pacman -Qdtq)
 		if [[ -n $_ORP ]]
@@ -174,8 +204,8 @@ function clean_pkg {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri pulire la cache dei pacchetti installati (conservando le ultime 2 versioni)"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)"
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]
+	read -r _SURE
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
     	sudo paccache -rk2 --nocolor
     	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti installati"
@@ -187,8 +217,8 @@ function clean_pkg {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri pulire completamente la cache dei pacchetti non installati"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages"
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]
+	read -r _SURE
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
     	sudo paccache -ruk0 --nocolor
     	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti non installati"
@@ -200,9 +230,9 @@ function clean_pkg {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "no" "Desideri ottimizzare (deframmentare) il database di pacaman (NO SSD)"
 	[[ $_LNG = eng ]] && qst_msg "no" "Do you want to optimize (defragment) pacman database (NO SSD)"
-	read -r sure
-	if [[ ( $_LNG = eng && ( $sure = y || $sure = Y ) ) || \
-		  ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]
+	read -r _SURE
+	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
+		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
     then
     	sudo pacman-optimize --nocolor
     	[[ $_LNG = ita ]] && end_msg "ok" "Ottimizzazione database"
@@ -223,9 +253,9 @@ function clean_file {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "no" "Desideri rimuovere ogni file in /tmp"
 	[[ $_LNG = eng ]] && qst_msg "no" "Do you want to clean every /tmp files"
-	read -r sure
-	if [[ ( $_LNG = eng && ( $sure = y || $sure = Y ) ) || \
-		  ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]
+	read -r _SURE
+	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
+		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
     then
     	sudo rm -rf /tmp/*
     	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file temporanei"
@@ -237,19 +267,20 @@ function clean_file {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri stimare lo spazio occupato dai file poco recenti nella cache e tra le miniature"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to estimate disk space taken by old cache and thumbnails"
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]
+	read -r _SURE
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
    	then
-		_OLD=$( find ~/.thumbnails -type f -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 )
-		(( _OLD+=$( find ~/.cache -type f -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 ) ))
-		(( _OLD+=$( find ~/.thumbnails -empty -type d -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 ) ))
-		(( _OLD+=$( find ~/.cache -empty -type d -atime +30 -print0 | du --files0-from=- -ck | tail -1 | cut -f 1 ) ))
+		_OLD=$( find ~/.thumbnails -type f -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 )
+		(( _OLD+=$( find ~/.cache -type f -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+		(( _OLD+=$( find ~/.thumbnails -empty -type d -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+		(( _OLD+=$( find ~/.cache -empty -type d -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
 		if [[ $_OLD -gt 0 ]]
 		then
-			[[ $_LNG = ita ]] && qst_msg "yes" "L'eliminazione di questi file libererà $_OLD kb di spazio su disco, vuoi procedere"
-			[[ $_LNG = eng ]] && qst_msg "yes" "The deletion of these files will free $_OLD kb of disk space, do you want to continue"
-			read -r sure
-			if [[ $sure != "n" && $sure != "N" ]]
+			_OLD=$(human_size "$_OLD")
+			[[ $_LNG = ita ]] && qst_msg "yes" "L'eliminazione di questi file libererà $_OLD di spazio su disco, vuoi procedere"
+			[[ $_LNG = eng ]] && qst_msg "yes" "The deletion of these files will free $_OLD of disk space, do you want to continue"
+			read -r _SURE
+			if [[ $_SURE != "n" && $_SURE != "N" ]]
 			then
 				find ~/.thumbnails -type f -atime +30 -print0 | xargs -0 /bin/rm -f
 				find ~/.cache -type f -atime +30 -print0 | xargs -0 /bin/rm -f
@@ -274,8 +305,8 @@ function clean_file {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri cercare file residui"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to search for residual files"
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]
+	read -r _SURE
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
     	_RES="$(find "$HOME" -name "Desktop.ini")$(find "$HOME" -name "*~")$(find "$HOME" -name "Thumbs.db")"
 		if [[ -n $_RES ]]
@@ -283,11 +314,15 @@ function clean_file {
 			find "$HOME" -name "*~"
     		find "$HOME" -name "Desktop.ini"
     		find "$HOME" -name "Thumbs.db"
-    		[[ $_LNG = ita ]] && qst_msg "no" "Desideri rimuovere questi file"
-    		[[ $_LNG = eng ]] && qst_msg "no" "Do you want to remove these files"
-    		read -r sure
-			if [[ ( $_LNG = eng && ( $sure = y || $sure = Y ) ) || \
-			  ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]
+    		_RESP=$( find "$HOME" -name "*~" -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 )
+    		(( _RESP+=$( find "$HOME" -name "Desktop.ini" -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+    		(( _RESP+=$( find "$HOME" -name "Thumbs.db" -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+			_RESP=$(human_size "$_RESP")
+			[[ $_LNG = ita ]] && qst_msg "no" "Questi file occupano $_RESP di spazio su disco, desideri rimuoverli"
+    		[[ $_LNG = eng ]] && qst_msg "no" "These files take $_RESP of disk space, do you want to remove them"
+    		read -r _SURE
+			if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
+			  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
         	then
         		find "$HOME" -name "*~" -print0 | xargs -0 /bin/rm -f
         		find "$HOME" -name "Desktop.ini" -print0 | xargs -0 /bin/rm -f
@@ -311,9 +346,9 @@ function clean_file {
 	echo
 	[[ $_LNG = ita ]] && qst_msg "no" "Desideri svuotare il cestino"
 	[[ $_LNG = eng ]] && qst_msg "no" "Do you want to clean trash"
-	read -r sure
-	if [[ ( $_LNG = eng && ( $sure = y || $sure = Y ) ) || \
-		  ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]
+	read -r _SURE
+	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
+		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
     then
     	sudo rm -rfv ~/.local/share/Trash/*
     	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
