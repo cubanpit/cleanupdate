@@ -146,8 +146,8 @@ function sys_update {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
 	then
-		_PAC=$(pacman -Qi pacaur 2> /dev/null)
-		_YAU=$(pacman -Qi yaourt 2> /dev/null)
+		_PAC=$( pacman -Qi pacaur 2> /dev/null )
+		_YAU=$( pacman -Qi yaourt 2> /dev/null )
 		if [[ -n $_PAC ]]
 		then
 			pacaur -Sua
@@ -270,10 +270,11 @@ function clean_file {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
    	then
-		_OLD=$( find ~/.thumbnails -type f -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 )
-		(( _OLD+=$( find ~/.cache -type f -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
-		(( _OLD+=$( find ~/.thumbnails -empty -type d -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
-		(( _OLD+=$( find ~/.cache -empty -type d -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+		_OLD=0
+		[[ -d ~/.thumbnails ]] && (( _OLD+=$( find ~/.thumbnails -type f -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+		[[ -d ~/.thumbnails ]] && (( _OLD+=$( find ~/.thumbnails -empty -type d -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+		[[ -d ~/.cache ]] && (( _OLD+=$( find ~/.cache -type f -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+		[[ -d ~/.cache ]] && (( _OLD+=$( find ~/.cache -empty -type d -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
 		if [[ $_OLD -gt 0 ]]
 		then
 			_OLD=$(human_size "$_OLD")
@@ -308,15 +309,15 @@ function clean_file {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-    	_RES="$(find "$HOME" -name "Desktop.ini")$(find "$HOME" -name "*~")$(find "$HOME" -name "Thumbs.db")"
+    	_RES="$(find "$HOME" -name "Desktop.ini" -user $USER 2>/dev/null)$(find "$HOME" -name "*~" -user $USER 2>/dev/null)$(find "$HOME" -name "Thumbs.db" -user $USER 2>/dev/null)"
 		if [[ -n $_RES ]]
 		then
-			find "$HOME" -name "*~"
-    		find "$HOME" -name "Desktop.ini"
-    		find "$HOME" -name "Thumbs.db"
-    		_RESP=$( find "$HOME" -name "*~" -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 )
-    		(( _RESP+=$( find "$HOME" -name "Desktop.ini" -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
-    		(( _RESP+=$( find "$HOME" -name "Thumbs.db" -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+			find "$HOME" -name "*~" -user $USER 2>/dev/null
+   			find "$HOME" -name "Desktop.ini" -user $USER 2>/dev/null
+   			find "$HOME" -name "Thumbs.db" -user $USER 2>/dev/null
+    		_RESP=$( find "$HOME" -name "*~" -user $USER -print0 2>/dev/null | du --files0-from=- -cb | tail -1 | cut -f 1 )
+    		(( _RESP+=$( find "$HOME" -name "Desktop.ini" -user $USER -print0 2>/dev/null | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+    		(( _RESP+=$( find "$HOME" -name "Thumbs.db" -user $USER -print0 2>/dev/null | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
 			_RESP=$(human_size "$_RESP")
 			[[ $_LNG = ita ]] && qst_msg "no" "Questi file occupano $_RESP di spazio su disco, desideri rimuoverli"
     		[[ $_LNG = eng ]] && qst_msg "no" "These files take $_RESP of disk space, do you want to remove them"
@@ -324,9 +325,9 @@ function clean_file {
 			if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
 			  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
         	then
-        		find "$HOME" -name "*~" -print0 | xargs -0 /bin/rm -f
-        		find "$HOME" -name "Desktop.ini" -print0 | xargs -0 /bin/rm -f
-        		find "$HOME" -name "Thumbs.db" -print0 | xargs -0 /bin/rm -f
+        		find "$HOME" -name "*~" -user $USER -print0 2>/dev/null | xargs -0 /bin/rm -f
+        		find "$HOME" -name "Desktop.ini" -user $USER -print0 2>/dev/null | xargs -0 /bin/rm -f
+        		find "$HOME" -name "Thumbs.db" -user $USER -print0 2>/dev/null | xargs -0 /bin/rm -f
         		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file residui"
         		[[ $_LNG = eng ]] && end_msg "ok" "Residual files clean"
     		else
@@ -344,15 +345,44 @@ function clean_file {
 		[[ $_LNG = eng ]] && end_msg "no" "Residual files search"
 	fi
 	echo
-	[[ $_LNG = ita ]] && qst_msg "no" "Desideri svuotare il cestino"
-	[[ $_LNG = eng ]] && qst_msg "no" "Do you want to clean trash"
+	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri controllare lo stato del cestino"
+	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to check trash status"
 	read -r _SURE
-	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
-		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-    	sudo rm -rfv ~/.local/share/Trash/*
-    	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
-    	[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
+		if [[ -d ~/.local/share/Trash/ ]]
+		then
+			ls ~/.local/share/Trash/
+			_CKTR=$( ls ~/.local/share/Trash )
+			_TRASH=$( find ~/.local/share/Trash/ -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 )
+			if [[ $_TRASH -gt 0 && -n $_CKTR ]]
+			then
+				_TRASH=$(human_size "$_TRASH")
+				[[ $_LNG = ita ]] && qst_msg "no" "Questi file occupano $_TRASH di spazio sul disco, desideri eliminarli definitivamente"
+				[[ $_LNG = eng ]] && qst_msg "no" "These files take $_TRASH on you disk, do you want do definetely delete them"
+				read -r _SURE
+				if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
+		  			( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
+				then
+					/bin/rm -rf ~/.local/share/Trash/*
+    				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
+					[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
+				else
+    				[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
+					[[ $_LNG = eng ]] && end_msg "no" "Trash clean"
+				fi
+			else
+				[[ $_LNG = ita ]] && echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
+				[[ $_LNG = eng ]] && echo "Trash is completely empty, there is no need to clean it."
+    			[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
+				[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
+			fi
+		else
+			[[ $_LNG = ita ]] && echo "Il cestino non esiste, ~/.local/share/Trash/ non è presente."
+			[[ $_LNG = eng ]] && echo "Trash doesn't exist, at least ~/.local/share/Trash/ does not."
+    		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
+			[[ $_LNG = eng ]] && end_msg "no" "Trash clean"
+		fi
 	else
     	[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
 		[[ $_LNG = eng ]] && end_msg "no" "Trash clean"
