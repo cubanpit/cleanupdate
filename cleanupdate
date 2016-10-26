@@ -309,26 +309,42 @@ function clean_file {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-    	_RES="$(find "$HOME" -name "Desktop.ini" -user $USER 2>/dev/null)$(find "$HOME" -name "*~" -user $USER 2>/dev/null)$(find "$HOME" -name "Thumbs.db" -user $USER 2>/dev/null)"
-		if [[ -n $_RES ]]
+		unset i
+		while IFS= read -r -d '' file; do
+			  _RES[i++]="$file"
+		done < <(find "$HOME" -name "*~" -user "$USER" -print0 2>/dev/null)
+    	while IFS= read -r -d '' file; do
+			  _RES[i++]="$file"
+		done < <(find "$HOME" -name "Desktop.ini" -user "$USER" -print0 2>/dev/null)
+    	while IFS= read -r -d '' file; do
+			  _RES[i++]="$file"
+		done < <(find "$HOME" -name "Thumbs.db" -user "$USER" -print0 2>/dev/null)
+		if [[ ${#_RES[@]} -gt 0 ]]
 		then
-			find "$HOME" -name "*~" -user $USER 2>/dev/null
-   			find "$HOME" -name "Desktop.ini" -user $USER 2>/dev/null
-   			find "$HOME" -name "Thumbs.db" -user $USER 2>/dev/null
-    		_RESP=$( find "$HOME" -name "*~" -user $USER -print0 2>/dev/null | du --files0-from=- -cb | tail -1 | cut -f 1 )
-    		(( _RESP+=$( find "$HOME" -name "Desktop.ini" -user $USER -print0 2>/dev/null | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
-    		(( _RESP+=$( find "$HOME" -name "Thumbs.db" -user $USER -print0 2>/dev/null | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+			unset i
+			for i in "${_RES[@]}"
+			do
+				echo "$i"
+			done
+			_RESP=0
+			unset i
+    		for i in "${_RES[@]}"
+			do
+				(( _RESP+=$( du -b "$i" | cut -f 1 ) ))
+			done
 			_RESP=$(human_size "$_RESP")
-			[[ $_LNG = ita ]] && qst_msg "no" "Questi file occupano $_RESP di spazio su disco, desideri rimuoverli"
-    		[[ $_LNG = eng ]] && qst_msg "no" "These files take $_RESP of disk space, do you want to remove them"
+			[[ $_LNG = ita ]] && qst_msg "no" "Ci sono ${#_RES[@]} file residui che occupano $_RESP di spazio su disco, desideri rimuoverli"
+    		[[ $_LNG = eng ]] && qst_msg "no" "There are ${#_RES[@]} residual files that take $_RESP of disk space, do you want to remove them"
     		read -r _SURE
 			if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
 			  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
         	then
-        		find "$HOME" -name "*~" -user $USER -print0 2>/dev/null | xargs -0 /bin/rm -f
-        		find "$HOME" -name "Desktop.ini" -user $USER -print0 2>/dev/null | xargs -0 /bin/rm -f
-        		find "$HOME" -name "Thumbs.db" -user $USER -print0 2>/dev/null | xargs -0 /bin/rm -f
-        		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file residui"
+				unset i
+				for i in "${_RES[@]}"
+				do
+					/bin/rm -f "$i"
+				done
+				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file residui"
         		[[ $_LNG = eng ]] && end_msg "ok" "Residual files clean"
     		else
         		[[ $_LNG = ita ]] && end_msg "no" "Pulizia file residui"
@@ -350,16 +366,28 @@ function clean_file {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-		if [[ -d ~/.local/share/Trash/ ]]
+		if [[ -d ~/.local/share/Trash/files ]]
 		then
-			ls ~/.local/share/Trash/
-			_CKTR=$( ls ~/.local/share/Trash )
-			_TRASH=$( find ~/.local/share/Trash/ -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 )
-			if [[ $_TRASH -gt 0 && -n $_CKTR ]]
+			unset i
+			while IFS= read -r -d '' file; do
+				_TRASH[i++]="$file"
+			done < <(find ~/.local/share/Trash/files -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
+			unset i
+			for i in "${_TRASH[@]}"
+			do
+				echo "$i"
+			done
+			_TRASP=0
+			unset i
+			for i in "${_TRASH[@]}"
+			do
+				(( _TRASP+=$( du -cb "$i" | tail -1 | cut -f 1 ) ))
+			done
+			if [[ ${#_TRASH[@]} -gt 0 ]]
 			then
-				_TRASH=$(human_size "$_TRASH")
-				[[ $_LNG = ita ]] && qst_msg "no" "Questi file occupano $_TRASH di spazio sul disco, desideri eliminarli definitivamente"
-				[[ $_LNG = eng ]] && qst_msg "no" "These files take $_TRASH on you disk, do you want do definetely delete them"
+				_TRASP=$(human_size "$_TRASP")
+				[[ $_LNG = ita ]] && qst_msg "no" "Sono presenti ${#_TRASH[@]} elementi che occupano $_TRASP di spazio sul disco, desideri eliminarli definitivamente"
+				[[ $_LNG = eng ]] && qst_msg "no" "There are ${#_TRASH[@]} items that take $_TRASP of disk space, do you want do definetely delete them"
 				read -r _SURE
 				if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
 		  			( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
@@ -378,10 +406,10 @@ function clean_file {
 				[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
 			fi
 		else
-			[[ $_LNG = ita ]] && echo "Il cestino non esiste, ~/.local/share/Trash/ non è presente."
-			[[ $_LNG = eng ]] && echo "Trash doesn't exist, at least ~/.local/share/Trash/ does not."
-    		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
-			[[ $_LNG = eng ]] && end_msg "no" "Trash clean"
+			[[ $_LNG = ita ]] && echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
+			[[ $_LNG = eng ]] && echo "Trash is completely empty, there is no need to clean it."
+    		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
+			[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
 		fi
 	else
     	[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
@@ -433,7 +461,7 @@ ${_BOLD}Search and clean residual files${_NORMAL}
 Search for files with names matching 'Thumbs.db', 'Desktop.ini' and '*~'. This files are temporary files from Windows (first and second one) and from Linux (last one) application, that store them to save some informations during work; they're important when you're using some applications, but they should disappears few seconds later, sometimes they don't.
 
 ${_BOLD}Clean trash files (rm -rfv ~/.local/share/Trash/*)${_NORMAL}
-Simply clean the user trash, printing all file names so the user at first glance can check deleted files and their number.
+Simply clean the user trash, files are located in '~/.local/share/Trash/files'; prints all file names so the user at first glance can check deleted files and their number.
 
 Press 'q' to quit documentation
 EOF
@@ -483,7 +511,7 @@ ${_BOLD}Ricerca e rimozione file residui${_NORMAL}
 Effettua una ricerca sui file che si chiamano 'Thumbs.db', 'Desktop.ini' e '*~'. I primi due soo file creati dai sistemi Windows ed inutili su di un sistema Linux, che possono comparire se si condividono alcune cartelle con il sistema operativo di casa Microsoft. L'ultimo tipo di file (con il nome che finisce con una tilde) è un tipo di file temporaneo creato da molte applicazioni come salvataggio temporaneo del lavoro in corso di svolgimento, utile nel caso in cui improvvisamente il sistema si spenga per esempio; può succedere che questi file rimangano nel sistema più a lungo del necessario, creando disordine ed occupando spazio.
 
 ${_BOLD}Pulizia cestino (rm -rfv ~/.local/share/Trash/*)${_NORMAL}
-Cancella tutti i file presenti nel cestino dell'utente, stampando tutti i file cancellati di modo che l'utente possa verificare velocemente l'entità dell'operazione.
+Cancella tutti i file presenti nel cestino dell'utente, i cui file sono contenuti in '~/.local/share/Trash/files', stampando tutti il nome dei file di modo che l'utente possa verificare velocemente l'entità dell'operazione.
 
 Premere 'q' per uscire dalla documentazione
 EOF

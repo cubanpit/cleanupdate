@@ -3,6 +3,7 @@
 Simple script to update and clean an Arch-based system.
 
 The script can switch between Italian and English languages.
+
 (At the moment it hasn't very elegant code, it's a work in progress.)
 
 ### Features:
