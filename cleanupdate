@@ -50,13 +50,9 @@ function human_size {
 	elif [[ _NUM -ge 1000 ]]
 	then
 		_NUM="$(( _NUM / 1000 )) kB"
-	elif [[ _NUM -gt 0 ]]
+	elif [[ _NUM -ge 0 ]]
 	then
 		_NUM="$_NUM B"
-	elif [[ _NUM -eq 0 ]]
-	then
-		[[ $_LNG = ita ]] && _NUM="meno di 1 byte"
-		[[ $_LNG = eng ]] && _NUM="less than 1 byte"
 	else
 		[[ $_LNG = ita ]] && echo "ERRORE: impossibile convertire numeri negativi."
 		[[ $_LNG = eng ]] && echo "ERROR: it's not possible to convert negative numbers."
@@ -373,23 +369,22 @@ function clean_file {
 				_TRASH[i++]="$file"
 			done < <(find ~/.local/share/Trash/files -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 			unset i
+			# this variable counts total file size
+			_TRASP=0
 			for i in "${_TRASH[@]}"
 			do
-				echo -ne "    "
+				_FILENAME=${i##*/}	# extract substring
+				_FILESIZE=$(du -bs "$i" | cut -f 1)
+				(( _TRASP+=$_FILESIZE ))
+				_FILESIZE=$(human_size "$_FILESIZE")
+				echo -ne "   $_FILESIZE   \t"
 				if [[ -d "$i" ]]
 				then
-					echo -n "${_BOLD}"
-					echo "$i" | cut -z -d / -f 8
-					echo -n "${_NORMAL}"
+					_FILENAME+="/"
+					echo "${_BOLD}$_FILENAME${_NORMAL}"
 				else
-					echo "$i" | cut -d / -f 8
+					echo "$_FILENAME"
 				fi
-			done
-			_TRASP=0
-			unset i
-			for i in "${_TRASH[@]}"
-			do
-				(( _TRASP+=$( du -cb "$i" | tail -1 | cut -f 1 ) ))
 			done
 			if [[ ${#_TRASH[@]} -gt 0 ]]
 			then
