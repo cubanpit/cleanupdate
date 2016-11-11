@@ -283,10 +283,10 @@ function clean_file {
 			read -r _SURE
 			if [[ $_SURE != "n" && $_SURE != "N" ]]
 			then
-				find ~/.thumbnails -type f -atime +30 -print0 | xargs -0 /bin/rm -f
-				find ~/.cache -type f -atime +30 -print0 | xargs -0 /bin/rm -f
-				find ~/.thumbnails -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
-				find ~/.cache -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
+				[[ -d ~/.thumbnails ]] && find ~/.thumbnails -type f -atime +30 -print0 | xargs -0 /bin/rm -f
+				[[ -d ~/.cache ]] && find ~/.cache -type f -atime +30 -print0 | xargs -0 /bin/rm -f
+				[[ -d ~/.thumbnails ]] && find ~/.thumbnails -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
+				[[ -d ~/.cache ]] && find ~/.cache -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
    				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache e miniature"
    				[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache clean"
 			else
