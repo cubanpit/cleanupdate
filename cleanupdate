@@ -224,15 +224,34 @@ function clean_pkg {
 		[[ $_LNG = eng ]] && end_msg "no" "Uninstalled packages cache clean"
 	fi
 	echo
-	[[ $_LNG = ita ]] && qst_msg "no" "Desideri ottimizzare (deframmentare) il database di pacaman (NO SSD)"
-	[[ $_LNG = eng ]] && qst_msg "no" "Do you want to optimize (defragment) pacman database (NO SSD)"
+	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri ottimizzare (deframmentare) il database di pacman"
+	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to optimize (defragment) pacman database"
 	read -r _SURE
-	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
-		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
+	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-    	sudo pacman-optimize --nocolor
-    	[[ $_LNG = ita ]] && end_msg "ok" "Ottimizzazione database"
-    	[[ $_LNG = eng ]] && end_msg "ok" "Database optimization"
+		_ROTAT=false
+		if [[ -d "/var/lib/pacman" ]] # check database exists
+		then
+			# find disk on which database are located
+			_DISK=$(df -P /var/lib/pacman | tail -n 1 | cut -d' ' -f 1 | \
+					sed -E 's/(\/dev\/|[0-9])//g')
+
+			# discover if database disk is rotational
+			[[ -n $_DISK && -b "/dev/$_DISK" && \
+			-e "/sys/block/$_DISK/queue/rotational" && \
+			$(cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] && _ROTAT=true
+		fi
+		if [[ $_ROTAT ]]
+		then
+    		sudo pacman-optimize --nocolor
+    		[[ $_LNG = ita ]] && end_msg "ok" "Ottimizzazione database"
+    		[[ $_LNG = eng ]] && end_msg "ok" "Database optimization"
+		else
+			[[ $_LNG = ita ]] && echo "Il database di pacman non risiede su un disco rotazionale, non è necessario eseguire la deframmentazione."
+    		[[ $_LNG = eng ]] && echo "The pacman database lives on a non rotational disk, defragmentation is not needed."
+			[[ $_LNG = ita ]] && end_msg "no" "Ottimizzazione database"
+			[[ $_LNG = eng ]] && end_msg "no" "Database optimization"
+		fi
 	else
     	[[ $_LNG = ita ]] && end_msg "no" "Ottimizzazione database"
 		[[ $_LNG = eng ]] && end_msg "no" "Database optimization"
@@ -375,7 +394,7 @@ function clean_file {
 			do
 				_FILENAME=${i##*/}	# extract substring
 				_FILESIZE=$(du -bs "$i" | cut -f 1)
-				(( _TRASP+=$_FILESIZE ))
+				(( _TRASP+=_FILESIZE ))
 				_FILESIZE=$(human_size "$_FILESIZE")
 				echo -ne "   $_FILESIZE   \t"
 				if [[ -d "$i" ]]
