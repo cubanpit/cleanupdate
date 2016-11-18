@@ -6,7 +6,7 @@
 # Menu taken from a script by Chrysostomus.
 #
 # This script should help you to mantain an ArchLinux-based system.
-# More info at github.com/cubanpit/cleanupdate
+# Report issue at github.com/cubanpit/cleanupdate
 #
 ################################################################################
 #
@@ -26,11 +26,12 @@
 ################################################################################
 
 
-_BOLD=$(tput bold)
-_NORMAL=$(tput sgr0)
-_RED=$(tput setaf 1)
-_GREEN=$(tput setaf 2)
-_YELLOW=$(tput setaf 3)
+_BOLD=$(/bin/tput bold)
+_NORMAL=$(/bin/tput sgr0)
+_RED=$(/bin/tput setaf 1)
+_GREEN=$(/bin/tput setaf 2)
+_YELLOW=$(/bin/tput setaf 3)
+_AQUA=$(/bin/tput setaf 6)
 _LNG="eng"
 [[ "$LANG" =~ "it_IT" ]] && _LNG="ita"
 
@@ -41,17 +42,13 @@ _LNG="eng"
 #
 function human_size {
 	_NUM=$1
-	if [[ _NUM -ge 1000000000 ]]
-	then
+	if [[ _NUM -ge 1000000000 ]]; then
 		_NUM="$(( _NUM / 1000000000 )) GB"
-	elif [[ _NUM -ge 1000000 ]]
-	then
+	elif [[ _NUM -ge 1000000 ]]; then
 		_NUM="$(( _NUM / 1000000 )) MB"
-	elif [[ _NUM -ge 1000 ]]
-	then
+	elif [[ _NUM -ge 1000 ]]; then
 		_NUM="$(( _NUM / 1000 )) kB"
-	elif [[ _NUM -ge 0 ]]
-	then
+	elif [[ _NUM -ge 0 ]]; then
 		_NUM="$_NUM B"
 	else
 		[[ $_LNG = ita ]] && echo "ERRORE: impossibile convertire numeri negativi."
@@ -68,14 +65,15 @@ function human_size {
 function end_msg {
 	_MOD=$1
 	_MSG=$2
-	if [[ $_MOD = ok ]]
-	then
-		[[ $_LNG = ita ]] && echo "${_BOLD}[${_GREEN}FINITO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+	if [[ $_MOD = ok ]]; then
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_GREEN}ESEGUITO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
 		[[ $_LNG = eng ]] && echo "${_BOLD}[${_GREEN}DONE${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
-	elif [[ $_MOD = no ]]
-	then
-		[[ $_LNG = ita ]] && echo "${_BOLD}[${_RED}NON ESEGUITO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
-		[[ $_LNG = eng ]] && echo "${_BOLD}[${_RED}NOT EXECUTED${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+	elif [[ $_MOD = no ]]; then
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_RED}ANNULLATO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_RED}CANCELED${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+	elif [[ $_MOD = skip ]]; then
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_AQUA}SALTATO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_AQUA}SKIPPED${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
 	else
 		[[ $_LNG = ita ]] && echo "ERRORE: modalità sconosciuta, vedere funzione end_msg()."
 		[[ $_LNG = eng ]] && echo "ERROR: unknown option, see end_msg() function."
@@ -89,12 +87,10 @@ function end_msg {
 function qst_msg {
 	_MOD=$1
 	_MSG=$2
-	if [[ $_MOD = yes ]]
-	then
+	if [[ $_MOD = yes ]]; then
 		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [S/n]?${_NORMAL} "
 		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [Y/n]?${_NORMAL} "
-	elif [[ $_MOD = no ]]
-	then
+	elif [[ $_MOD = no ]]; then
 		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [s/N]?${_NORMAL} "
 		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [y/N]?${_NORMAL} "
 	else
@@ -116,7 +112,7 @@ function sys_update {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
 	then
-		sudo pacman -Syy --color never
+		sudo /bin/pacman -Syy --color never
 		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento database locale"
 		[[ $_LNG = eng ]] && end_msg "ok" "Local database update"
 	else
@@ -129,7 +125,7 @@ function sys_update {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-    	sudo pacman -Syu --color never
+    	sudo /bin/pacman -Syu --color never
     	[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento pacchetti ufficiali"
     	[[ $_LNG = eng ]] && end_msg "ok" "Official packages upgrade"
 	else
@@ -142,16 +138,16 @@ function sys_update {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
 	then
-		_PAC=$( pacman -Qi pacaur 2> /dev/null )
-		_YAU=$( pacman -Qi yaourt 2> /dev/null )
+		_PAC=$( /bin/pacman -Qi pacaur 2> /dev/null )
+		_YAU=$( /bin/pacman -Qi yaourt 2> /dev/null )
 		if [[ -n $_PAC ]]
 		then
-			pacaur -Sua
+			/bin/pacaur -Sua
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
 		elif [[ -n $_YAU ]]
 		then
-			yaourt -Sua --nocolor
+			/bin/yaourt -Sua --nocolor
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
 		else
@@ -159,9 +155,8 @@ function sys_update {
 				"non è possibile accedere agli aggiornamenti AUR tramite questo script."
 			[[ $_LNG = eng ]] && echo "You don't have neither 'yaourt' nor 'pacaur' installed,"\
 				"you can't access AUR updates through this script."
-			echo
-			[[ $_LNG = ita ]] && end_msg "no" "Aggiornamento AUR"
-			[[ $_LNG = eng ]] && end_msg "no" "AUR upgrade"
+			[[ $_LNG = ita ]] && end_msg "skip" "Aggiornamento AUR"
+			[[ $_LNG = eng ]] && end_msg "skip" "AUR upgrade"
 		fi
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Aggiornamento AUR"
@@ -183,16 +178,18 @@ function clean_pkg {
 	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
 		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
     then
-		_ORP=$(pacman -Qdtq)
+		_ORP=$(/bin/pacman -Qdtq)
 		if [[ -n $_ORP ]]
 		then
-			sudo pacman --color never -Rs $_ORP
+			sudo /bin/pacman --color never -Rs $_ORP
+			[[ $_LNG = ita ]] && end_msg "ok" "Pacchetti orfani"
+			[[ $_LNG = eng ]] && end_msg "ok" "Orphaned packages"
 		else
 			[[ $_LNG = ita ]] && echo "Non è presente alcun pacchetto orfano."
 			[[ $_LNG = eng ]] && echo "There isn't any orphaned packages."
+			[[ $_LNG = ita ]] && end_msg "skip" "Pacchetti orfani"
+			[[ $_LNG = eng ]] && end_msg "skip" "Orphaned packages"
 		fi
-		[[ $_LNG = ita ]] && end_msg "ok" "Pacchetti orfani"
-		[[ $_LNG = eng ]] && end_msg "ok" "Orphaned packages"
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pacchetti orfani"
 		[[ $_LNG = eng ]] && end_msg "no" "Orphaned packages"
@@ -203,7 +200,7 @@ function clean_pkg {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-    	sudo paccache -rk2 --nocolor
+    	sudo /bin/paccache -rk2 --nocolor
     	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti installati"
     	[[ $_LNG = eng ]] && end_msg "ok" "Installed packages cache clean"
 	else
@@ -216,7 +213,7 @@ function clean_pkg {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-    	sudo paccache -ruk0 --nocolor
+    	sudo /bin/paccache -ruk0 --nocolor
     	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti non installati"
     	[[ $_LNG = eng ]] && end_msg "ok" "Uninstalled packages cache clean"
 	else
@@ -233,24 +230,23 @@ function clean_pkg {
 		if [[ -d "/var/lib/pacman" ]] # check database exists
 		then
 			# find disk on which database are located
-			_DISK=$(df -P /var/lib/pacman | tail -n 1 | cut -d' ' -f 1 | \
-					sed -E 's/(\/dev\/|[0-9])//g')
-
+			_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | /bin/cut -d' ' -f 1 | \
+					/bin/sed -E 's/(\/dev\/|[0-9])//g')
 			# discover if database disk is rotational
 			[[ -n $_DISK && -b "/dev/$_DISK" && \
 			-e "/sys/block/$_DISK/queue/rotational" && \
-			$(cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] && _ROTAT=true
+			$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] && _ROTAT=true
 		fi
-		if [[ $_ROTAT ]]
+		if [[ "$_ROTAT" = true ]]
 		then
-    		sudo pacman-optimize --nocolor
+    		sudo /bin/pacman-optimize --nocolor
     		[[ $_LNG = ita ]] && end_msg "ok" "Ottimizzazione database"
     		[[ $_LNG = eng ]] && end_msg "ok" "Database optimization"
 		else
 			[[ $_LNG = ita ]] && echo "Il database di pacman non risiede su un disco rotazionale, non è necessario eseguire la deframmentazione."
     		[[ $_LNG = eng ]] && echo "The pacman database lives on a non rotational disk, defragmentation is not needed."
-			[[ $_LNG = ita ]] && end_msg "no" "Ottimizzazione database"
-			[[ $_LNG = eng ]] && end_msg "no" "Database optimization"
+			[[ $_LNG = ita ]] && end_msg "skip" "Ottimizzazione database"
+			[[ $_LNG = eng ]] && end_msg "skip" "Database optimization"
 		fi
 	else
     	[[ $_LNG = ita ]] && end_msg "no" "Ottimizzazione database"
@@ -272,7 +268,7 @@ function clean_file {
 	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
 		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
     then
-    	sudo rm -rf /tmp/*
+    	sudo /bin/rm -rf /tmp/*
     	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file temporanei"
     	[[ $_LNG = eng ]] && end_msg "ok" "Tmp files clean"
 	else
@@ -286,10 +282,10 @@ function clean_file {
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
    	then
 		_OLD=0
-		[[ -d ~/.thumbnails ]] && (( _OLD+=$( find ~/.thumbnails -type f -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
-		[[ -d ~/.thumbnails ]] && (( _OLD+=$( find ~/.thumbnails -empty -type d -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
-		[[ -d ~/.cache ]] && (( _OLD+=$( find ~/.cache -type f -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
-		[[ -d ~/.cache ]] && (( _OLD+=$( find ~/.cache -empty -type d -atime +30 -print0 | du --files0-from=- -cb | tail -1 | cut -f 1 ) ))
+		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -type f -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
+		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
+		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -type f -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
+		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -empty -type d -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
 		if [[ $_OLD -gt 0 ]]
 		then
 			_OLD=$(human_size "$_OLD")
@@ -298,10 +294,10 @@ function clean_file {
 			read -r _SURE
 			if [[ $_SURE != "n" && $_SURE != "N" ]]
 			then
-				[[ -d ~/.thumbnails ]] && find ~/.thumbnails -type f -atime +30 -print0 | xargs -0 /bin/rm -f
-				[[ -d ~/.cache ]] && find ~/.cache -type f -atime +30 -print0 | xargs -0 /bin/rm -f
-				[[ -d ~/.thumbnails ]] && find ~/.thumbnails -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
-				[[ -d ~/.cache ]] && find ~/.cache -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
+				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -type f -atime +30 -print0 | xargs -0 /bin/rm -f
+				[[ -d ~/.cache ]] && /bin/find ~/.cache -type f -atime +30 -print0 | xargs -0 /bin/rm -f
+				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
+				[[ -d ~/.cache ]] && /bin/find ~/.cache -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
    				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache e miniature"
    				[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache clean"
 			else
@@ -311,8 +307,8 @@ function clean_file {
 		else
 			[[ $_LNG = ita ]] && echo "Non c'è necessità di eliminare alcun file, le cartelle sono sufficientemente pulite."
 			[[ $_LNG = eng ]] && echo "There is no need to delete any files, these folders are pretty clean."
-   			[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache e miniature"
-   			[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache clean"
+   			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cache e miniature"
+   			[[ $_LNG = eng ]] && end_msg "skip" "Thumbs and cache clean"
 		fi
 	else
    		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache e miniature"
@@ -327,25 +323,22 @@ function clean_file {
 		unset i
 		while IFS= read -r -d '' file; do
 			  _RES[i++]="$file"
-		done < <(find "$HOME" -name "*~" -user "$USER" -print0 2>/dev/null)
+		done < <(/bin/find "$HOME" -name "*~" -user "$USER" -print0 2>/dev/null)
     	while IFS= read -r -d '' file; do
 			  _RES[i++]="$file"
-		done < <(find "$HOME" -name "Desktop.ini" -user "$USER" -print0 2>/dev/null)
+		done < <(/bin/find "$HOME" -name "Desktop.ini" -user "$USER" -print0 2>/dev/null)
     	while IFS= read -r -d '' file; do
 			  _RES[i++]="$file"
-		done < <(find "$HOME" -name "Thumbs.db" -user "$USER" -print0 2>/dev/null)
-		if [[ ${#_RES[@]} -gt 0 ]]
-		then
+		done < <(/bin/find "$HOME" -name "Thumbs.db" -user "$USER" -print0 2>/dev/null)
+		if [[ ${#_RES[@]} -gt 0 ]]; then
 			unset i
-			for i in "${_RES[@]}"
-			do
+			for i in "${_RES[@]}"; do
 				echo "$i"
 			done
 			_RESP=0
 			unset i
-    		for i in "${_RES[@]}"
-			do
-				(( _RESP+=$( du -b "$i" | cut -f 1 ) ))
+    		for i in "${_RES[@]}"; do
+				(( _RESP+=$( /bin/du -b "$i" | /bin/cut -f 1 ) ))
 			done
 			_RESP=$(human_size "$_RESP")
 			[[ $_LNG = ita ]] && qst_msg "no" "Ci sono ${#_RES[@]} file residui che occupano $_RESP di spazio su disco, desideri rimuoverli"
@@ -355,8 +348,7 @@ function clean_file {
 			  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
         	then
 				unset i
-				for i in "${_RES[@]}"
-				do
+				for i in "${_RES[@]}"; do
 					/bin/rm -f "$i"
 				done
 				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file residui"
@@ -368,8 +360,8 @@ function clean_file {
 		else
 			[[ $_LNG = ita ]] && echo "Non sono presenti file residui."
 			[[ $_LNG = eng ]] && echo "There are no residual files."
-        	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file residui"
-        	[[ $_LNG = eng ]] && end_msg "ok" "Residual files clean"
+        	[[ $_LNG = ita ]] && end_msg "skip" "Pulizia file residui"
+        	[[ $_LNG = eng ]] && end_msg "skip" "Residual files clean"
 		fi
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pulizia file residui"
@@ -381,24 +373,21 @@ function clean_file {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]
     then
-		if [[ -d ~/.local/share/Trash/files ]]
-		then
+		if [[ -d ~/.local/share/Trash/files ]]; then
 			unset i
 			while IFS= read -r -d '' file; do
 				_TRASH[i++]="$file"
-			done < <(find ~/.local/share/Trash/files -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
+			done < <(/bin/find ~/.local/share/Trash/files -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 			unset i
 			# this variable counts total file size
 			_TRASP=0
-			for i in "${_TRASH[@]}"
-			do
+			for i in "${_TRASH[@]}"; do
 				_FILENAME=${i##*/}	# extract substring
-				_FILESIZE=$(du -bs "$i" | cut -f 1)
+				_FILESIZE=$(/bin/du -bs "$i" | /bin/cut -f 1)
 				(( _TRASP+=_FILESIZE ))
 				_FILESIZE=$(human_size "$_FILESIZE")
 				echo -ne "   $_FILESIZE   \t"
-				if [[ -d "$i" ]]
-				then
+				if [[ -d "$i" ]]; then
 					_FILENAME+="/"
 					echo "${_BOLD}$_FILENAME${_NORMAL}"
 				else
@@ -424,14 +413,14 @@ function clean_file {
 			else
 				[[ $_LNG = ita ]] && echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
 				[[ $_LNG = eng ]] && echo "Trash is completely empty, there is no need to clean it."
-    			[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
-				[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
+    			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cestino"
+				[[ $_LNG = eng ]] && end_msg "skip" "Trash clean"
 			fi
 		else
 			[[ $_LNG = ita ]] && echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
 			[[ $_LNG = eng ]] && echo "Trash is completely empty, there is no need to clean it."
-    		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
-			[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
+    		[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cestino"
+			[[ $_LNG = eng ]] && end_msg "skip" "Trash clean"
 		fi
 	else
     	[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
@@ -468,7 +457,7 @@ By default pacman keeps forever a backup of every version of every installed pac
 ${_BOLD}Clean the cache of uninstalled packages (paccache -ruk0)${_NORMAL}
 See previous command explanation. This works with unisnstalled packages and doesn't keep any backup version.
 
-${_BOLD}Optimize (defragment) pacman database (NO SSD) (pacman-optimize)${_NORMAL}
+${_BOLD}Optimize (defragment) pacman database (pacman-optimize)${_NORMAL}
 This command simply optimize access to pacman database, defragmenting it. For SSD it doesn't change anything in performances and it does a lot of writes, so it's not recommended.
 
 ${_BOLD}${_YELLOW}::Clean files::${_NORMAL}
@@ -518,7 +507,7 @@ Elimina le vecchie versioni dei pacchetti installati che pacman tiene come backu
 ${_BOLD}Pulizia della cache dei pacchetti non installati (paccache -ruk0)${_NORMAL}
 Come la voce precedente, ma per i pacchetti non più installati sul sistema. Non essendoci necessità di effettuare downgrade non conserva neanche una versione di backup.
 
-${_BOLD}Ottimizzazione (deframmentazione) del database di pacman (NO SSD) (pacman-optimize)${_NORMAL}
+${_BOLD}Ottimizzazione (deframmentazione) del database di pacman (pacman-optimize)${_NORMAL}
 Ottimizza l'accesso al database di pacman, deframmentandolo. Non è un'ottimizzazione utile nel caso in cui si utilizzi un SSD a causa del funzionamento stesso dei dischi a stato solido, inoltre causa inutili scritture sul disco che nel caso degli SSD sarebbe meglio limitare se non necessarie.
 
 ${_BOLD}${_YELLOW}::Pulizia file::${_NORMAL}
@@ -530,9 +519,9 @@ ${_BOLD}Pulizia cache e miniature non recenti${_NORMAL}
 Ricerca nelle cartelle '~/.cache' e '~/.thumbnails' file con l'ultimo accesso risalente a più di 30 giorni prima e li cancella, elimina anche le eventuali cartelle vuote che si trovano all'interno. I file presenti in cache sono utilizzati dalle applicazioni per velocizzare alcune operazioni comuni (es. caricamento copertine album in un riproduttore multimediale), invece i thumbnails sono le miniature delle immagini che vengono utilizzate (es. dal gestore file) per caricare più velocemente le anteprime delle immagini presenti nel sistema.
 
 ${_BOLD}Ricerca e rimozione file residui${_NORMAL}
-Effettua una ricerca sui file che si chiamano 'Thumbs.db', 'Desktop.ini' e '*~'. I primi due soo file creati dai sistemi Windows ed inutili su di un sistema Linux, che possono comparire se si condividono alcune cartelle con il sistema operativo di casa Microsoft. L'ultimo tipo di file (con il nome che finisce con una tilde) è un tipo di file temporaneo creato da molte applicazioni come salvataggio temporaneo del lavoro in corso di svolgimento, utile nel caso in cui improvvisamente il sistema si spenga per esempio; può succedere che questi file rimangano nel sistema più a lungo del necessario, creando disordine ed occupando spazio.
+Effettua una ricerca sui file che si chiamano 'Thumbs.db', 'Desktop.ini' e '*~'. I primi due sono file creati dai sistemi Windows ed inutili su di un sistema Linux, che possono comparire se si condividono alcune cartelle con il sistema operativo di casa Microsoft. L'ultimo tipo di file (con il nome che finisce con una tilde) è un tipo di file temporaneo creato da molte applicazioni come salvataggio temporaneo del lavoro in corso di svolgimento, utile nel caso in cui improvvisamente il sistema si spenga per esempio; può succedere che questi file rimangano nel sistema più a lungo del necessario, creando disordine ed occupando spazio.
 
-${_BOLD}Pulizia cestino (rm -rfv ~/.local/share/Trash/*)${_NORMAL}
+${_BOLD}Pulizia cestino (rm -rf ~/.local/share/Trash/*)${_NORMAL}
 Cancella tutti i file presenti nel cestino dell'utente, i cui file sono contenuti in '~/.local/share/Trash/files', stampando tutti il nome dei file di modo che l'utente possa verificare velocemente l'entità dell'operazione.
 
 Premere 'q' per uscire dalla documentazione
