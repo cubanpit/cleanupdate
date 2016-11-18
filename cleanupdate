@@ -26,12 +26,18 @@
 ################################################################################
 
 # Define some useful text style and color
-declare -r _BOLD=$(/bin/tput bold)
-declare -r _NORMAL=$(/bin/tput sgr0)
-declare -r _RED=$(/bin/tput setaf 1)
-declare -r _GREEN=$(/bin/tput setaf 2)
-declare -r _YELLOW=$(/bin/tput setaf 3)
-declare -r _AQUA=$(/bin/tput setaf 6)
+_BOLD=$(/bin/tput bold)
+readonly _BOLD
+_NORMAL=$(/bin/tput sgr0)
+readonly _NORMAL
+_RED=$(/bin/tput setaf 1)
+readonly _RED
+_GREEN=$(/bin/tput setaf 2)
+readonly _GREEN
+_YELLOW=$(/bin/tput setaf 3)
+readonly _YELLOW
+_AQUA=$(/bin/tput setaf 6)
+readonly _AQUA
 
 # Default language is English, but Italian it's available
 _LNG="eng"
@@ -44,6 +50,7 @@ then
 else
 	declare -r _SUDO="sudo"
 fi
+readonly _SUDO
 
 #
 # Function to convert file size in a format easier to read, it receives file
@@ -183,7 +190,7 @@ function clean_pkg {
 	read -r _SURE
 	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
 		( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
-		declare -r _ORP=$(/bin/pacman -Qdtq)
+		_ORP=$(/bin/pacman -Qdtq)
 		if [[ -n $_ORP ]]; then
 			$_SUDO /bin/pacman --color never -Rs $_ORP
 			[[ $_LNG = ita ]] && end_msg "ok" "Pacchetti orfani"
