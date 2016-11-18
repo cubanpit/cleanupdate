@@ -25,15 +25,25 @@
 #
 ################################################################################
 
+# Define some useful text style and color
+declare -r _BOLD=$(/bin/tput bold)
+declare -r _NORMAL=$(/bin/tput sgr0)
+declare -r _RED=$(/bin/tput setaf 1)
+declare -r _GREEN=$(/bin/tput setaf 2)
+declare -r _YELLOW=$(/bin/tput setaf 3)
+declare -r _AQUA=$(/bin/tput setaf 6)
 
-_BOLD=$(/bin/tput bold)
-_NORMAL=$(/bin/tput sgr0)
-_RED=$(/bin/tput setaf 1)
-_GREEN=$(/bin/tput setaf 2)
-_YELLOW=$(/bin/tput setaf 3)
-_AQUA=$(/bin/tput setaf 6)
+# Default language is English, but Italian it's available
 _LNG="eng"
 [[ "$LANG" =~ "it_IT" ]] && _LNG="ita"
+
+# If user is not root, then you need 'sudo'
+if [[ "$(id -u)" = "0" ]]
+then
+	declare -r _SUDO=""
+else
+	declare -r _SUDO="sudo"
+fi
 
 #
 # Function to convert file size in a format easier to read, it receives file
@@ -58,9 +68,9 @@ function human_size {
 }
 
 #
-# Function to print a message after a transaction, communicating the success
-#  or the failure.
-# Usage: end_msg "ok||no" "message"
+# Function to print a message after a transaction, communicating if it has been
+#  executed, has been cenceled or has been skipped because unuseful.
+# Usage: end_msg "ok||no||skip" "message"
 #
 function end_msg {
 	_MOD=$1
@@ -110,9 +120,8 @@ function sys_update {
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri aggiornare il database locale"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to update local database"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-	then
-		sudo /bin/pacman -Syy --color never
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		$_SUDO /bin/pacman -Syy --color never
 		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento database locale"
 		[[ $_LNG = eng ]] && end_msg "ok" "Local database update"
 	else
@@ -123,30 +132,27 @@ function sys_update {
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri aggiornare i pacchetti ufficiali"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to upgrade official packages"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-    then
-    	sudo /bin/pacman -Syu --color never
-    	[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento pacchetti ufficiali"
-    	[[ $_LNG = eng ]] && end_msg "ok" "Official packages upgrade"
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		$_SUDO /bin/pacman -Syu --color never
+		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento pacchetti ufficiali"
+		[[ $_LNG = eng ]] && end_msg "ok" "Official packages upgrade"
 	else
-    	[[ $_LNG = ita ]] && end_msg "no" "Aggiornamento pacchetti ufficiali"
+		[[ $_LNG = ita ]] && end_msg "no" "Aggiornamento pacchetti ufficiali"
 		[[ $_LNG = eng ]] && end_msg "no" "Official packages upgrade"
 	fi
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri aggiornare i pacchetti di AUR"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to upgrade AUR packages"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-	then
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		# Check if pacaur or yaourt are installed
 		_PAC=$( /bin/pacman -Qi pacaur 2> /dev/null )
 		_YAU=$( /bin/pacman -Qi yaourt 2> /dev/null )
-		if [[ -n $_PAC ]]
-		then
+		if [[ -n $_PAC ]]; then
 			/bin/pacaur -Sua
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
-		elif [[ -n $_YAU ]]
-		then
+		elif [[ -n $_YAU ]]; then
 			/bin/yaourt -Sua --nocolor
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
@@ -166,7 +172,7 @@ function sys_update {
 
 #
 # Function containing all package clean operation.
-# Orphaned packages cleaing, cache cleaning, database optimization.
+# Orphaned packages cleaning, cache cleaning, database optimization.
 #
 function clean_pkg {
 	[[ $_LNG = ita ]] && echo " ${_BOLD}::Pulizia pacchetti::${_NORMAL} "
@@ -176,12 +182,10 @@ function clean_pkg {
 	[[ $_LNG = eng ]] && qst_msg "no" "Do you want search for orphaned packages"
 	read -r _SURE
 	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
-		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
-    then
-		_ORP=$(/bin/pacman -Qdtq)
-		if [[ -n $_ORP ]]
-		then
-			sudo /bin/pacman --color never -Rs $_ORP
+		( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
+		declare -r _ORP=$(/bin/pacman -Qdtq)
+		if [[ -n $_ORP ]]; then
+			$_SUDO /bin/pacman --color never -Rs $_ORP
 			[[ $_LNG = ita ]] && end_msg "ok" "Pacchetti orfani"
 			[[ $_LNG = eng ]] && end_msg "ok" "Orphaned packages"
 		else
@@ -198,58 +202,55 @@ function clean_pkg {
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri pulire la cache dei pacchetti installati (conservando le ultime 2 versioni)"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-    then
-    	sudo /bin/paccache -rk2 --nocolor
-    	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti installati"
-    	[[ $_LNG = eng ]] && end_msg "ok" "Installed packages cache clean"
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		$_SUDO /bin/paccache -rk2 --nocolor
+		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti installati"
+		[[ $_LNG = eng ]] && end_msg "ok" "Installed packages cache clean"
 	else
-    	[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache pacchetti installati"
+		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache pacchetti installati"
 		[[ $_LNG = eng ]] && end_msg "no" "Installed packages cache clean"
 	fi
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri pulire completamente la cache dei pacchetti non installati"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-    then
-    	sudo /bin/paccache -ruk0 --nocolor
-    	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti non installati"
-    	[[ $_LNG = eng ]] && end_msg "ok" "Uninstalled packages cache clean"
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		$_SUDO /bin/paccache -ruk0 --nocolor
+		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti non installati"
+		[[ $_LNG = eng ]] && end_msg "ok" "Uninstalled packages cache clean"
 	else
-    	[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache pacchetti non installati"
+		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache pacchetti non installati"
 		[[ $_LNG = eng ]] && end_msg "no" "Uninstalled packages cache clean"
 	fi
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri ottimizzare (deframmentare) il database di pacman"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to optimize (defragment) pacman database"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-    then
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		# This part of the script try to check if the disk containing
+		#  pacman database is a solid state drive.
 		_ROTAT=false
-		if [[ -d "/var/lib/pacman" ]] # check database exists
-		then
-			# find disk on which database are located
+		if [[ -d "/var/lib/pacman" ]]; then # check database existence
+			# Find disk on which database is located
 			_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | /bin/cut -d' ' -f 1 | \
 					/bin/sed -E 's/(\/dev\/|[0-9])//g')
-			# discover if database disk is rotational
+			# Discover if database disk exist as device and is rotational
 			[[ -n $_DISK && -b "/dev/$_DISK" && \
 			-e "/sys/block/$_DISK/queue/rotational" && \
 			$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] && _ROTAT=true
 		fi
-		if [[ "$_ROTAT" = true ]]
-		then
-    		sudo /bin/pacman-optimize --nocolor
-    		[[ $_LNG = ita ]] && end_msg "ok" "Ottimizzazione database"
-    		[[ $_LNG = eng ]] && end_msg "ok" "Database optimization"
+		if [[ "$_ROTAT" = true ]]; then
+			$_SUDO /bin/pacman-optimize --nocolor
+			[[ $_LNG = ita ]] && end_msg "ok" "Ottimizzazione database"
+			[[ $_LNG = eng ]] && end_msg "ok" "Database optimization"
 		else
 			[[ $_LNG = ita ]] && echo "Il database di pacman non risiede su un disco rotazionale, non è necessario eseguire la deframmentazione."
-    		[[ $_LNG = eng ]] && echo "The pacman database lives on a non rotational disk, defragmentation is not needed."
+			[[ $_LNG = eng ]] && echo "The pacman database lives on a non rotational disk, defragmentation is not needed."
 			[[ $_LNG = ita ]] && end_msg "skip" "Ottimizzazione database"
 			[[ $_LNG = eng ]] && end_msg "skip" "Database optimization"
 		fi
 	else
-    	[[ $_LNG = ita ]] && end_msg "no" "Ottimizzazione database"
+		[[ $_LNG = ita ]] && end_msg "no" "Ottimizzazione database"
 		[[ $_LNG = eng ]] && end_msg "no" "Database optimization"
 	fi
 }
@@ -266,11 +267,10 @@ function clean_file {
 	[[ $_LNG = eng ]] && qst_msg "no" "Do you want to clean every /tmp files"
 	read -r _SURE
 	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
-		  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
-    then
-    	sudo /bin/rm -rf /tmp/*
-    	[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file temporanei"
-    	[[ $_LNG = eng ]] && end_msg "ok" "Tmp files clean"
+		( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
+		$_SUDO /bin/rm -rf /tmp/*
+		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file temporanei"
+		[[ $_LNG = eng ]] && end_msg "ok" "Tmp files clean"
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pulizia file temporanei"
 		[[ $_LNG = eng ]] && end_msg "no" "Tmp files clean"
@@ -279,89 +279,88 @@ function clean_file {
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri stimare lo spazio occupato dai file poco recenti nella cache e tra le miniature"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to estimate disk space taken by old cache and thumbnails"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-   	then
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		# This part checks the existence of thumbnails and cache folders, then
+		#  calculate the total space they take.
 		_OLD=0
 		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -type f -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
 		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
 		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -type f -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
 		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -empty -type d -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		if [[ $_OLD -gt 0 ]]
-		then
+		if [[ $_OLD -gt 0 ]]; then
 			_OLD=$(human_size "$_OLD")
 			[[ $_LNG = ita ]] && qst_msg "yes" "L'eliminazione di questi file libererà $_OLD di spazio su disco, vuoi procedere"
 			[[ $_LNG = eng ]] && qst_msg "yes" "The deletion of these files will free $_OLD of disk space, do you want to continue"
 			read -r _SURE
-			if [[ $_SURE != "n" && $_SURE != "N" ]]
-			then
+			if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -type f -atime +30 -print0 | xargs -0 /bin/rm -f
 				[[ -d ~/.cache ]] && /bin/find ~/.cache -type f -atime +30 -print0 | xargs -0 /bin/rm -f
 				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
 				[[ -d ~/.cache ]] && /bin/find ~/.cache -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
-   				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache e miniature"
-   				[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache clean"
+				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache e miniature"
+				[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache clean"
 			else
-   				[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache e miniature"
+				[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache e miniature"
 				[[ $_LNG = eng ]] && end_msg "no" "Thumbs and cache clean"
 			fi
 		else
 			[[ $_LNG = ita ]] && echo "Non c'è necessità di eliminare alcun file, le cartelle sono sufficientemente pulite."
 			[[ $_LNG = eng ]] && echo "There is no need to delete any files, these folders are pretty clean."
-   			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cache e miniature"
-   			[[ $_LNG = eng ]] && end_msg "skip" "Thumbs and cache clean"
+			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cache e miniature"
+			[[ $_LNG = eng ]] && end_msg "skip" "Thumbs and cache clean"
 		fi
 	else
-   		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache e miniature"
+		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache e miniature"
 		[[ $_LNG = eng ]] && end_msg "no" "Thumbs and cache clean"
 	fi
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri cercare file residui"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to search for residual files"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-    then
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		# Null separated output will be used just to have less problem with
+		#  strange characters.
 		unset i
 		while IFS= read -r -d '' file; do
-			  _RES[i++]="$file"
+			_RES[i++]="$file"
 		done < <(/bin/find "$HOME" -name "*~" -user "$USER" -print0 2>/dev/null)
-    	while IFS= read -r -d '' file; do
-			  _RES[i++]="$file"
+		while IFS= read -r -d '' file; do
+			_RES[i++]="$file"
 		done < <(/bin/find "$HOME" -name "Desktop.ini" -user "$USER" -print0 2>/dev/null)
-    	while IFS= read -r -d '' file; do
-			  _RES[i++]="$file"
+		while IFS= read -r -d '' file; do
+			_RES[i++]="$file"
 		done < <(/bin/find "$HOME" -name "Thumbs.db" -user "$USER" -print0 2>/dev/null)
 		if [[ ${#_RES[@]} -gt 0 ]]; then
-			unset i
+			# Print every residual file
 			for i in "${_RES[@]}"; do
 				echo "$i"
 			done
+			# Calculate space taken by residual files
 			_RESP=0
-			unset i
-    		for i in "${_RES[@]}"; do
+			for i in "${_RES[@]}"; do
 				(( _RESP+=$( /bin/du -b "$i" | /bin/cut -f 1 ) ))
 			done
 			_RESP=$(human_size "$_RESP")
 			[[ $_LNG = ita ]] && qst_msg "no" "Ci sono ${#_RES[@]} file residui che occupano $_RESP di spazio su disco, desideri rimuoverli"
-    		[[ $_LNG = eng ]] && qst_msg "no" "There are ${#_RES[@]} residual files that take $_RESP of disk space, do you want to remove them"
-    		read -r _SURE
+			[[ $_LNG = eng ]] && qst_msg "no" "There are ${#_RES[@]} residual files that take $_RESP of disk space, do you want to remove them"
+			read -r _SURE
 			if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
-			  ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
-        	then
-				unset i
+				( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
+				# Remove every residual file
 				for i in "${_RES[@]}"; do
 					/bin/rm -f "$i"
 				done
 				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file residui"
-        		[[ $_LNG = eng ]] && end_msg "ok" "Residual files clean"
-    		else
-        		[[ $_LNG = ita ]] && end_msg "no" "Pulizia file residui"
+				[[ $_LNG = eng ]] && end_msg "ok" "Residual files clean"
+			else
+				[[ $_LNG = ita ]] && end_msg "no" "Pulizia file residui"
 				[[ $_LNG = eng ]] && end_msg "no" "Residual files clean"
-    		fi
+			fi
 		else
 			[[ $_LNG = ita ]] && echo "Non sono presenti file residui."
 			[[ $_LNG = eng ]] && echo "There are no residual files."
-        	[[ $_LNG = ita ]] && end_msg "skip" "Pulizia file residui"
-        	[[ $_LNG = eng ]] && end_msg "skip" "Residual files clean"
+		[[ $_LNG = ita ]] && end_msg "skip" "Pulizia file residui"
+		[[ $_LNG = eng ]] && end_msg "skip" "Residual files clean"
 		fi
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pulizia file residui"
@@ -371,15 +370,14 @@ function clean_file {
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri controllare lo stato del cestino"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to check trash status"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]
-    then
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		if [[ -d ~/.local/share/Trash/files ]]; then
 			unset i
 			while IFS= read -r -d '' file; do
 				_TRASH[i++]="$file"
 			done < <(/bin/find ~/.local/share/Trash/files -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
-			unset i
-			# this variable counts total file size
+			# This for loop counts total space taken by files and prints every
+			#  file name next to the file size.
 			_TRASP=0
 			for i in "${_TRASH[@]}"; do
 				_FILENAME=${i##*/}	# extract substring
@@ -394,36 +392,34 @@ function clean_file {
 					echo "$_FILENAME"
 				fi
 			done
-			if [[ ${#_TRASH[@]} -gt 0 ]]
-			then
+			if [[ ${#_TRASH[@]} -gt 0 ]]; then
 				_TRASP=$(human_size "$_TRASP")
 				[[ $_LNG = ita ]] && qst_msg "no" "Sono presenti ${#_TRASH[@]} elementi che occupano $_TRASP di spazio sul disco, desideri eliminarli definitivamente"
 				[[ $_LNG = eng ]] && qst_msg "no" "There are ${#_TRASH[@]} items that take $_TRASP of disk space, do you want do definetely delete them"
 				read -r _SURE
 				if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
-		  			( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]
-				then
+					( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
 					/bin/rm -rf ~/.local/share/Trash/*
-    				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
+					[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
 					[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
 				else
-    				[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
+					[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
 					[[ $_LNG = eng ]] && end_msg "no" "Trash clean"
 				fi
 			else
 				[[ $_LNG = ita ]] && echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
 				[[ $_LNG = eng ]] && echo "Trash is completely empty, there is no need to clean it."
-    			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cestino"
+				[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cestino"
 				[[ $_LNG = eng ]] && end_msg "skip" "Trash clean"
 			fi
 		else
 			[[ $_LNG = ita ]] && echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
 			[[ $_LNG = eng ]] && echo "Trash is completely empty, there is no need to clean it."
-    		[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cestino"
+			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cestino"
 			[[ $_LNG = eng ]] && end_msg "skip" "Trash clean"
 		fi
 	else
-    	[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
+		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
 		[[ $_LNG = eng ]] && end_msg "no" "Trash clean"
 	fi
 }
@@ -542,8 +538,7 @@ function main {
 	echo " \___|_|\___|\__,_|_| |_|\__,_| .__/ \__,_|\__,_|\__\___| "
 	echo "                              |_|                         "
 	echo
-	if [[ $_LNG = ita ]]
-	then
+	if [[ $_LNG = ita ]]; then
 		echo " ┌────────────────────────────────────────┐"
 		echo " │    1.  Aggiorna e pulisci tutto        │"
 		echo " │    2.  Aggiorna il sistema             │"
