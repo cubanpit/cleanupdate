@@ -77,7 +77,7 @@ function human_size {
 #
 # Function to print a message after a transaction, communicating if it has been
 #  executed, has been cenceled or has been skipped because unuseful.
-# Usage: end_msg "ok||no||skip" "message"
+# Usage: end_msg "ok||no||skip||warn" "message"
 #
 function end_msg {
 	_MOD=$1
@@ -91,6 +91,9 @@ function end_msg {
 	elif [[ $_MOD = skip ]]; then
 		[[ $_LNG = ita ]] && echo "${_BOLD}[${_AQUA}SALTATO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
 		[[ $_LNG = eng ]] && echo "${_BOLD}[${_AQUA}SKIPPED${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+	elif [[ $_MOD = warn ]]; then
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_YELLOW}ATTENZIONE${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_YELLOW}WARNING${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
 	else
 		[[ $_LNG = ita ]] && echo "ERRORE: modalità sconosciuta, vedere funzione end_msg()."
 		[[ $_LNG = eng ]] && echo "ERROR: unknown option, see end_msg() function."
@@ -128,7 +131,19 @@ function sys_update {
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to update local database"
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		_INITTIME=$(date +%s)
 		$_SUDO /bin/pacman -Syy --color never
+		_ENDTIME=$(date +%s)
+		if [[ $(( _ENDTIME - _INITTIME )) -gt 45 ]]; then
+			_DISTRO=$(/bin/grep -i manjaro /etc/lsb-release)
+			if [[ -n $_DISTRO ]]; then
+				[[ $_LNG = ita ]] && end_msg "warn" "La velocità di download dai repository risulta bassa, prova a configurare una lista dei mirror personalizzata tramite il comando 'pacman-mirrors'."
+				[[ $_LNG = eng ]] && end_msg "warn" "Download speed from repository is quite low, try configuring a custom mirrorlist with the command 'pacman-mirrors'."
+			else
+				[[ $_LNG = ita ]] && end_msg "warn" "La velocità di download dai repository risulta bassa, prova a configurare una lista dei mirror personalizzata."
+				[[ $_LNG = eng ]] && end_msg "warn" "Download speed from repository is quite low, try configuring a custom mirrorlist."
+			fi
+		fi
 		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento database locale"
 		[[ $_LNG = eng ]] && end_msg "ok" "Local database update"
 	else
@@ -174,6 +189,12 @@ function sys_update {
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Aggiornamento AUR"
 		[[ $_LNG = eng ]] && end_msg "no" "AUR upgrade"
+	fi
+	_PACNEW=$(/bin/find /etc -name "*.pacnew" 2> /dev/null)
+	if [[ -n $_PACNEW ]]; then
+		echo
+		[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti nuove versioni di alcuni file di configurazione. Valutare le modifiche tramite il comando 'pacdiff'."
+		[[ $_LNG = eng ]] && end_msg "warn" "There are updated version of some configuration files. Assess the changes with the command 'pacdiff'."
 	fi
 }
 
@@ -259,6 +280,12 @@ function clean_pkg {
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Ottimizzazione database"
 		[[ $_LNG = eng ]] && end_msg "no" "Database optimization"
+	fi
+	_PACNEW=$(/bin/find /etc -name "*.pacnew" 2> /dev/null)
+	if [[ -n $_PACNEW ]]; then
+		echo
+		[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti nuove versioni di alcuni file di configurazione. Valutare le modifiche tramite il comando 'pacdiff'."
+		[[ $_LNG = eng ]] && end_msg "warn" "There are updated version of some configuration files. Assess the changes with the command 'pacdiff'."
 	fi
 }
 
@@ -429,12 +456,17 @@ ${_BOLD}${_YELLOW}::Update system::${_NORMAL}
 
 ${_BOLD}Update local database (pacman -Syy)${_NORMAL}
 Sync local database with online repositories, force the sync also if local database seems up to date. Repositories are configured in '/etc/pacman.conf'.
+[Only on Manjaro Linux systems] If download speed from repositories is too low you can try configuring a custom mirrorlist with the command 'pacman-mirrors', further information in 'pacman-mirrors --help'.
+[On every pacman-based Linux] To make a custom mirrorlist you can modify '/etc/pacman.d/mirrorlist', available mirrors are in '/etc/pacman.d/mirrors'.
 
 ${_BOLD}Update packages from repositories (pacman -Syu)${_NORMAL}
 Check that local database is up to date with online repositories, check packages version between database and installed packages, if versions are different runs update. It will print a warning if a package is newer than repository, in that case it's possible to downgrade with 'pacman -Syuu'.
 
 ${_BOLD}Update packages from AUR (yaourt -Sua)${_NORMAL}
 Update packages from AUR repository, if needed. It can use different tools for that: 'pacaur' or 'yaourt'.
+
+${_BOLD}Configuration files check${_NORMAL}
+Search '*.pacnew' files in '/etc' directory, if there is any you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help'.
 
 ${_BOLD}${_YELLOW}::Clean packages::${_NORMAL}
 
@@ -449,6 +481,9 @@ See previous command explanation. This works with unisnstalled packages and does
 
 ${_BOLD}Optimize (defragment) pacman database (pacman-optimize)${_NORMAL}
 This command simply optimize access to pacman database, defragmenting it. For SSD it doesn't change anything in performances and it does a lot of writes, so it's not recommended.
+
+${_BOLD}Configuration files check${_NORMAL}
+Search '*.pacnew' files in '/etc' directory, if there is any you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help'.
 
 ${_BOLD}${_YELLOW}::Clean files::${_NORMAL}
 
@@ -476,12 +511,17 @@ ${_BOLD}${_YELLOW}::Aggiornamento del sistema::${_NORMAL}
 
 ${_BOLD}Aggiornamento del database locale (pacman -Syy)${_NORMAL}
 Sincronizza il database locale di pacman con i repository online, in particolare forza la sincronizzazione effettuandola anche se il database locale risulta aggiornato. I repository possono essere aggiunti e configurati nel file '/etc/pacman.conf'.
+[Solo in sistemi Manjaro Linux] Se la velocità di download dai repository è troppo bassa viene consigliata la modifica della lista dei mirror tramite il comando 'pacman-mirrors', per ulteriori informazioni consultare 'pacman-mirrors --help'.
+[In ogni sistema Linux pacman-based] Per personalizzare la lista dei mirror è possibile modificare il file '/etc/pacman.d/mirrorlist', i mirror disponibili si trovano in '/etc/pacman.d/mirrors'.
 
 ${_BOLD}Aggiornamento dei pacchetti dai repository ufficiali (pacman -Syu)${_NORMAL}
 Controlla che il database locale sia aggiornato, se ci sono differenze tra le versioni dei pacchetti installati e di quelli presenti nel database effettua l'upgrade (innalzamento di versione). Il comando notifica se la versione installata di un pacchetto è più recente di quella nei repository, in questo caso può essere utile eseguire un downgrade (abbassamento di versione) tramite il comando 'pacman -Syuu'.
 
 ${_BOLD}Aggiornamento dei pacchetti di AUR (pacaur -Sua || yaourt -Sua)${_NORMAL}
 Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se necessario. Può utilizzare come strumenti (in ordine di priorità) 'pacaur' oppure 'yaourt'.
+
+${_BOLD}Verifica file di configurazione${_NORMAL}
+Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc', nel caso in cui siano presenti è consigliata la consultazione degli stessi tramite il comando 'pacdiff'.
 
 ${_BOLD}${_YELLOW}::Pulizia pacchetti::${_NORMAL}
 
@@ -496,6 +536,9 @@ Come la voce precedente, ma per i pacchetti non più installati sul sistema. Non
 
 ${_BOLD}Ottimizzazione (deframmentazione) del database di pacman (pacman-optimize)${_NORMAL}
 Ottimizza l'accesso al database di pacman, deframmentandolo. Non è un'ottimizzazione utile nel caso in cui si utilizzi un SSD a causa del funzionamento stesso dei dischi a stato solido, inoltre causa inutili scritture sul disco che nel caso degli SSD sarebbe meglio limitare se non necessarie.
+
+${_BOLD}Verifica file di configurazione${_NORMAL}
+Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc', nel caso in cui siano presenti è consigliata la consultazione degli stessi tramite il comando 'pacdiff'.
 
 ${_BOLD}${_YELLOW}::Pulizia file::${_NORMAL}
 
