@@ -190,12 +190,6 @@ function sys_update {
 		[[ $_LNG = ita ]] && end_msg "no" "Aggiornamento AUR"
 		[[ $_LNG = eng ]] && end_msg "no" "AUR upgrade"
 	fi
-	_PACNEW=$(/bin/find /etc -name "*.pacnew" 2> /dev/null)
-	if [[ -n $_PACNEW ]]; then
-		echo
-		[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti nuove versioni di alcuni file di configurazione. Valutare le modifiche tramite il comando 'pacdiff'."
-		[[ $_LNG = eng ]] && end_msg "warn" "There are updated version of some configuration files. Assess the changes with the command 'pacdiff'."
-	fi
 }
 
 #
@@ -281,8 +275,39 @@ function clean_pkg {
 		[[ $_LNG = ita ]] && end_msg "no" "Ottimizzazione database"
 		[[ $_LNG = eng ]] && end_msg "no" "Database optimization"
 	fi
-	_PACNEW=$(/bin/find /etc -name "*.pacnew" 2> /dev/null)
-	if [[ -n $_PACNEW ]]; then
+	# Here we'll check for '.pacnew' files, then catch '.pacnew' files that are
+	#  useless (there is 'foo.conf.pacnew' and not 'foo.conf'), finally warn the
+	#  user about it.
+	unset i
+	while IFS= read -r -d '' file; do
+		_PACNEW[i++]="$file"
+	done < <(/bin/find /etc -name "*.pacnew" -print0 2>/dev/null)
+	unset j
+	for i in "${_PACNEW[@]}"; do
+		_PACCONF="$(echo "$i" | sed 's/\.pacnew//g')"
+		[[ -f "$_PACCONF" ]] || _ORPHPACNEW[j++]="$_PACCONF.pacnew"
+	done
+	[[ ${#_PACNEW[@]} -eq ${#_ORPHPACNEW[@]} || ${#_PACNEW[@]} -eq 0 ]] && _PACNEW=false || _PACNEW=true
+	if [[ ${#_ORPHPACNEW[@]} -gt 0 ]]; then
+		echo
+		for i in "${_ORPHPACNEW[@]}"; do
+			echo "$i"
+		done
+		[[ $_LNG = ita ]] && qst_msg "yes" "Sono presenti questi ${#_ORPHPACNEW[@]} file '.pacnew' orfani (consultare la documentazione per maggiori informazioni), vuoi eliminarli"
+		[[ $_LNG = eng ]] && qst_msg "yes" "These are ${#_ORPHPACNEW[@]} orphan '.pacnew' files (read documentation for further informations), do you want to erase them"
+		read -r _SURE
+		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+			for i in "${_ORPHPACNEW[@]}"; do
+				$_SUDO /bin/rm -f "$i"
+			done
+			[[ $_LNG = ita ]] && end_msg "ok" "File di configurazione orfani"
+			[[ $_LNG = eng ]] && end_msg "ok" "Orphan configuration files"
+		else
+			[[ $_LNG = ita ]] && end_msg "no" "File di configurazione orfani"
+			[[ $_LNG = eng ]] && end_msg "no" "Orphan configuration files"
+		fi
+	fi
+	if [[ $_PACNEW = true ]]; then
 		echo
 		[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti nuove versioni di alcuni file di configurazione. Valutare le modifiche tramite il comando 'pacdiff'."
 		[[ $_LNG = eng ]] && end_msg "warn" "There are updated version of some configuration files. Assess the changes with the command 'pacdiff'."
@@ -465,9 +490,6 @@ Check that local database is up to date with online repositories, check packages
 ${_BOLD}Update packages from AUR (yaourt -Sua)${_NORMAL}
 Update packages from AUR repository, if needed. It can use different tools for that: 'pacaur' or 'yaourt'.
 
-${_BOLD}Configuration files check${_NORMAL}
-Search '*.pacnew' files in '/etc' directory, if there is any you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help'.
-
 ${_BOLD}${_YELLOW}::Clean packages::${_NORMAL}
 
 ${_BOLD}Search and uninstall orphaned packages (pacman -Qdtq)${_NORMAL}
@@ -483,7 +505,7 @@ ${_BOLD}Optimize (defragment) pacman database (pacman-optimize)${_NORMAL}
 This command simply optimize access to pacman database, defragmenting it. For SSD it doesn't change anything in performances and it does a lot of writes, so it's not recommended.
 
 ${_BOLD}Configuration files check${_NORMAL}
-Search '*.pacnew' files in '/etc' directory, if there is any you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help'.
+Search '*.pacnew' files in '/etc' directory, these are files created by 'pacman' when a package changes its configuration file, this way it doesn't overwrite valuable user's configurations; 'pacnew' files are useless (orphan) without the 'non pacnew' file (same filename without '.pacnew'), but sometimes they remain after package removal. If there is any useful '.pacnew' file you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help'.
 
 ${_BOLD}${_YELLOW}::Clean files::${_NORMAL}
 
@@ -520,9 +542,6 @@ Controlla che il database locale sia aggiornato, se ci sono differenze tra le ve
 ${_BOLD}Aggiornamento dei pacchetti di AUR (pacaur -Sua || yaourt -Sua)${_NORMAL}
 Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se necessario. Può utilizzare come strumenti (in ordine di priorità) 'pacaur' oppure 'yaourt'.
 
-${_BOLD}Verifica file di configurazione${_NORMAL}
-Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc', nel caso in cui siano presenti è consigliata la consultazione degli stessi tramite il comando 'pacdiff'.
-
 ${_BOLD}${_YELLOW}::Pulizia pacchetti::${_NORMAL}
 
 ${_BOLD}Ricerca e rimozione dei pacchetti orfani (pacman -Qdtq)${_NORMAL}
@@ -538,7 +557,7 @@ ${_BOLD}Ottimizzazione (deframmentazione) del database di pacman (pacman-optimiz
 Ottimizza l'accesso al database di pacman, deframmentandolo. Non è un'ottimizzazione utile nel caso in cui si utilizzi un SSD a causa del funzionamento stesso dei dischi a stato solido, inoltre causa inutili scritture sul disco che nel caso degli SSD sarebbe meglio limitare se non necessarie.
 
 ${_BOLD}Verifica file di configurazione${_NORMAL}
-Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc', nel caso in cui siano presenti è consigliata la consultazione degli stessi tramite il comando 'pacdiff'.
+Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc', questi file vengono creati da 'pacman' quando un pacchetto aggiorna il proprio file di configurazione, questo per evitare di sovrascrivere i preziosi file di configurazione modificati dall'utente; nel caso in cui il file 'pacnew' non abbia un corrispondente file di configurazione (ha lo stesso nome ma senza '.pacnew') allora viene considerato orfano e non ha nessuna utilità. Nel caso in cui siano presenti file 'pacnew' non orfani è consigliata la consultazione degli stessi tramite il comando 'pacdiff'.
 
 ${_BOLD}${_YELLOW}::Pulizia file::${_NORMAL}
 
@@ -576,7 +595,7 @@ function main {
 		echo " │    3.  Pulisci i pacchetti             │"
 		echo " │    4.  Pulisci i file                  │"
 		echo " │                                        │"
-		echo " │    8.  Spiega le opzioni               │"
+		echo " │    8.  Documentazione                  │"
 		echo " │    9.  Cambia lingua (eng|${_BOLD}ita${_NORMAL})         │"
 		echo " │  q|0.  ESCI                            │"
 		echo " └────────────────────────────────────────┘"
@@ -589,7 +608,7 @@ function main {
 		echo " │    3.  Clean packages                  │"
 		echo " │    4.  Clean files                     │"
 		echo " │                                        │"
-		echo " │    8.  Explain options                 │"
+		echo " │    8.  Documentation                   │"
 		echo " │    9.  Change language (${_BOLD}eng${_NORMAL}|ita)       │"
 		echo " │  q|0.  QUIT                            │"
 		echo " └────────────────────────────────────────┘"
