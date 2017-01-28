@@ -294,7 +294,7 @@ function clean_pkg {
 			echo "$i"
 		done
 		[[ $_LNG = ita ]] && qst_msg "yes" "Sono presenti questi ${#_ORPHPACNEW[@]} file '.pacnew' orfani (consultare la documentazione per maggiori informazioni), vuoi eliminarli"
-		[[ $_LNG = eng ]] && qst_msg "yes" "These are ${#_ORPHPACNEW[@]} orphan '.pacnew' files (read documentation for further informations), do you want to erase them"
+		[[ $_LNG = eng ]] && qst_msg "yes" "These are ${#_ORPHPACNEW[@]} orphan '.pacnew' files (read documentation for further information), do you want to erase them"
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 			for i in "${_ORPHPACNEW[@]}"; do
@@ -336,7 +336,7 @@ function clean_file {
 		if [[ $_OLD -gt 0 ]]; then
 			_OLD=$(human_size "$_OLD")
 			[[ $_LNG = ita ]] && qst_msg "yes" "L'eliminazione di questi file libererà $_OLD di spazio su disco, vuoi procedere"
-			[[ $_LNG = eng ]] && qst_msg "yes" "The deletion of these files will free $_OLD of disk space, do you want to continue"
+			[[ $_LNG = eng ]] && qst_msg "yes" "The deletion of these files frees $_OLD of disk space, do you want to continue"
 			read -r _SURE
 			if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -type f -atime +30 -print0 | xargs -0 /bin/rm -f
@@ -480,23 +480,24 @@ Press 'q' to quit documentation
 ${_BOLD}${_YELLOW}::Update system::${_NORMAL}
 
 ${_BOLD}Update local database (pacman -Syy)${_NORMAL}
-Sync local database with online repositories, force the sync also if local database seems up to date. Repositories are configured in '/etc/pacman.conf'.
+Syncs local database with online repositories, forces the sync also if local database seems up to date. Repositories are configured in '/etc/pacman.conf'.
 [Only on Manjaro Linux systems] If download speed from repositories is too low you can try configuring a custom mirrorlist with the command 'pacman-mirrors', further information in 'pacman-mirrors --help'.
 [On every pacman-based Linux] To make a custom mirrorlist you can modify '/etc/pacman.d/mirrorlist', available mirrors are in '/etc/pacman.d/mirrors'.
 
 ${_BOLD}Update packages from repositories (pacman -Syu)${_NORMAL}
-Check that local database is up to date with online repositories, check packages version between database and installed packages, if versions are different runs update. It will print a warning if a package is newer than repository, in that case it's possible to downgrade with 'pacman -Syuu'.
+Checks that local database is up to date with online repositories, compare packages version between database and installed packages, if versions are different runs update.
+It prints a warning if some packages are newer than those in repositories, it's possible to downgrade these packages with 'pacman -Syuu'.
 
 ${_BOLD}Update packages from AUR (yaourt -Sua)${_NORMAL}
-Update packages from AUR repository, if needed. It can use different tools for that: 'pacaur' or 'yaourt'.
+Updates packages from AUR repository, if needed. It can use different tools for that: 'pacaur' or 'yaourt'.
 
 ${_BOLD}${_YELLOW}::Clean packages::${_NORMAL}
 
 ${_BOLD}Search and uninstall orphaned packages (pacman -Qdtq)${_NORMAL}
-Search for packages installed as dependencies and no longer required, if there are some it asks before unistalling them.
+Searches for packages installed as dependencies and no longer required, if there are any it asks before uninstalling them.
 
 ${_BOLD}Clean the cache of installed packages (paccache -rk2)${_NORMAL}
-By default pacman keeps forever a backup of every version of every installed package, this backups can grow and fill the hard disk, so it must be cleaned sometimes. This command removes all backups for all installed packages keeping only two version, just in case it is necessary to perform a downgrade.
+By default pacman keeps forever a backup of every version of every installed package, this backups can grow and fill the hard disk, so it must be cleaned from time to time. This command removes all backups for all installed packages keeping only two version, just in case it is necessary to perform a downgrade.
 
 ${_BOLD}Clean the cache of uninstalled packages (paccache -ruk0)${_NORMAL}
 See previous command explanation. This works with unisnstalled packages and doesn't keep any backup version.
@@ -505,18 +506,18 @@ ${_BOLD}Optimize (defragment) pacman database (pacman-optimize)${_NORMAL}
 This command simply optimize access to pacman database, defragmenting it. For SSD it doesn't change anything in performances and it does a lot of writes, so it's not recommended.
 
 ${_BOLD}Configuration files check${_NORMAL}
-Search '*.pacnew' files in '/etc' directory, these are files created by 'pacman' when a package changes its configuration file, this way it doesn't overwrite valuable user's configurations; 'pacnew' files are useless (orphan) without the 'non pacnew' file (same filename without '.pacnew'), but sometimes they remain after package removal. If there is any useful '.pacnew' file you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help'.
+Searches '*.pacnew' files in '/etc' directory, these are files created by 'pacman' when a package changes its configuration file, this way it doesn't overwrite valuable user's configurations; 'pacnew' files are useless (orphan) without the 'non pacnew' file (same filename without '.pacnew'), but sometimes they remain after package removal. If there is any useful '.pacnew' file you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help'.
 
 ${_BOLD}${_YELLOW}::Clean files::${_NORMAL}
 
 ${_BOLD}Clean old cache and thumbnail files${_NORMAL}
-Search in '~/.cache' and '~/.thumbnails' for files with last access more than 30 days ago and delete them, delete also empty folders inside those directories. Cache and thumbnail files are not necessary and are used by user applications to load faster images thumbnails or informations.
+Searches in '~/.cache' and '~/.thumbnails' for files with last access more than 30 days ago and delete them, delete also empty folders inside those directories. Cache and thumbnail files are not necessary and are used by user applications to load faster images thumbnails or information.
 
 ${_BOLD}Search and clean residual files${_NORMAL}
-Search for files with names matching 'Thumbs.db', 'Desktop.ini' and '*~'. This files are temporary files from Windows (first and second one) and from Linux (last one) application, that store them to save some informations during work; they're important when you're using some applications, but they should disappears few seconds later, sometimes they don't.
+Searches for files with names matching 'Thumbs.db', 'Desktop.ini' and '*~'. This files are temporary files from Windows (first and second one) and from Linux (last one) application, that store them to save some information during work; they're important when you're using some applications, but they should disappears few seconds later, sometimes they don't.
 
 ${_BOLD}Clean trash files (rm -rfv ~/.local/share/Trash/*)${_NORMAL}
-Simply clean the user trash, files are located in '~/.local/share/Trash/files'; prints all file names so the user at first glance can check deleted files and their number.
+Simply cleans the user trash, files are located in '~/.local/share/Trash/files'; prints all file names so the user at first glance can check deleted files and their number.
 
 Press 'q' to quit documentation
 EOF
