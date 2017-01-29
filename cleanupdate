@@ -387,7 +387,7 @@ function clean_file {
 			#  file name next to the file size.
 			_TRASP=0
 			for i in "${_TRASH[@]}"; do
-				_FILENAME=${i##*/}	# extract substring
+				_FILENAME=$(basename "$i")
 				_FILESIZE=$(/bin/du -bs "$i" | /bin/cut -f 1)
 				(( _TRASP+=_FILESIZE ))
 				_FILESIZE=$(human_size "$_FILESIZE")
