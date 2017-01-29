@@ -284,17 +284,17 @@ function clean_pkg {
 	done < <(/bin/find /etc -name "*.pacnew" -print0 2>/dev/null)
 	unset j
 	for i in "${_PACNEW[@]}"; do
-		_PACCONF="$(echo "$i" | sed 's/\.pacnew//g')"
+		_PACCONF=${i//\.pacnew/}
 		[[ -f "$_PACCONF" ]] || _ORPHPACNEW[j++]="$_PACCONF.pacnew"
 	done
-	[[ ${#_PACNEW[@]} -eq ${#_ORPHPACNEW[@]} || ${#_PACNEW[@]} -eq 0 ]] && _PACNEW=false || _PACNEW=true
+	[[ ${#_PACNEW[@]} -eq ${#_ORPHPACNEW[@]} || ${#_PACNEW[@]} -eq 0 ]] && _PACNCTRL=false || _PACNCTRL=true
 	if [[ ${#_ORPHPACNEW[@]} -gt 0 ]]; then
 		echo
 		for i in "${_ORPHPACNEW[@]}"; do
 			echo "$i"
 		done
-		[[ $_LNG = ita ]] && qst_msg "yes" "Sono presenti questi ${#_ORPHPACNEW[@]} file '.pacnew' orfani (consultare la documentazione per maggiori informazioni), vuoi eliminarli"
-		[[ $_LNG = eng ]] && qst_msg "yes" "These are ${#_ORPHPACNEW[@]} orphan '.pacnew' files (read documentation for further information), do you want to erase them"
+		[[ $_LNG = ita ]] && qst_msg "yes" "Sono presenti questi ${#_ORPHPACNEW[@]} file '.pacnew' orfani (consultare la documentazione [8] per maggiori informazioni), vuoi eliminarli"
+		[[ $_LNG = eng ]] && qst_msg "yes" "These are ${#_ORPHPACNEW[@]} orphan '.pacnew' files (read documentation [8] for further information), do you want to erase them"
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 			for i in "${_ORPHPACNEW[@]}"; do
@@ -307,10 +307,10 @@ function clean_pkg {
 			[[ $_LNG = eng ]] && end_msg "no" "Orphan configuration files"
 		fi
 	fi
-	if [[ $_PACNEW = true ]]; then
+	if [[ $_PACNCTRL = true ]]; then
 		echo
-		[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti nuove versioni di alcuni file di configurazione. Valutare le modifiche tramite il comando 'pacdiff'."
-		[[ $_LNG = eng ]] && end_msg "warn" "There are updated version of some configuration files. Assess the changes with the command 'pacdiff'."
+		[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti nuove versioni di alcuni file di configurazione. Valutare le modifiche tramite il comando 'pacdiff'. Consultare la documentazione [8] per maggiori informazioni."
+		[[ $_LNG = eng ]] && end_msg "warn" "There are updated version of some configuration files. Assess the changes with the command 'pacdiff'. Read documentation [8] for further information."
 	fi
 }
 
@@ -506,7 +506,7 @@ ${_BOLD}Optimize (defragment) pacman database (pacman-optimize)${_NORMAL}
 This command simply optimize access to pacman database, defragmenting it. For SSD it doesn't change anything in performances and it does a lot of writes, so it's not recommended.
 
 ${_BOLD}Configuration files check${_NORMAL}
-Searches '*.pacnew' files in '/etc' directory, these are files created by 'pacman' when a package changes its configuration file, this way it doesn't overwrite valuable user's configurations; 'pacnew' files are useless (orphan) without the 'non pacnew' file (same filename without '.pacnew'), but sometimes they remain after package removal. If there is any useful '.pacnew' file you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help'.
+Searches '*.pacnew' files in '/etc' directory, these are files created by 'pacman' when a package changes its configuration file, this way it doesn't overwrite valuable user's configurations; 'pacnew' files are useless (orphan) without the 'non pacnew' file (same filename without '.pacnew'), but sometimes they remain after package removal. If there is any useful '.pacnew' file you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help' or at https://wiki.archlinux.org/index.php/Pacman/Pacnew_and_Pacsave.
 
 ${_BOLD}${_YELLOW}::Clean files::${_NORMAL}
 
@@ -558,7 +558,7 @@ ${_BOLD}Ottimizzazione (deframmentazione) del database di pacman (pacman-optimiz
 Ottimizza l'accesso al database di pacman, deframmentandolo. Non è un'ottimizzazione utile nel caso in cui si utilizzi un SSD a causa del funzionamento stesso dei dischi a stato solido, inoltre causa inutili scritture sul disco che nel caso degli SSD sarebbe meglio limitare se non necessarie.
 
 ${_BOLD}Verifica file di configurazione${_NORMAL}
-Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc', questi file vengono creati da 'pacman' quando un pacchetto aggiorna il proprio file di configurazione, questo per evitare di sovrascrivere i preziosi file di configurazione modificati dall'utente; nel caso in cui il file 'pacnew' non abbia un corrispondente file di configurazione (ha lo stesso nome ma senza '.pacnew') allora viene considerato orfano e non ha nessuna utilità. Nel caso in cui siano presenti file 'pacnew' non orfani è consigliata la consultazione degli stessi tramite il comando 'pacdiff'.
+Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc', questi file vengono creati da 'pacman' quando un pacchetto aggiorna il proprio file di configurazione, questo per evitare di sovrascrivere i preziosi file di configurazione modificati dall'utente; nel caso in cui il file 'pacnew' non abbia un corrispondente file di configurazione (ha lo stesso nome ma senza '.pacnew') allora viene considerato orfano e non ha nessuna utilità. Nel caso in cui siano presenti file 'pacnew' non orfani è consigliata la consultazione degli stessi tramite il comando 'pacdiff', maggiori informazioni tramite 'pacdiff --help' o nella pagina https://wiki.archlinux.org/index.php/Pacman/Pacnew_and_Pacsave_(Italiano).
 
 ${_BOLD}${_YELLOW}::Pulizia file::${_NORMAL}
 
