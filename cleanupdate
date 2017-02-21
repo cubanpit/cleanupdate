@@ -132,7 +132,7 @@ function sys_update {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		_INITTIME=$(date +%s)
-		$_SUDO /bin/pacman -Syy --color never
+		$_SUDO /bin/pacman -Syy --color always
 		_ENDTIME=$(date +%s)
 		if [[ $(( _ENDTIME - _INITTIME )) -gt 45 ]]; then
 			_DISTRO=$(/bin/grep -i manjaro /etc/lsb-release)
@@ -155,7 +155,7 @@ function sys_update {
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to upgrade official packages"
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		$_SUDO /bin/pacman -Syu --color never
+		$_SUDO /bin/pacman -Syu --color always
 		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento pacchetti ufficiali"
 		[[ $_LNG = eng ]] && end_msg "ok" "Official packages upgrade"
 	else
@@ -167,15 +167,24 @@ function sys_update {
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to upgrade AUR packages"
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		# Look for orphan packages, they could be pkgs removed from repositories
+		#  and moved to AUR, better not to upgrade them silently.
+		_ORP=$(/bin/pacman -Qdtq)
+		if [[ -n $_ORP ]]; then
+			[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
+			[[ $_LNG = eng ]] && end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
+			$_SUDO /bin/pacman --color always -Rs $_ORP
+		fi
+		set -x
 		# Check if pacaur or yaourt are installed
-		_PAC=$( /bin/pacman -Qi pacaur 2> /dev/null )
-		_YAU=$( /bin/pacman -Qi yaourt 2> /dev/null )
+		_PAC=$( /bin/pacman -Q pacaur 2> /dev/null )
+		_YAU=$( /bin/pacman -Q yaourt 2> /dev/null )
 		if [[ -n $_PAC ]]; then
-			/bin/pacaur -Sua
+			/bin/pacaur -Sua --color always
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
 		elif [[ -n $_YAU ]]; then
-			/bin/yaourt -Sua --nocolor
+			/bin/yaourt -Sua --color
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
 		else
@@ -186,6 +195,7 @@ function sys_update {
 			[[ $_LNG = ita ]] && end_msg "skip" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "skip" "AUR upgrade"
 		fi
+		set +x
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Aggiornamento AUR"
 		[[ $_LNG = eng ]] && end_msg "no" "AUR upgrade"
@@ -207,7 +217,7 @@ function clean_pkg {
 		( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
 		_ORP=$(/bin/pacman -Qdtq)
 		if [[ -n $_ORP ]]; then
-			$_SUDO /bin/pacman --color never -Rs $_ORP
+			$_SUDO /bin/pacman --color always -Rs $_ORP
 			[[ $_LNG = ita ]] && end_msg "ok" "Pacchetti orfani"
 			[[ $_LNG = eng ]] && end_msg "ok" "Orphaned packages"
 		else
