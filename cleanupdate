@@ -337,7 +337,7 @@ function clean_file {
 		[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to clean log files to save disk space"
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-			/bin/journalctl --vacuum-size=100M --vacuum-time=1weeks
+			$_SUDO /bin/journalctl --vacuum-size=100M --vacuum-time=1weeks
 			[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file di log"
 			[[ $_LNG = eng ]] && end_msg "ok" "Log files clean"
 		else
