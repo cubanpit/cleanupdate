@@ -8,6 +8,6 @@ Terminal=true
 Exec=cleanupdate
 Icon=utilities-terminal
 Categories=ConsoleOnly;System;
-GenericName=System Mantainance Helper
+GenericName=System Maintenance Helper
 GenericName[it]=Manutenzione del Sistema
 Keywords=system;clean;

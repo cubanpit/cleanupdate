@@ -5,7 +5,7 @@
 # Initial script found somewhere on internet (thanks to unknown).
 # Menu taken from a script by Chrysostomus.
 #
-# This script should help you to mantain an ArchLinux-based system.
+# This script should help you to maintain an ArchLinux-based system.
 # Report issue at github.com/cubanpit/cleanupdate
 #
 ################################################################################
@@ -27,17 +27,12 @@
 
 # Define some useful text style and color
 _BOLD=$(/bin/tput bold)
-readonly _BOLD
 _NORMAL=$(/bin/tput sgr0)
-readonly _NORMAL
 _RED=$(/bin/tput setaf 1)
-readonly _RED
 _GREEN=$(/bin/tput setaf 2)
-readonly _GREEN
 _YELLOW=$(/bin/tput setaf 3)
-readonly _YELLOW
 _AQUA=$(/bin/tput setaf 6)
-readonly _AQUA
+readonly _BOLD _NORMAL _RED _GREEN _YELLOW _AQUA
 
 # Default language is English, but Italian it's available
 _LNG="eng"
@@ -50,7 +45,6 @@ then
 else
 	declare -r _SUDO="sudo"
 fi
-readonly _SUDO
 
 #
 # Function to convert file size in a format easier to read, it receives file
@@ -127,10 +121,11 @@ function sys_update {
 	[[ $_LNG = ita ]] && echo " ${_BOLD}::Aggiornamento del sistema::${_NORMAL} "
 	[[ $_LNG = eng ]] && echo " ${_BOLD}::System update::${_NORMAL} "
 	echo
-	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri aggiornare il database locale"
-	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to update local database"
+	[[ $_LNG = ita ]] && qst_msg "no" "Desideri aggiornare il database locale"
+	[[ $_LNG = eng ]] && qst_msg "no" "Do you want to update local database"
 	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
+		( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
 		_INITTIME=$(date +%s)
 		$_SUDO /bin/pacman -Syy --color always
 		_ENDTIME=$(date +%s)
@@ -201,18 +196,17 @@ function sys_update {
 }
 
 #
-# Function containing all package clean operation.
+# Function containing all package cleaning operation.
 # Orphaned packages cleaning, cache cleaning, database optimization.
 #
 function clean_pkg {
 	[[ $_LNG = ita ]] && echo " ${_BOLD}::Pulizia pacchetti::${_NORMAL} "
-	[[ $_LNG = eng ]] && echo " ${_BOLD}::Clean packages::${_NORMAL} "
+	[[ $_LNG = eng ]] && echo " ${_BOLD}::Packages cleaning::${_NORMAL} "
 	echo
-	[[ $_LNG = ita ]] && qst_msg "no" "Desideri cercare pacchetti orfani?"
-	[[ $_LNG = eng ]] && qst_msg "no" "Do you want search for orphaned packages"
+	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri cercare pacchetti orfani?"
+	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want search for orphaned packages"
 	read -r _SURE
-	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
-		( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
+	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		_ORP=$(/bin/pacman -Qdtq)
 		if [[ -n $_ORP ]]; then
 			$_SUDO /bin/pacman --color always -Rs $_ORP
@@ -235,10 +229,10 @@ function clean_pkg {
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		$_SUDO /bin/paccache -rk2 --nocolor
 		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti installati"
-		[[ $_LNG = eng ]] && end_msg "ok" "Installed packages cache clean"
+		[[ $_LNG = eng ]] && end_msg "ok" "Installed packages cache cleaning"
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache pacchetti installati"
-		[[ $_LNG = eng ]] && end_msg "no" "Installed packages cache clean"
+		[[ $_LNG = eng ]] && end_msg "no" "Installed packages cache cleaning"
 	fi
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri pulire completamente la cache dei pacchetti non installati"
@@ -247,10 +241,10 @@ function clean_pkg {
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		$_SUDO /bin/paccache -ruk0 --nocolor
 		[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache pacchetti non installati"
-		[[ $_LNG = eng ]] && end_msg "ok" "Uninstalled packages cache clean"
+		[[ $_LNG = eng ]] && end_msg "ok" "Uninstalled packages cache cleaning"
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache pacchetti non installati"
-		[[ $_LNG = eng ]] && end_msg "no" "Uninstalled packages cache clean"
+		[[ $_LNG = eng ]] && end_msg "no" "Uninstalled packages cache cleaning"
 	fi
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri ottimizzare (deframmentare) il database di pacman"
@@ -325,24 +319,24 @@ function clean_pkg {
 }
 
 #
-# Function containing all file clean operation.
-# Cache & thumbs clean, residual file clean, trash clean.
+# Function containing all file cleaning operation.
+# Cache & thumbs cleaning, residual file cleaning, trash cleaning.
 #
 function clean_file {
 	[[ $_LNG = ita ]] && echo " ${_BOLD}::Pulizia file::${_NORMAL} "
-	[[ $_LNG = eng ]] && echo " ${_BOLD}::Clean files::${_NORMAL} "
+	[[ $_LNG = eng ]] && echo " ${_BOLD}::Files cleaning::${_NORMAL} "
 	if [[ "$(/bin/cat /proc/1/comm)" = systemd ]]; then
 		echo
 		[[ $_LNG = ita ]] && qst_msg "yes" "Desideri ripulire i file di log per guadagnare spazio su disco"
 		[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to clean log files to save disk space"
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-			$_SUDO /bin/journalctl --vacuum-size=100M --vacuum-time=1weeks
+			$_SUDO /bin/journalctl --vacuum-size=200M --vacuum-time=1weeks
 			[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file di log"
-			[[ $_LNG = eng ]] && end_msg "ok" "Log files clean"
+			[[ $_LNG = eng ]] && end_msg "ok" "Log files cleaning"
 		else
 			[[ $_LNG = ita ]] && end_msg "no" "Pulizia file di log"
-			[[ $_LNG = eng ]] && end_msg "no" "Log files clean"
+			[[ $_LNG = eng ]] && end_msg "no" "Log files cleaning"
 		fi
 	fi
 	echo
@@ -353,10 +347,14 @@ function clean_file {
 		# This part checks the existence of thumbnails and cache folders, then
 		#  calculate the total space they take.
 		_OLD=0
-		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -type f -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -type f -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -empty -type d -atime +30 -print0 | /bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
+		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -type f -atime +30 -print0 |\
+						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
+		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 |\
+						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
+		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -type f -atime +30 -print0 |\
+						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
+		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -empty -type d -atime +30 -print0 |\
+						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
 		if [[ $_OLD -gt 0 ]]; then
 			_OLD=$(human_size "$_OLD")
 			[[ $_LNG = ita ]] && qst_msg "yes" "L'eliminazione di questi file libererà $_OLD di spazio su disco, vuoi procedere"
@@ -368,20 +366,20 @@ function clean_file {
 				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
 				[[ -d ~/.cache ]] && /bin/find ~/.cache -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
 				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache e miniature"
-				[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache clean"
+				[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache cleaning"
 			else
 				[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache e miniature"
-				[[ $_LNG = eng ]] && end_msg "no" "Thumbs and cache clean"
+				[[ $_LNG = eng ]] && end_msg "no" "Thumbs and cache cleaning"
 			fi
 		else
 			[[ $_LNG = ita ]] && echo "Non c'è necessità di eliminare alcun file, le cartelle sono sufficientemente pulite."
 			[[ $_LNG = eng ]] && echo "There is no need to delete any files, these folders are pretty clean."
 			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cache e miniature"
-			[[ $_LNG = eng ]] && end_msg "skip" "Thumbs and cache clean"
+			[[ $_LNG = eng ]] && end_msg "skip" "Thumbs and cache cleaning"
 		fi
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cache e miniature"
-		[[ $_LNG = eng ]] && end_msg "no" "Thumbs and cache clean"
+		[[ $_LNG = eng ]] && end_msg "no" "Thumbs and cache cleaning"
 	fi
 	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri cercare file residui"
@@ -421,16 +419,16 @@ function clean_file {
 					/bin/rm -f "$i"
 				done
 				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file residui"
-				[[ $_LNG = eng ]] && end_msg "ok" "Residual files clean"
+				[[ $_LNG = eng ]] && end_msg "ok" "Residual files cleaning"
 			else
 				[[ $_LNG = ita ]] && end_msg "no" "Pulizia file residui"
-				[[ $_LNG = eng ]] && end_msg "no" "Residual files clean"
+				[[ $_LNG = eng ]] && end_msg "no" "Residual files cleaning"
 			fi
 		else
 			[[ $_LNG = ita ]] && echo "Non sono presenti file residui."
 			[[ $_LNG = eng ]] && echo "There are no residual files."
 		[[ $_LNG = ita ]] && end_msg "skip" "Pulizia file residui"
-		[[ $_LNG = eng ]] && end_msg "skip" "Residual files clean"
+		[[ $_LNG = eng ]] && end_msg "skip" "Residual files cleaning"
 		fi
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pulizia file residui"
@@ -471,26 +469,26 @@ function clean_file {
 					( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
 					/bin/rm -rf ~/.local/share/Trash/*
 					[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
-					[[ $_LNG = eng ]] && end_msg "ok" "Trash clean"
+					[[ $_LNG = eng ]] && end_msg "ok" "Trash cleaning"
 				else
 					[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
-					[[ $_LNG = eng ]] && end_msg "no" "Trash clean"
+					[[ $_LNG = eng ]] && end_msg "no" "Trash cleaning"
 				fi
 			else
 				[[ $_LNG = ita ]] && echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
 				[[ $_LNG = eng ]] && echo "Trash is completely empty, there is no need to clean it."
 				[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cestino"
-				[[ $_LNG = eng ]] && end_msg "skip" "Trash clean"
+				[[ $_LNG = eng ]] && end_msg "skip" "Trash cleaning"
 			fi
 		else
 			[[ $_LNG = ita ]] && echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
 			[[ $_LNG = eng ]] && echo "Trash is completely empty, there is no need to clean it."
 			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cestino"
-			[[ $_LNG = eng ]] && end_msg "skip" "Trash clean"
+			[[ $_LNG = eng ]] && end_msg "skip" "Trash cleaning"
 		fi
 	else
 		[[ $_LNG = ita ]] && end_msg "no" "Pulizia cestino"
-		[[ $_LNG = eng ]] && end_msg "no" "Trash clean"
+		[[ $_LNG = eng ]] && end_msg "no" "Trash cleaning"
 	fi
 }
 
@@ -515,7 +513,7 @@ It prints a warning if some packages are newer than those in repositories, it's 
 ${_BOLD}Update packages from AUR (yaourt -Sua)${_NORMAL}
 Updates packages from AUR repository, if needed. It can use different tools for that: 'pacaur' or 'yaourt'.
 
-${_BOLD}${_YELLOW}::Clean packages::${_NORMAL}
+${_BOLD}${_YELLOW}::Packages cleaning::${_NORMAL}
 
 ${_BOLD}Search and uninstall orphaned packages (pacman -Qdtq)${_NORMAL}
 Searches for packages installed as dependencies and no longer required, if there are any it asks before uninstalling them.
@@ -532,10 +530,10 @@ This command simply optimize access to pacman database, defragmenting it. For SS
 ${_BOLD}Configuration files check${_NORMAL}
 Searches '*.pacnew' files in '/etc' directory, these are files created by 'pacman' when a package changes its configuration file, this way it doesn't overwrite valuable user's configurations; 'pacnew' files are useless (orphan) without the 'non pacnew' file (same filename without '.pacnew'), but sometimes they remain after package removal. If there is any useful '.pacnew' file you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help' or at https://wiki.archlinux.org/index.php/Pacman/Pacnew_and_Pacsave.
 
-${_BOLD}${_YELLOW}::Clean files::${_NORMAL}
+${_BOLD}${_YELLOW}::Files cleaning::${_NORMAL}
 
-${_BOLD}Log files clean${_NORMAL}
-Cleans log file if the total size is over 100MB or the age is over 1 week, using the command 'journalctl --vacuum-size=100M --vacuum-time=1weeks'. It runs only on systems with systemd as init.
+${_BOLD}Log files cleaning${_NORMAL}
+Cleans log file if the total size is over 200MB or the age is over 1 week, using the command 'journalctl --vacuum-size=200M --vacuum-time=1weeks'. It runs only on systems with systemd as init.
 Log files contain informations about most important events that happens in an operating system while it is alive, they are useful to find out the cause of errors or malfunctions.
 
 ${_BOLD}Clean old cache and thumbnail files${_NORMAL}
@@ -591,7 +589,7 @@ Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc'
 ${_BOLD}${_YELLOW}::Pulizia file::${_NORMAL}
 
 ${_BOLD}Pulizia file di log${_NORMAL}
-Pulisce i file di log se la loro dimensione supera i 100MB o se sono più vecchi di 1 settimana tramite il comando 'journalctl --vacuum-size=100M --vacuum-time=1weeks'. Esegue questa operazione solo se il systema di init è 'systemd'.
+Pulisce i file di log se la loro dimensione supera i 200MB o se sono più vecchi di 1 settimana tramite il comando 'journalctl --vacuum-size=200M --vacuum-time=1weeks'. Esegue questa operazione solo se il systema di init è 'systemd'.
 I file di log contengono un resoconto di tutti gli avvenimenti rilevanti che succedono durante il funzionamento del sistema operativo, sono molto utili per capire le cause di errori o malfunzionamenti.
 
 ${_BOLD}Pulizia cache e miniature non recenti${_NORMAL}
