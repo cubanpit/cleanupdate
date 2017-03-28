@@ -331,7 +331,7 @@ function clean_file {
 		[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to clean log files to save disk space"
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-			$_SUDO /bin/journalctl --vacuum-size=200M --vacuum-time=1weeks
+			$_SUDO /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks
 			[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file di log"
 			[[ $_LNG = eng ]] && end_msg "ok" "Log files cleaning"
 		else
@@ -705,6 +705,17 @@ function main {
 	esac
 	done
 }
+
+# Here begin the "main script"
+
+if [[ $# -gt 0 ]] ; then
+	[[ $_LNG = ita ]] && echo "Errore! Sono stati forniti i seguenti argomenti:"
+	[[ $_LNG = eng ]] && echo "Error! Some arguments have been provided:"
+	echo -en "\t" ; for i in "$@" ; do echo -n $i ; echo -n " " ; done ; echo ; echo
+	[[ $_LNG = ita ]] && echo "Cleanupdate non ha bisogno di alcun argomento."
+	[[ $_LNG = eng ]] && echo "Cleanupdate doesn't need any argument."
+	exit 1
+fi
 
 main
 
