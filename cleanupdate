@@ -493,6 +493,65 @@ function clean_file {
 }
 
 #
+# Function containing pacman troubleshooting
+#
+function trouble_shoot {
+	if [[ $_LNG = ita ]]; then
+		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Indicare quale di questi"\
+			"messaggi restituisce il gestore di pacchetti:\n${_NORMAL}"
+		echo -e "${_BOLD}[1] ->${_NORMAL} errore: impossibile eseguire l'operazione richiesta (file in conflitto)"
+		echo -e "${_BOLD}[2] ->${_NORMAL} errore: impossibile eseguire l'operazione richiesta (il pacchetto non è valido oppure è corrotto)"
+		echo -e "${_BOLD}[3] ->${_NORMAL} errore: impossibile scaricare il pacchetto '...' da ..."
+		echo -e "${_BOLD}[4] ->${_NORMAL} errore: impossibile bloccare il database: File già esistente"
+		echo -e "${_BOLD}[0] ->${_NORMAL} Torna al menù principale"
+		echo -en "\n${_BOLD}Numero: ${_NORMAL}"
+		read -r -n1 _SURE
+		case $_SURE in
+			0) 	;;
+			1)	echo
+				echo -e "\nQuesto messaggio di errore compare quando il gestore"\
+					"di pacchetti si accorge che per installare un determinato"\
+					"pacchetto sarebbe neccessario sovrascrivere un file già"\
+					"presente nel sistema. Il nome del file in questione viene"\
+					"stampato insieme al messaggio di errore."
+				echo -e "Ci sono due possibili soluzioni:\n-> se vengono segnalati"\
+					"solo pochi file è possibile rimuoverli manualmente tramite"\
+					"il comando 'sudo rm /percorso/completo/file';\n-> se i"\
+					"file sono molto numerosi è possibile automatizzare il"\
+					"processo dando al gestore di pacchetti il permesso di"\
+					"sovrascrivere i file in conflitto, questa opziona va"\
+					"utilizzata il meno possibile perché può avere effetti"\
+					"collaterali anche gravi, per utilizzarla bisogna lanciare"\
+					"il seguente comando di installazione fornendo il nome del"\
+					"pacchetto che causa il problema 'sudo pacman -S --force"\
+					"nomepacchetto'."
+				;;
+			2) 	echo 2
+				;;
+			3) 	echo
+				echo -e "\nQuesto messaggio di errore compare quando il gestore"\
+					"di pacchetti non riesce a scaricare dai server di Manjaro"\
+					"i database o i pacchetti richiesti."
+				echo -e "La prima cosa da verificare è la corretta connessione"\
+					"ad una rete internet del sistema in uso."
+				echo -e "Se il sistema risulta connesso ad interne ma il"\
+					"problema persiste è probabile che il gestore di pacchetti"\
+					"si stia rivolgendo ad un server non funzionante oppure"\
+					"obsoleto, è quindi necessario generare una nuova lista dei"\
+					"mirror; sui sistemi Manjaro Linux è possibile farlo"\
+					"tramite 'pacman-mirrors'."
+				echo -e "Il comando consigliato per generare velocemente una"\
+					"nuova lista dei mirror è 'sudo pacman-mirrors -f10'."
+				;;
+			4) 	echo 4
+				;;
+		esac
+	elif [[ $_LNG = eng ]]; then
+		echo "Not ready yet. Just wait a minute."
+	fi
+}
+
+#
 # Function containing english documentation text.
 #
 function doc_eng {
@@ -626,6 +685,7 @@ function main {
 		echo " │    3.  Pulisci i pacchetti             │"
 		echo " │    4.  Pulisci i file                  │"
 		echo " │                                        │"
+		echo " │    7.  Risoluzione problemi frequenti  │"
 		echo " │    8.  Documentazione                  │"
 		echo " │    9.  Cambia lingua (eng|${_BOLD}ita${_NORMAL})         │"
 		echo " │  q|0.  ESCI                            │"
@@ -639,6 +699,7 @@ function main {
 		echo " │    3.  Clean packages                  │"
 		echo " │    4.  Clean files                     │"
 		echo " │                                        │"
+		echo " │    7.  Solve commmon errors            │"
 		echo " │    8.  Documentation                   │"
 		echo " │    9.  Change language (${_BOLD}eng${_NORMAL}|ita)       │"
 		echo " │  q|0.  QUIT                            │"
@@ -679,6 +740,14 @@ function main {
 		4)
 			clear
 			clean_file
+			echo
+			[[ $_LNG = ita ]] && echo "Finito! Premi un tasto qualsiasi per continuare. "
+			[[ $_LNG = eng ]] && echo "Finished! Press any key to continue. "
+			read -rs -n1
+			;;
+		7)
+			clear
+			trouble_shoot
 			echo
 			[[ $_LNG = ita ]] && echo "Finito! Premi un tasto qualsiasi per continuare. "
 			[[ $_LNG = eng ]] && echo "Finished! Press any key to continue. "
