@@ -499,26 +499,28 @@ function trouble_shoot {
 	if [[ $_LNG = ita ]]; then
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Indicare quale di questi"\
 			"messaggi restituisce il gestore di pacchetti:\n${_NORMAL}"
-		echo -e "${_BOLD}[1] ->${_NORMAL} errore: impossibile eseguire l'operazione richiesta (file in conflitto)"
-		echo -e "${_BOLD}[2] ->${_NORMAL} errore: impossibile eseguire l'operazione richiesta (il pacchetto non è valido oppure è corrotto)"
-		echo -e "${_BOLD}[3] ->${_NORMAL} errore: impossibile scaricare il pacchetto '...' da ..."
-		echo -e "${_BOLD}[4] ->${_NORMAL} errore: impossibile bloccare il database: File già esistente"
-		echo -e "${_BOLD}[0] ->${_NORMAL} Torna al menù principale"
+		echo "${_BOLD}[1] ->${_NORMAL} errore: impossibile eseguire l'operazione richiesta (file in conflitto)"
+		echo "${_BOLD}[2] ->${_NORMAL} errore: impossibile eseguire l'operazione richiesta (il pacchetto non è valido oppure è corrotto (firma PGP))"
+		echo "${_BOLD}[3] ->${_NORMAL} errore: impossibile scaricare il pacchetto '...' da ..."
+		echo "${_BOLD}[4] ->${_NORMAL} errore: impossibile bloccare il database: File già esistente"
+		echo -e "\nSe il problema non è qui elencato si consiglia di chiedere aiuto sul forum online della propria distribuzione."
+		echo "${_BOLD}[0] ->${_NORMAL} Torna al menù principale"
 		echo -en "\n${_BOLD}Numero: ${_NORMAL}"
 		read -r -n1 _SURE
 		case $_SURE in
 			0) 	;;
-			1)	echo
-				echo -e "\nQuesto messaggio di errore compare quando il gestore"\
+			1)	echo ; echo
+				echo "Questo messaggio di errore compare quando il gestore"\
 					"di pacchetti si accorge che per installare un determinato"\
 					"pacchetto sarebbe neccessario sovrascrivere un file già"\
 					"presente nel sistema. Il nome del file in questione viene"\
 					"stampato insieme al messaggio di errore."
-				echo -e "Ci sono due possibili soluzioni:\n-> se vengono segnalati"\
-					"solo pochi file è possibile rimuoverli manualmente tramite"\
-					"il comando 'sudo rm /percorso/completo/file';\n-> se i"\
-					"file sono molto numerosi è possibile automatizzare il"\
-					"processo dando al gestore di pacchetti il permesso di"\
+				echo "Ci sono due possibili soluzioni:"
+				echo "-> se vengono segnalati solo pochi file è possibile"\
+					"rimuoverli manualmente tramite il comando 'sudo rm"\
+					"/percorso/completo/file';"
+				echo "-> se i file sono molto numerosi è possibile automatizzare"\
+					"il processo dando al gestore di pacchetti il permesso di"\
 					"sovrascrivere i file in conflitto, questa opziona va"\
 					"utilizzata il meno possibile perché può avere effetti"\
 					"collaterali anche gravi, per utilizzarla bisogna lanciare"\
@@ -526,25 +528,46 @@ function trouble_shoot {
 					"pacchetto che causa il problema 'sudo pacman -S --force"\
 					"nomepacchetto'."
 				;;
-			2) 	echo 2
+			2) 	echo ; echo
+				echo "Questo messaggio di errore segnala l'impossibilità di"\
+					"verificare correttamente la provenienza di un pacchetto."
+				echo "Generalmente può essere risolto lanciando il seguenti"\
+					"comandi:"
+				echo "  sudo rm -r /etc/pacman.d/gnupg"
+				echo "  sudo pacman -Sy gnupg archlinux-keyring manjaro-keyring"
+				echo "  sudo pacman-key --init"
+				echo "  sudo pacman-key --populate arch manjaro"
+				echo "  sudo pacman-key --refresh-keys"
 				;;
-			3) 	echo
-				echo -e "\nQuesto messaggio di errore compare quando il gestore"\
+			3) 	echo ; echo
+				echo "Questo messaggio di errore compare quando il gestore"\
 					"di pacchetti non riesce a scaricare dai server di Manjaro"\
 					"i database o i pacchetti richiesti."
-				echo -e "La prima cosa da verificare è la corretta connessione"\
+				echo "La prima cosa da verificare è la corretta connessione"\
 					"ad una rete internet del sistema in uso."
-				echo -e "Se il sistema risulta connesso ad interne ma il"\
+				echo "Se il sistema risulta connesso ad interne ma il"\
 					"problema persiste è probabile che il gestore di pacchetti"\
 					"si stia rivolgendo ad un server non funzionante oppure"\
 					"obsoleto, è quindi necessario generare una nuova lista dei"\
 					"mirror; sui sistemi Manjaro Linux è possibile farlo"\
 					"tramite 'pacman-mirrors'."
-				echo -e "Il comando consigliato per generare velocemente una"\
+				echo "Il comando consigliato per generare velocemente una"\
 					"nuova lista dei mirror è 'sudo pacman-mirrors -f10'."
 				;;
-			4) 	echo 4
+			4) 	echo ; echo
+				echo "Questo messaggio di errore segnala la presenza di un"\
+					"file di lock, che indica un'operazione in corso da parte"\
+					"del gestore di pacchetti, a volte questo file non viene"\
+					"correttamente cancellato e rimane nonostante non ci sia"\
+					"alcuna operazione in corso."
+				echo "Dopo aver controllato che non ci sia alcun processo"\
+					"di installazione/aggiornamento in atto (sia da parte di"\
+					"pacman sia da parte dei gestori software da interfaccia"\
+					"grafica) è possibile eliminare il file di lock lanciando"\
+					"il comando 'sudo rm /var/lib/pacman/db.lck'."
 				;;
+			*)	echo ; echo
+				echo "Questa opzione non è presente nell'elenco."
 		esac
 	elif [[ $_LNG = eng ]]; then
 		echo "Not ready yet. Just wait a minute."
