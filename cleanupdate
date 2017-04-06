@@ -394,6 +394,9 @@ function clean_file {
 		done < <(/bin/find "$HOME" -name "*~" -user "$USER" -print0 2>/dev/null)
 		while IFS= read -r -d '' file; do
 			_RES[i++]="$file"
+		done < <(/bin/find "$HOME" -name ".*.swp" -user "$USER" -print0 2>/dev/null)
+		while IFS= read -r -d '' file; do
+			_RES[i++]="$file"
 		done < <(/bin/find "$HOME" -name "Desktop.ini" -user "$USER" -print0 2>/dev/null)
 		while IFS= read -r -d '' file; do
 			_RES[i++]="$file"
@@ -622,7 +625,7 @@ ${_BOLD}Clean old cache and thumbnail files${_NORMAL}
 Searches in '~/.cache' and '~/.thumbnails' for files with last access more than 30 days ago and delete them, delete also empty folders inside those directories. Cache and thumbnail files are not necessary and are used by user applications to load faster images thumbnails or information.
 
 ${_BOLD}Search and clean residual files${_NORMAL}
-Searches for files with names matching 'Thumbs.db', 'Desktop.ini' and '*~'. This files are temporary files from Windows (first and second one) and from Linux (last one) application, that store them to save some information during work; they're important when you're using some applications, but they should disappears few seconds later, sometimes they don't.
+Searches for files with names matching 'Thumbs.db', 'Desktop.ini', '.*.swp' and '*~'. This files are temporary files from Windows (first and second one) and from Linux (last two) application, that store them to save some information during work; they're important when you're using some applications, but they should disappears few seconds later, sometimes they don't. You should save your document in every application in use before using this option.
 
 ${_BOLD}Clean trash files (rm -rfv ~/.local/share/Trash/*)${_NORMAL}
 Simply cleans the user trash, files are located in '~/.local/share/Trash/files'; prints all file names so the user at first glance can check deleted files and their number.
@@ -678,7 +681,7 @@ ${_BOLD}Pulizia cache e miniature non recenti${_NORMAL}
 Ricerca nelle cartelle '~/.cache' e '~/.thumbnails' file con l'ultimo accesso risalente a più di 30 giorni prima e li cancella, elimina anche le eventuali cartelle vuote che si trovano all'interno. I file presenti in cache sono utilizzati dalle applicazioni per velocizzare alcune operazioni comuni (es. caricamento copertine album in un riproduttore multimediale), invece i thumbnails sono le miniature delle immagini che vengono utilizzate (es. dal gestore file) per caricare più velocemente le anteprime delle immagini presenti nel sistema.
 
 ${_BOLD}Ricerca e rimozione file residui${_NORMAL}
-Effettua una ricerca sui file che si chiamano 'Thumbs.db', 'Desktop.ini' e '*~'. I primi due sono file creati dai sistemi Windows ed inutili su di un sistema Linux, che possono comparire se si condividono alcune cartelle con il sistema operativo di casa Microsoft. L'ultimo tipo di file (con il nome che finisce con una tilde) è un tipo di file temporaneo creato da molte applicazioni come salvataggio temporaneo del lavoro in corso di svolgimento, utile nel caso in cui improvvisamente il sistema si spenga per esempio; può succedere che questi file rimangano nel sistema più a lungo del necessario, creando disordine ed occupando spazio.
+Effettua una ricerca sui file che si chiamano 'Thumbs.db', 'Desktop.ini', '.*.swp' e '*~'. I primi due sono file creati dai sistemi Windows ed inutili su di un sistema Linux, che possono comparire se si condividono alcune cartelle con il sistema operativo di casa Microsoft. Gli ultimi due tipi di file sono file temporanei creati da molte applicazioni come salvataggio temporaneo del lavoro in corso, utile nel caso in cui improvvisamente il sistema si spenga per esempio; può succedere che questi file rimangano nel sistema più a lungo del necessario, creando disordine ed occupando spazio. Si consiglia di salvare i propri documenti in tutte le applicazioni aperte prima di eseguire questa opzione.
 
 ${_BOLD}Pulizia cestino (rm -rf ~/.local/share/Trash/*)${_NORMAL}
 Cancella tutti i file presenti nel cestino dell'utente, i cui file sono contenuti in '~/.local/share/Trash/files', stampando tutti il nome dei file di modo che l'utente possa verificare velocemente l'entità dell'operazione.
