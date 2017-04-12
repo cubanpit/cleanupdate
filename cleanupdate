@@ -174,7 +174,7 @@ function sys_update {
 		_PAC=$( /bin/pacman -Q pacaur 2> /dev/null )
 		_YAU=$( /bin/pacman -Q yaourt 2> /dev/null )
 		if [[ -n $_PAC ]]; then
-			/bin/pacaur -Sua --color always
+			/bin/pacaur -Syua --color always
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
 		elif [[ -n $_YAU ]]; then
