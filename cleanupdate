@@ -121,36 +121,19 @@ function sys_update {
 	[[ $_LNG = ita ]] && echo " ${_BOLD}::Aggiornamento del sistema::${_NORMAL} "
 	[[ $_LNG = eng ]] && echo " ${_BOLD}::System update::${_NORMAL} "
 	echo
-	[[ $_LNG = ita ]] && qst_msg "no" "Desideri aggiornare il database locale"
-	[[ $_LNG = eng ]] && qst_msg "no" "Do you want to update local database"
-	read -r _SURE
-	if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
-		( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
-		_INITTIME=$(date +%s)
-		$_SUDO /bin/pacman -Syy --color always
-		_ENDTIME=$(date +%s)
-		if [[ $(( _ENDTIME - _INITTIME )) -gt 45 ]]; then
-			_DISTRO=$(/bin/grep -i manjaro /etc/lsb-release)
-			if [[ -n $_DISTRO ]]; then
-				[[ $_LNG = ita ]] && end_msg "warn" "La velocità di download dai repository risulta bassa, prova a configurare una lista dei mirror personalizzata tramite il comando 'pacman-mirrors'."
-				[[ $_LNG = eng ]] && end_msg "warn" "Download speed from repository is quite low, try configuring a custom mirrorlist with the command 'pacman-mirrors'."
-			else
-				[[ $_LNG = ita ]] && end_msg "warn" "La velocità di download dai repository risulta bassa, prova a configurare una lista dei mirror personalizzata."
-				[[ $_LNG = eng ]] && end_msg "warn" "Download speed from repository is quite low, try configuring a custom mirrorlist."
-			fi
-		fi
-		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento database locale"
-		[[ $_LNG = eng ]] && end_msg "ok" "Local database update"
-	else
-		[[ $_LNG = ita ]] && end_msg "no" "Aggiornamento database locale"
-		[[ $_LNG = eng ]] && end_msg "no" "Local database update"
-	fi
-	echo
 	[[ $_LNG = ita ]] && qst_msg "yes" "Desideri aggiornare i pacchetti ufficiali"
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to upgrade official packages"
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		$_SUDO /bin/pacman -Syu --color always
+		_DISTRO=$(/bin/grep -i manjaro /etc/lsb-release)
+		if [[ -n $_DISTRO &&\
+				"$(stat /etc/pacman.d/mirrorlist | grep 'Modify' | cut -d' ' -f2)"\
+				!= "$(date +%Y-%m-%d)" ]]; then
+			$_SUDO /bin/pacman-mirrors -f10
+			$_SUDO /bin/pacman -Syyu --color always
+		else
+			$_SUDO /bin/pacman -Syu --color always
+		fi
 		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento pacchetti ufficiali"
 		[[ $_LNG = eng ]] && end_msg "ok" "Official packages upgrade"
 	else
@@ -586,11 +569,6 @@ Press 'q' to quit documentation
 
 ${_BOLD}${_YELLOW}::Update system::${_NORMAL}
 
-${_BOLD}Update local database (pacman -Syy)${_NORMAL}
-Syncs local database with online repositories, forces the sync also if local database seems up to date. Repositories are configured in '/etc/pacman.conf'.
-[Only on Manjaro Linux systems] If download speed from repositories is too low you can try configuring a custom mirrorlist with the command 'pacman-mirrors', further information in 'pacman-mirrors --help'.
-[On every pacman-based Linux] To make a custom mirrorlist you can modify '/etc/pacman.d/mirrorlist', available mirrors are in '/etc/pacman.d/mirrors'.
-
 ${_BOLD}Update packages from repositories (pacman -Syu)${_NORMAL}
 Checks that local database is up to date with online repositories, compare packages version between database and installed packages, if versions are different runs update.
 It prints a warning if some packages are newer than those in repositories, it's possible to downgrade these packages with 'pacman -Syuu'.
@@ -642,11 +620,6 @@ less -R << EOF
 Premere 'q' per uscire dalla documentazione
 
 ${_BOLD}${_YELLOW}::Aggiornamento del sistema::${_NORMAL}
-
-${_BOLD}Aggiornamento del database locale (pacman -Syy)${_NORMAL}
-Sincronizza il database locale di pacman con i repository online, in particolare forza la sincronizzazione effettuandola anche se il database locale risulta aggiornato. I repository possono essere aggiunti e configurati nel file '/etc/pacman.conf'.
-[Solo in sistemi Manjaro Linux] Se la velocità di download dai repository è troppo bassa viene consigliata la modifica della lista dei mirror tramite il comando 'pacman-mirrors', per ulteriori informazioni consultare 'pacman-mirrors --help'.
-[In ogni sistema Linux pacman-based] Per personalizzare la lista dei mirror è possibile modificare il file '/etc/pacman.d/mirrorlist', i mirror disponibili si trovano in '/etc/pacman.d/mirrors'.
 
 ${_BOLD}Aggiornamento dei pacchetti dai repository ufficiali (pacman -Syu)${_NORMAL}
 Controlla che il database locale sia aggiornato, se ci sono differenze tra le versioni dei pacchetti installati e di quelli presenti nel database effettua l'upgrade (innalzamento di versione). Il comando notifica se la versione installata di un pacchetto è più recente di quella nei repository, in questo caso può essere utile eseguire un downgrade (abbassamento di versione) tramite il comando 'pacman -Syuu'.
