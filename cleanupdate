@@ -485,16 +485,23 @@ function trouble_shoot {
 	if [[ $_LNG = ita ]]; then
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Indicare quale di questi"\
 			"messaggi restituisce il gestore di pacchetti:\n${_NORMAL}"
-		echo "${_BOLD}[1] ->${_NORMAL} errore: impossibile eseguire l'operazione richiesta (file in conflitto)"
-		echo "${_BOLD}[2] ->${_NORMAL} errore: impossibile eseguire l'operazione richiesta (il pacchetto non è valido oppure è corrotto (firma PGP))"
-		echo "${_BOLD}[3] ->${_NORMAL} errore: impossibile scaricare il pacchetto '...' da ..."
-		echo "${_BOLD}[4] ->${_NORMAL} errore: impossibile bloccare il database: File già esistente"
-		echo -e "\nSe il problema non è qui elencato si consiglia di chiedere aiuto sul forum online della propria distribuzione."
+		echo "${_BOLD}[1] ->${_NORMAL} errore: impossibile eseguire"\
+			"l'operazione richiesta (file in conflitto)"
+		echo "${_BOLD}[2] ->${_NORMAL} errore: impossibile eseguire"\
+			"l'operazione richiesta (il pacchetto non è valido oppure è"
+			"corrotto (firma PGP))"
+		echo "${_BOLD}[3] ->${_NORMAL} errore: impossibile scaricare il"\
+			"pacchetto '...' da ..."
+		echo "${_BOLD}[4] ->${_NORMAL} errore: impossibile bloccare il"\
+			"database: File già esistente"
+		echo -e "\nSe il problema non è qui elencato si consiglia di chiedere"\
+			"aiuto sul forum online della propria distribuzione."
 		echo "${_BOLD}[0] ->${_NORMAL} Torna al menù principale"
 		echo -en "\n${_BOLD}Numero: ${_NORMAL}"
 		read -r -n1 _SURE
 		case $_SURE in
-			0) 	;;
+			0) 	main
+				;;
 			1)	echo ; echo
 				echo "Questo messaggio di errore compare quando il gestore"\
 					"di pacchetti si accorge che per installare un determinato"\
@@ -527,11 +534,11 @@ function trouble_shoot {
 				;;
 			3) 	echo ; echo
 				echo "Questo messaggio di errore compare quando il gestore"\
-					"di pacchetti non riesce a scaricare dai server di Manjaro"\
+					"di pacchetti non riesce a scaricare dai repository online"\
 					"i database o i pacchetti richiesti."
 				echo "La prima cosa da verificare è la corretta connessione"\
 					"ad una rete internet del sistema in uso."
-				echo "Se il sistema risulta connesso ad interne ma il"\
+				echo "Se il sistema risulta connesso ad internet ma il"\
 					"problema persiste è probabile che il gestore di pacchetti"\
 					"si stia rivolgendo ad un server non funzionante oppure"\
 					"obsoleto, è quindi necessario generare una nuova lista dei"\
@@ -553,11 +560,81 @@ function trouble_shoot {
 					"il comando 'sudo rm /var/lib/pacman/db.lck'."
 				;;
 			*)	echo ; echo
-				echo "Questa opzione non è presente nell'elenco."
+				echo "Non esiste l'opzione '$_SURE'."
 		esac
 	elif [[ $_LNG = eng ]]; then
-		echo "Not ready yet. Just wait a minute."
+		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Which of this error the"\
+			"package manager prints:\n${_NORMAL}"
+		echo "${_BOLD}[1] ->${_NORMAL} error: failed to commit transaction"\
+			"(conflicting files)"
+		echo "${_BOLD}[2] ->${_NORMAL} error: failed to commit transaction"\
+			"(invalid or corrupted package (PGP signature))"
+		echo "${_BOLD}[3] ->${_NORMAL} error: failed retrieving file '...'"\
+			"from ..."
+		echo "${_BOLD}[4] ->${_NORMAL} error: failed to init transaction"\
+			"(unable to lock database)"
+		echo -e "\nIf the problem isn't listed here you could ask for help"\
+			"online on your distribution's forum."
+		echo "${_BOLD}[0] ->${_NORMAL} Return to main menu"
+		echo -en "\n${_BOLD}Number: ${_NORMAL}"
+		read -r -n1 _SURE
+		case $_SURE in
+			0) 	main
+				;;
+			1)	echo ; echo
+				echo "This error message appears if a file is already present"\
+					"in the filesystem when trying to install a new package, so"\
+					"pacman decide not to overwrite it and prompt out an error."
+					"The file name is printed in the error message."
+				echo "There are two possible solutions:"
+				echo "-> if there are only few conflicting files it's possible"\
+					"to remove them with 'sudo rm /path/to/file';"
+				echo "-> if there are many files it's possible to give pacman"
+					"permission to overwrite the conflicting files, this option"\
+					"can be dangerous and should be used only when necessary,"\
+					"to use it you have to read from the error message the name"\
+					"of the guilty package and execute 'sudo pacman -S --force"\
+					"packagename'."
+				;;
+			2) 	echo ; echo
+				echo "This error message appears if pacman fails to verify the"\
+					"source of a package."
+				echo "You should solve the problem with these commands:"
+				echo "  sudo rm -r /etc/pacman.d/gnupg"
+				echo "  sudo pacman -Sy gnupg archlinux-keyring manjaro-keyring"
+				echo "  sudo pacman-key --init"
+				echo "  sudo pacman-key --populate arch manjaro"
+				echo "  sudo pacman-key --refresh-keys"
+				;;
+			3) 	echo ; echo
+				echo "This error message appears if pacman fails to download"\
+					"needed packages or database from online repository."
+				echo "First of all you should verify that your system is"\
+					"connected to a network properly."
+				echo "If the network conntection works, it's possible that"\
+					"pacman is trying to download files from a non working or"\
+					"obsolete server, therefore you should update your mirror"\
+					"list; in a Manjaro Linux system you can use"\
+					"'pacman-mirrors' to accomplish that."
+				echo "To generate a new mirrorlist in few seconds the suggested"\
+					"command is 'sudo pacman-mirrors -f10'."
+				;;
+			4) 	echo ; echo
+				echo "This error message appears when pacman finds a lock file,"\
+					"this means a package management transaction should be in"\
+					"progress, sometimes this file remains also when there is"\
+					"no such transaction."
+				echo "You should verify there isn't any package management"\
+					"process (from pacman or from any graphical package"\
+					"management software), then you can remove the lock file"\
+					"launching 'sudo rm /var/lib/pacman/db.lck'."
+				;;
+			*)	echo ; echo
+				echo "There is no '$_SURE' option."
+
+		esac
 	fi
+
 }
 
 #
@@ -669,6 +746,7 @@ EOF
 function main {
 	while true; do
 	clear
+	unset _SURE
 	echo
 	echo "      _                                  _       _        "
 	echo "  ___| | ___  __ _ _ __  _   _ _ __   __| | __ _| |_ ___  "
@@ -706,8 +784,8 @@ function main {
 		echo
 		echo -n " Select an option : "
 	fi
-	read -rs -n1 ans
-	case $ans in
+	read -rs -n1 _SURE
+	case $_SURE in
 		1)
 			clear
 			sys_update
@@ -766,8 +844,8 @@ function main {
 		*)
 			echo
 			echo
-			[[ $_LNG = ita ]] && echo -n " Non esiste l'opzione '$ans'. Premi un tasto qualsiasi per continuare. "
-			[[ $_LNG = eng ]] && echo -n " There is no '$ans' option. Press any key to continue. "
+			[[ $_LNG = ita ]] && echo -n " Non esiste l'opzione '$_SURE'. Premi un tasto qualsiasi per continuare. "
+			[[ $_LNG = eng ]] && echo -n " There is no '$_SURE' option. Press any key to continue. "
 			read -rs -n1
 			;;
 	esac
@@ -779,7 +857,7 @@ function main {
 if [[ $# -gt 0 ]] ; then
 	[[ $_LNG = ita ]] && echo "Errore! Sono stati forniti i seguenti argomenti:"
 	[[ $_LNG = eng ]] && echo "Error! Some arguments have been provided:"
-	echo -en "\t" ; for i in "$@" ; do echo -n $i ; echo -n " " ; done ; echo ; echo
+	echo -en "\t" ; for i in "$@" ; do echo -n "$i" ; echo -n " " ; done ; echo ; echo
 	[[ $_LNG = ita ]] && echo "Cleanupdate non ha bisogno di alcun argomento."
 	[[ $_LNG = eng ]] && echo "Cleanupdate doesn't need any argument."
 	exit 1
