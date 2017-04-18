@@ -344,10 +344,14 @@ function clean_file {
 			[[ $_LNG = eng ]] && qst_msg "yes" "The deletion of these files frees $_OLD of disk space, do you want to continue"
 			read -r _SURE
 			if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -type f -atime +30 -print0 | xargs -0 /bin/rm -f
-				[[ -d ~/.cache ]] && /bin/find ~/.cache -type f -atime +30 -print0 | xargs -0 /bin/rm -f
-				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
-				[[ -d ~/.cache ]] && /bin/find ~/.cache -empty -type d -atime +30 -print0 | xargs -0 /bin/rm -rf
+				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -type f \
+					-atime +30 -print0 | xargs -0 /bin/rm -f
+				[[ -d ~/.cache ]] && /bin/find ~/.cache -name 'pacaur' -prune \
+					-o \( -type f -atime +30 -print0 \)  | xargs -0 /bin/rm -f
+				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -empty \
+					-type d -atime +30 -print0 | xargs -0 /bin/rm -rf
+				[[ -d ~/.cache ]] && /bin/find ~/.cache -name 'pacaur' -prune \
+					-o \( -empty -type d -atime +30 -print0 \) | xargs -0 /bin/rm -rf
 				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache e miniature"
 				[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache cleaning"
 			else
@@ -355,8 +359,10 @@ function clean_file {
 				[[ $_LNG = eng ]] && end_msg "no" "Thumbs and cache cleaning"
 			fi
 		else
-			[[ $_LNG = ita ]] && echo "Non c'è necessità di eliminare alcun file, le cartelle sono sufficientemente pulite."
-			[[ $_LNG = eng ]] && echo "There is no need to delete any files, these folders are pretty clean."
+			[[ $_LNG = ita ]] && echo "Non c'è necessità di eliminare alcun"\
+				"file, le cartelle sono sufficientemente pulite."
+			[[ $_LNG = eng ]] && echo "There is no need to delete any files,"\
+				"these folders are pretty clean."
 			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cache e miniature"
 			[[ $_LNG = eng ]] && end_msg "skip" "Thumbs and cache cleaning"
 		fi
@@ -584,7 +590,7 @@ function trouble_shoot {
 			1)	echo ; echo
 				echo "This error message appears if a file is already present"\
 					"in the filesystem when trying to install a new package, so"\
-					"pacman decide not to overwrite it and prompt out an error."
+					"pacman decides not to overwrite it and prompt out an error."
 					"The file name is printed in the error message."
 				echo "There are two possible solutions:"
 				echo "-> if there are only few conflicting files it's possible"\
