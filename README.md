@@ -14,11 +14,12 @@ The script can switch between Italian and English languages.
  - optimize (defragment) pacman database;
  - clean temporary or unuseful files;
  - clean old journald logs;
+ - suggest solution to most common pacman errors;
 
 Further details are available within the script documentation page, in Italian or English.
 
 
-### Installation:
+### Installation
 
 This script has been created for an Arch-based system, you need to have `pacman` as package manager to use it properly.
 Some features should work on any modern Linux system, you can copy those part and create your own script (remember to check the license).
@@ -37,7 +38,6 @@ You can also launch it from the command line
 cleanupdate
 ```
 
-
 Otherwise, you can simply download the `cleanupdate` file from this repository and make it executable
 ```
 chmod +x cleanupdate
@@ -46,3 +46,7 @@ Then you can manually launch it with
 ```
 ./cleanupdate
 ```
+
+### Thanks
+
+ - Mariano Messora, corrections to English translation.
