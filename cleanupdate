@@ -494,7 +494,7 @@ function trouble_shoot {
 		echo "${_BOLD}[1] ->${_NORMAL} errore: impossibile eseguire"\
 			"l'operazione richiesta (file in conflitto)"
 		echo "${_BOLD}[2] ->${_NORMAL} errore: impossibile eseguire"\
-			"l'operazione richiesta (il pacchetto non è valido oppure è"
+			"l'operazione richiesta (il pacchetto non è valido oppure è"\
 			"corrotto (firma PGP))"
 		echo "${_BOLD}[3] ->${_NORMAL} errore: impossibile scaricare il"\
 			"pacchetto '...' da ..."
@@ -518,14 +518,14 @@ function trouble_shoot {
 				echo "-> se vengono segnalati solo pochi file è possibile"\
 					"rimuoverli manualmente tramite il comando 'sudo rm"\
 					"/percorso/completo/file';"
-				echo "-> se i file sono molto numerosi è possibile automatizzare"\
-					"il processo dando al gestore di pacchetti il permesso di"\
-					"sovrascrivere i file in conflitto, questa opziona va"\
-					"utilizzata il meno possibile perché può avere effetti"\
-					"collaterali anche gravi, per utilizzarla bisogna lanciare"\
-					"il seguente comando di installazione fornendo il nome del"\
-					"pacchetto che causa il problema 'sudo pacman -S --force"\
-					"nomepacchetto'."
+				echo "-> se i file sono molto numerosi è possibile"\
+					"automatizzare il processo dando al gestore di pacchetti"\
+					"il permesso di sovrascrivere i file in conflitto, questa"\
+					"opzione va utilizzata il meno possibile perché può avere"\
+					"effetti collaterali anche gravi, per utilizzarla bisogna"\
+					"lanciare il seguente comando di installazione fornendo il"\
+					"nome del pacchetto che causa il problema 'sudo pacman -S"\
+					"--force nomepacchetto'."
 				;;
 			2) 	echo ; echo
 				echo "Questo messaggio di errore segnala l'impossibilità di"\
@@ -547,8 +547,8 @@ function trouble_shoot {
 				echo "Se il sistema risulta connesso ad internet ma il"\
 					"problema persiste è probabile che il gestore di pacchetti"\
 					"si stia rivolgendo ad un server non funzionante oppure"\
-					"obsoleto, è quindi necessario generare una nuova lista dei"\
-					"mirror; sui sistemi Manjaro Linux è possibile farlo"\
+					"obsoleto, è quindi necessario generare una nuova lista"\
+					"dei mirror; sui sistemi Manjaro Linux è possibile farlo"\
 					"tramite 'pacman-mirrors'."
 				echo "Il comando consigliato per generare velocemente una"\
 					"nuova lista dei mirror è 'sudo pacman-mirrors -f10'."
@@ -569,8 +569,8 @@ function trouble_shoot {
 				echo "Non esiste l'opzione '$_SURE'."
 		esac
 	elif [[ $_LNG = eng ]]; then
-		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Which of this error the"\
-			"package manager prints:\n${_NORMAL}"
+		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Select the error"\
+			"message printed by the package manager:\n${_NORMAL}"
 		echo "${_BOLD}[1] ->${_NORMAL} error: failed to commit transaction"\
 			"(conflicting files)"
 		echo "${_BOLD}[2] ->${_NORMAL} error: failed to commit transaction"\
@@ -579,8 +579,8 @@ function trouble_shoot {
 			"from ..."
 		echo "${_BOLD}[4] ->${_NORMAL} error: failed to init transaction"\
 			"(unable to lock database)"
-		echo -e "\nIf the problem isn't listed here you could ask for help"\
-			"online on your distribution's forum."
+		echo -e "\nIf the problem is not listed here ask to your"\
+			"distribution's forum online for help."
 		echo "${_BOLD}[0] ->${_NORMAL} Return to main menu"
 		echo -en "\n${_BOLD}Number: ${_NORMAL}"
 		read -r -n1 _SURE
@@ -588,24 +588,24 @@ function trouble_shoot {
 			0) 	main
 				;;
 			1)	echo ; echo
-				echo "This error message appears if a file is already present"\
-					"in the filesystem when trying to install a new package, so"\
-					"pacman decides not to overwrite it and prompt out an error."
+				echo "This error message appears when the pckage manager needs"\
+					"to overwrite an existing file in order to install a"\
+					"certain package."\
 					"The file name is printed in the error message."
 				echo "There are two possible solutions:"
-				echo "-> if there are only few conflicting files it's possible"\
-					"to remove them with 'sudo rm /path/to/file';"
-				echo "-> if there are many files it's possible to give pacman"
-					"permission to overwrite the conflicting files, this option"\
-					"can be dangerous and should be used only when necessary,"\
-					"to use it you have to read from the error message the name"\
-					"of the guilty package and execute 'sudo pacman -S --force"\
-					"packagename'."
+				echo "-> if there are only a few conflicting files, they can"\
+					"be removed manually with 'sudo rm /path/to/file';"
+				echo "-> if there are many conflicting files it is possible to"\
+					"give pacman permission to overwrite them; however this"\
+					"option can be dangerous and should be used only when"\
+					"necessary; to use it read from the error message the name"\
+					"of the package in question and execute 'sudo pacman -S"\
+					"--force packagename'."
 				;;
 			2) 	echo ; echo
 				echo "This error message appears if pacman fails to verify the"\
 					"source of a package."
-				echo "You should solve the problem with these commands:"
+				echo "These commands should solve the problem:"
 				echo "  sudo rm -r /etc/pacman.d/gnupg"
 				echo "  sudo pacman -Sy gnupg archlinux-keyring manjaro-keyring"
 				echo "  sudo pacman-key --init"
@@ -615,25 +615,25 @@ function trouble_shoot {
 			3) 	echo ; echo
 				echo "This error message appears if pacman fails to download"\
 					"needed packages or database from online repository."
-				echo "First of all you should verify that your system is"\
-					"connected to a network properly."
-				echo "If the network conntection works, it's possible that"\
-					"pacman is trying to download files from a non working or"\
-					"obsolete server, therefore you should update your mirror"\
-					"list; in a Manjaro Linux system you can use"\
-					"'pacman-mirrors' to accomplish that."
-				echo "To generate a new mirrorlist in few seconds the suggested"\
-					"command is 'sudo pacman-mirrors -f10'."
+				echo "Verify first that your system is properly connected to a"\
+					"network."
+				echo "If the problem persists, it is possible that pacman is"\
+					"trying to download files from a non working or obsolete"\
+					"server, in this case the mirror list should be updated;"\
+					"in a Manjaro Linux system you can use 'pacman-mirrors' to"\
+					"accomplish that."
+				echo "To generate a new mirrorlist in few seconds the"\
+					"suggested command is 'sudo pacman-mirrors -f10'."
 				;;
 			4) 	echo ; echo
-				echo "This error message appears when pacman finds a lock file,"\
-					"this means a package management transaction should be in"\
-					"progress, sometimes this file remains also when there is"\
-					"no such transaction."
-				echo "You should verify there isn't any package management"\
-					"process (from pacman or from any graphical package"\
-					"management software), then you can remove the lock file"\
-					"launching 'sudo rm /var/lib/pacman/db.lck'."
+				echo "This error message appears when pacman finds a lock"\
+					"file, which indicates that a package management"\
+					"transaction is in progress; however sometimes such files"\
+					"remain also after the transaction is finished."
+				echo "After making sure that no package management process"\
+					"(from pacman or from any graphical package management"\
+					"software) is in progress, then the lock file can be"\
+					"removed launching 'sudo rm /var/lib/pacman/db.lck'."
 				;;
 			*)	echo ; echo
 				echo "There is no '$_SURE' option."
