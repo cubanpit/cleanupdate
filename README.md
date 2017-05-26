@@ -50,3 +50,4 @@ Then you can manually launch it with
 ### Thanks
 
  - Mariano Messora, corrections to English translation.
+ - PC ZERO from Manjaro Italia Forum, idea and base design for the icon.
