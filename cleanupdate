@@ -134,6 +134,15 @@ function sys_update {
 		else
 			$_SUDO /bin/pacman -Syu --color always
 		fi
+		if [[ "$?" = 0 &&\
+				$(sudo pacman -Syu 2>&1 | grep -q "is newer than"; echo "$?") ]]; then
+			[[ $_LNG = ita ]] && qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
+			[[ $_LNG = eng ]] && qst_msg "yes" "There are packages with newer version than those in repository, do you want to downgrade them"
+			read -r _SURE
+			if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+				$_SUDO /bin/pacman -Syuu --color always
+			fi
+		fi
 		[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento pacchetti ufficiali"
 		[[ $_LNG = eng ]] && end_msg "ok" "Official packages upgrade"
 	else
@@ -580,7 +589,7 @@ function trouble_shoot {
 		echo "${_BOLD}[4] ->${_NORMAL} error: failed to init transaction"\
 			"(unable to lock database)"
 		echo -e "\nIf the problem is not listed here ask to your"\
-			"distribution's forum online for help."
+			"distribution's online forum for help."
 		echo "${_BOLD}[0] ->${_NORMAL} Return to main menu"
 		echo -en "\n${_BOLD}Number: ${_NORMAL}"
 		read -r -n1 _SURE
