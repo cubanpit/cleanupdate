@@ -28,9 +28,7 @@ This script is available on AUR as `cleanupdate-git`, so you can install it manu
 ```yaourt -S cleanupdate-git```  
 or  
 ```pacaur -S cleanupdate-git```  
-Installing from AUR adds a `.desktop` file in your system, this way the script should be available as `cleanupdate` in your application menu.
-You can also launch it from the command line  
-```cleanupdate```
+Installing from AUR adds a `.desktop` file in your system, this way the script should be available as `cleanupdate` in your application menu, obviously you can also launch it from the command line.
 
 Otherwise, you can simply download the `cleanupdate` file from this repository and make it executable  
 ```chmod +x cleanupdate```  
