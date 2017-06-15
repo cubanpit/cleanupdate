@@ -206,7 +206,7 @@ function clean_pkg {
 			[[ $_LNG = eng ]] && end_msg "ok" "Orphaned packages"
 		else
 			[[ $_LNG = ita ]] && echo "Non è presente alcun pacchetto orfano."
-			[[ $_LNG = eng ]] && echo "There isn't any orphaned packages."
+			[[ $_LNG = eng ]] && echo "There isn't any orphaned package."
 			[[ $_LNG = ita ]] && end_msg "skip" "Pacchetti orfani"
 			[[ $_LNG = eng ]] && end_msg "skip" "Orphaned packages"
 		fi
@@ -370,7 +370,7 @@ function clean_file {
 		else
 			[[ $_LNG = ita ]] && echo "Non c'è necessità di eliminare alcun"\
 				"file, le cartelle sono sufficientemente pulite."
-			[[ $_LNG = eng ]] && echo "There is no need to delete any files,"\
+			[[ $_LNG = eng ]] && echo "There is no need to delete any file,"\
 				"these folders are pretty clean."
 			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cache e miniature"
 			[[ $_LNG = eng ]] && end_msg "skip" "Thumbs and cache cleaning"
