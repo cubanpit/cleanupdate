@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -p
 #
 # 'cleanupdate' by cubanpit at github.com
 #
@@ -127,15 +127,16 @@ function sys_update {
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		_DISTRO=$(/bin/grep -i manjaro /etc/lsb-release)
 		if [[ -n $_DISTRO &&\
-				"$(stat /etc/pacman.d/mirrorlist | grep 'Modify' | cut -d' ' -f2)"\
-				!= "$(date +%Y-%m-%d)" ]]; then
+				"$(/bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
+				/bin/cut -d' ' -f2)" != "$(/bin/date +%Y-%m-%d)" ]]; then
 			$_SUDO /bin/pacman-mirrors -f10
 			$_SUDO /bin/pacman -Syyu --color always
 		else
 			$_SUDO /bin/pacman -Syu --color always
 		fi
 		if [[ "$?" = 0 &&\
-				"$(sudo pacman -Syu 2>&1 | grep -q "is newer than"; echo "$?")" = 0 ]]; then
+				"$($_SUDO /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than";\
+				echo "$?")" = 0 ]]; then
 			[[ $_LNG = ita ]] && qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
 			[[ $_LNG = eng ]] && qst_msg "yes" "There are packages with newer version than those in repository, do you want to downgrade them"
 			read -r _SURE
@@ -248,12 +249,13 @@ function clean_pkg {
 		_ROTAT=false
 		if [[ -d "/var/lib/pacman" ]]; then # check database existence
 			# Find disk on which database is located
-			_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | /bin/cut -d' ' -f 1 | \
-					/bin/sed -E 's/(\/dev\/|[0-9])//g')
+			_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | \
+				/bin/cut -d' ' -f 1 | /bin/sed -E 's/(\/dev\/|[0-9])//g')
 			# Discover if database disk exist as device and is rotational
 			[[ -n $_DISK && -b "/dev/$_DISK" && \
 			-e "/sys/block/$_DISK/queue/rotational" && \
-			$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] && _ROTAT=true
+			$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] \
+			&& _ROTAT=true
 		fi
 		if [[ "$_ROTAT" = true ]]; then
 			$_SUDO /bin/pacman-optimize --nocolor
