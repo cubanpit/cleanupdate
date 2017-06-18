@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -p
 #
 # 'cleanupdate' by cubanpit at github.com
 #
@@ -127,15 +127,16 @@ function sys_update {
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		_DISTRO=$(/bin/grep -i manjaro /etc/lsb-release)
 		if [[ -n $_DISTRO &&\
-				"$(stat /etc/pacman.d/mirrorlist | grep 'Modify' | cut -d' ' -f2)"\
-				!= "$(date +%Y-%m-%d)" ]]; then
+				"$(/bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
+				/bin/cut -d' ' -f2)" != "$(/bin/date +%Y-%m-%d)" ]]; then
 			$_SUDO /bin/pacman-mirrors -f10
 			$_SUDO /bin/pacman -Syyu --color always
 		else
 			$_SUDO /bin/pacman -Syu --color always
 		fi
 		if [[ "$?" = 0 &&\
-				"$(sudo pacman -Syu 2>&1 | grep -q "is newer than"; echo "$?")" = 0 ]]; then
+				"$($_SUDO /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than";\
+				echo "$?")" = 0 ]]; then
 			[[ $_LNG = ita ]] && qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
 			[[ $_LNG = eng ]] && qst_msg "yes" "There are packages with newer version than those in repository, do you want to downgrade them"
 			read -r _SURE
@@ -206,7 +207,7 @@ function clean_pkg {
 			[[ $_LNG = eng ]] && end_msg "ok" "Orphaned packages"
 		else
 			[[ $_LNG = ita ]] && echo "Non è presente alcun pacchetto orfano."
-			[[ $_LNG = eng ]] && echo "There isn't any orphaned packages."
+			[[ $_LNG = eng ]] && echo "There isn't any orphaned package."
 			[[ $_LNG = ita ]] && end_msg "skip" "Pacchetti orfani"
 			[[ $_LNG = eng ]] && end_msg "skip" "Orphaned packages"
 		fi
@@ -248,12 +249,13 @@ function clean_pkg {
 		_ROTAT=false
 		if [[ -d "/var/lib/pacman" ]]; then # check database existence
 			# Find disk on which database is located
-			_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | /bin/cut -d' ' -f 1 | \
-					/bin/sed -E 's/(\/dev\/|[0-9])//g')
+			_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | \
+				/bin/cut -d' ' -f 1 | /bin/sed -E 's/(\/dev\/|[0-9])//g')
 			# Discover if database disk exist as device and is rotational
 			[[ -n $_DISK && -b "/dev/$_DISK" && \
 			-e "/sys/block/$_DISK/queue/rotational" && \
-			$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] && _ROTAT=true
+			$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] \
+			&& _ROTAT=true
 		fi
 		if [[ "$_ROTAT" = true ]]; then
 			$_SUDO /bin/pacman-optimize --nocolor
@@ -323,7 +325,7 @@ function clean_file {
 		[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to clean log files to save disk space"
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-			$_SUDO /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks | tail -n 1
+			$_SUDO /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks | /bin/tail -n 1
 			[[ $_LNG = ita ]] && end_msg "ok" "Pulizia file di log"
 			[[ $_LNG = eng ]] && end_msg "ok" "Log files cleaning"
 		else
@@ -370,7 +372,7 @@ function clean_file {
 		else
 			[[ $_LNG = ita ]] && echo "Non c'è necessità di eliminare alcun"\
 				"file, le cartelle sono sufficientemente pulite."
-			[[ $_LNG = eng ]] && echo "There is no need to delete any files,"\
+			[[ $_LNG = eng ]] && echo "There is no need to delete any file,"\
 				"these folders are pretty clean."
 			[[ $_LNG = ita ]] && end_msg "skip" "Pulizia cache e miniature"
 			[[ $_LNG = eng ]] && end_msg "skip" "Thumbs and cache cleaning"
