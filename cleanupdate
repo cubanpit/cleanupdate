@@ -43,7 +43,7 @@ if [[ "$(id -u)" = "0" ]]
 then
 	declare -r _SUDO=""
 else
-	declare -r _SUDO="sudo"
+	declare -r _SUDO="/bin/sudo"
 fi
 
 #
@@ -877,6 +877,11 @@ if [[ $# -gt 0 ]] ; then
 	[[ $_LNG = eng ]] && echo "Cleanupdate doesn't need any argument."
 	exit 1
 fi
+
+# Launch the long search for residual file and put everything in background,
+# this way the second execution will be faster on hard disk, because everything
+# is already in cache.
+/bin/find "$HOME" 2>/dev/null >/dev/null &
 
 main
 
