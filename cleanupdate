@@ -38,14 +38,6 @@ readonly _BOLD _NORMAL _RED _GREEN _YELLOW _AQUA
 _LNG="eng"
 [[ "$LANG" =~ "it_IT" ]] && _LNG="ita"
 
-# If user is not root, then you need 'sudo'
-if [[ "$(id -u)" = "0" ]]
-then
-	declare -r _SUDO=""
-else
-	declare -r _SUDO="/bin/sudo"
-fi
-
 #
 # Function to convert file size in a format easier to read, it receives file
 #  size in bytes.
@@ -110,6 +102,36 @@ function qst_msg {
 	else
 		[[ $_LNG = ita ]] && echo "ERRORE: risposta predefinita sconosciuta, vedere funzione qst_msg()."
 		[[ $_LNG = eng ]] && echo "ERROR: unknown default answer, see qst_msg() function."
+	fi
+}
+
+#
+# Function to check if the user is root.
+# This script should not be executed as root.
+#
+function check_root {
+	if [[ "$(id -u)" = "0" ]]
+	then
+		echo "This script should not be executed as root."
+		echo "Please retry running it as user."
+		exit 126
+	else
+		declare -r _SUDO="/bin/sudo"
+	fi
+}
+
+#
+# Function to check arguments passed to the script.
+# This script doesn't accept any argument.
+#
+function check_args {
+	if [[ $# -gt 0 ]] ; then
+		[[ $_LNG = ita ]] && echo "Errore! Sono stati forniti i seguenti argomenti:"
+		[[ $_LNG = eng ]] && echo "Error! Some arguments have been provided:"
+		echo -en "\t" ; for i in "$@" ; do echo -n "$i" ; echo -n " " ; done ; echo ; echo
+		[[ $_LNG = ita ]] && echo "Cleanupdate non ha bisogno di alcun argomento."
+		[[ $_LNG = eng ]] && echo "Cleanupdate doesn't need any argument."
+		exit 1
 	fi
 }
 
@@ -869,20 +891,14 @@ function main {
 	done
 }
 
-# Here begin the "main script"
+# Here begins the "main script"
 
-if [[ $# -gt 0 ]] ; then
-	[[ $_LNG = ita ]] && echo "Errore! Sono stati forniti i seguenti argomenti:"
-	[[ $_LNG = eng ]] && echo "Error! Some arguments have been provided:"
-	echo -en "\t" ; for i in "$@" ; do echo -n "$i" ; echo -n " " ; done ; echo ; echo
-	[[ $_LNG = ita ]] && echo "Cleanupdate non ha bisogno di alcun argomento."
-	[[ $_LNG = eng ]] && echo "Cleanupdate doesn't need any argument."
-	exit 1
-fi
+check_root
+check_args "$@"
 
 # Launch the long search for residual file and put everything in background,
-# this way the second execution will be faster on hard disk, because everything
-# is already in cache.
+#  this way the second execution will be faster on hard disk, because everything
+#  is already in cache.
 /bin/find "$HOME" 2>/dev/null >/dev/null &
 
 main
