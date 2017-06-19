@@ -115,8 +115,6 @@ function check_root {
 		echo "This script should not be executed as root."
 		echo "Please retry running it as user."
 		exit 126
-	else
-		declare -r _SUDO="/bin/sudo"
 	fi
 }
 
@@ -363,13 +361,13 @@ function clean_file {
 		# This part checks the existence of thumbnails and cache folders, then
 		#  calculate the total space they take.
 		_OLD=0
-		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -type f -atime +30 -print0 |\
+		[[ -d "$HOME/.thumbnails" ]] && (( _OLD+=$( /bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
 						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d ~/.thumbnails ]] && (( _OLD+=$( /bin/find ~/.thumbnails -empty -type d -atime +30 -print0 |\
+		[[ -d "$HOME/.thumbnails" ]] && (( _OLD+=$( /bin/find "$HOME/.thumbnails" -empty -type d -atime +30 -print0 |\
 						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -type f -atime +30 -print0 |\
+		[[ -d "$HOME/.cache" ]] && (( _OLD+=$( /bin/find "$HOME/.cache" -type f -atime +30 -print0 |\
 						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d ~/.cache ]] && (( _OLD+=$( /bin/find ~/.cache -empty -type d -atime +30 -print0 |\
+		[[ -d "$HOME/.cache" ]] && (( _OLD+=$( /bin/find "$HOME/.cache" -empty -type d -atime +30 -print0 |\
 						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
 		if [[ $_OLD -gt 0 ]]; then
 			_OLD=$(human_size "$_OLD")
@@ -377,13 +375,13 @@ function clean_file {
 			[[ $_LNG = eng ]] && qst_msg "yes" "The deletion of these files frees $_OLD of disk space, do you want to continue"
 			read -r _SURE
 			if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -type f \
+				[[ -d "$HOME/.thumbnails" ]] && /bin/find "$HOME/.thumbnails" -type f \
 					-atime +30 -print0 | xargs -0 /bin/rm -f
-				[[ -d ~/.cache ]] && /bin/find ~/.cache -name 'pacaur' -prune \
+				[[ -d "$HOME/.cache" ]] && /bin/find "$HOME/.cache" -name 'pacaur' -prune \
 					-o \( -type f -atime +30 -print0 \)  | xargs -0 /bin/rm -f
-				[[ -d ~/.thumbnails ]] && /bin/find ~/.thumbnails -empty \
+				[[ -d "$HOME/.thumbnails" ]] && /bin/find "$HOME/.thumbnails" -empty \
 					-type d -atime +30 -print0 | xargs -0 /bin/rm -rf
-				[[ -d ~/.cache ]] && /bin/find ~/.cache -name 'pacaur' -prune \
+				[[ -d "$HOME/.cache" ]] && /bin/find "$HOME/.cache" -name 'pacaur' -prune \
 					-o \( -empty -type d -atime +30 -print0 \) | xargs -0 /bin/rm -rf
 				[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cache e miniature"
 				[[ $_LNG = eng ]] && end_msg "ok" "Thumbs and cache cleaning"
@@ -464,11 +462,11 @@ function clean_file {
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want to check trash status"
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		if [[ -d ~/.local/share/Trash/files ]]; then
+		if [[ -d "$HOME/.local/share/Trash/files" ]]; then
 			unset i
 			while IFS= read -r -d '' file; do
 				_TRASH[i++]="$file"
-			done < <(/bin/find ~/.local/share/Trash/files -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
+			done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 			# This for loop counts total space taken by files and prints every
 			#  file name next to the file size.
 			_TRASP=0
@@ -492,7 +490,7 @@ function clean_file {
 				read -r _SURE
 				if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || \
 					( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
-					/bin/rm -rf ~/.local/share/Trash/*
+					/bin/rm -rf "$HOME/.local/share/Trash/*"
 					[[ $_LNG = ita ]] && end_msg "ok" "Pulizia cestino"
 					[[ $_LNG = eng ]] && end_msg "ok" "Trash cleaning"
 				else
@@ -716,13 +714,13 @@ Cleans log file if the total size is over 200MB or the age is over 1 week, using
 Log files contain informations about most important events that happens in an operating system while it is alive, they are useful to find out the cause of errors or malfunctions.
 
 ${_BOLD}Clean old cache and thumbnail files${_NORMAL}
-Searches in '~/.cache' and '~/.thumbnails' for files with last access more than 30 days ago and delete them, delete also empty folders inside those directories. Cache and thumbnail files are not necessary and are used by user applications to load faster images thumbnails or information.
+Searches in '$HOME/.cache' and '$HOME/.thumbnails' for files with last access more than 30 days ago and delete them, delete also empty folders inside those directories. Cache and thumbnail files are not necessary and are used by user applications to load faster images thumbnails or information.
 
 ${_BOLD}Search and clean residual files${_NORMAL}
 Searches for files with names matching 'Thumbs.db', 'Desktop.ini', '.*.swp' and '*~'. This files are temporary files from Windows (first and second one) and from Linux (last two) application, that store them to save some information during work; they're important when you're using some applications, but they should disappears few seconds later, sometimes they don't. You should save your document in every application in use before using this option.
 
-${_BOLD}Clean trash files (rm -rfv ~/.local/share/Trash/*)${_NORMAL}
-Simply cleans the user trash, files are located in '~/.local/share/Trash/files'; prints all file names so the user at first glance can check deleted files and their number.
+${_BOLD}Clean trash files (rm -rfv $HOME/.local/share/Trash/*)${_NORMAL}
+Simply cleans the user trash, files are located in '$HOME/.local/share/Trash/files'; prints all file names so the user at first glance can check deleted files and their number.
 
 Press 'q' to quit documentation
 EOF
@@ -767,13 +765,13 @@ Pulisce i file di log se la loro dimensione supera i 200MB o se sono più vecchi
 I file di log contengono un resoconto di tutti gli avvenimenti rilevanti che succedono durante il funzionamento del sistema operativo, sono molto utili per capire le cause di errori o malfunzionamenti.
 
 ${_BOLD}Pulizia cache e miniature non recenti${_NORMAL}
-Ricerca nelle cartelle '~/.cache' e '~/.thumbnails' file con l'ultimo accesso risalente a più di 30 giorni prima e li cancella, elimina anche le eventuali cartelle vuote che si trovano all'interno. I file presenti in cache sono utilizzati dalle applicazioni per velocizzare alcune operazioni comuni (es. caricamento copertine album in un riproduttore multimediale), invece i thumbnails sono le miniature delle immagini che vengono utilizzate (es. dal gestore file) per caricare più velocemente le anteprime delle immagini presenti nel sistema.
+Ricerca nelle cartelle '$HOME/.cache' e '$HOME/.thumbnails' file con l'ultimo accesso risalente a più di 30 giorni prima e li cancella, elimina anche le eventuali cartelle vuote che si trovano all'interno. I file presenti in cache sono utilizzati dalle applicazioni per velocizzare alcune operazioni comuni (es. caricamento copertine album in un riproduttore multimediale), invece i thumbnails sono le miniature delle immagini che vengono utilizzate (es. dal gestore file) per caricare più velocemente le anteprime delle immagini presenti nel sistema.
 
 ${_BOLD}Ricerca e rimozione file residui${_NORMAL}
 Effettua una ricerca sui file che si chiamano 'Thumbs.db', 'Desktop.ini', '.*.swp' e '*~'. I primi due sono file creati dai sistemi Windows ed inutili su di un sistema Linux, che possono comparire se si condividono alcune cartelle con il sistema operativo di casa Microsoft. Gli ultimi due tipi di file sono file temporanei creati da molte applicazioni come salvataggio temporaneo del lavoro in corso, utile nel caso in cui improvvisamente il sistema si spenga per esempio; può succedere che questi file rimangano nel sistema più a lungo del necessario, creando disordine ed occupando spazio. Si consiglia di salvare i propri documenti in tutte le applicazioni aperte prima di eseguire questa opzione.
 
-${_BOLD}Pulizia cestino (rm -rf ~/.local/share/Trash/*)${_NORMAL}
-Cancella tutti i file presenti nel cestino dell'utente, i cui file sono contenuti in '~/.local/share/Trash/files', stampando tutti il nome dei file di modo che l'utente possa verificare velocemente l'entità dell'operazione.
+${_BOLD}Pulizia cestino (rm -rf $HOME/.local/share/Trash/*)${_NORMAL}
+Cancella tutti i file presenti nel cestino dell'utente, i cui file sono contenuti in '$HOME/.local/share/Trash/files', stampando tutti il nome dei file di modo che l'utente possa verificare velocemente l'entità dell'operazione.
 
 Premere 'q' per uscire dalla documentazione
 EOF
@@ -895,6 +893,7 @@ function main {
 
 check_root
 check_args "$@"
+declare -r _SUDO="/bin/sudo"
 
 # Launch the long search for residual file and put everything in background,
 #  this way the second execution will be faster on hard disk, because everything
