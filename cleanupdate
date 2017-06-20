@@ -1,4 +1,4 @@
-#!/bin/bash -p
+#!/bin/bash
 #
 # 'cleanupdate' by cubanpit at github.com
 #
@@ -25,6 +25,10 @@
 #
 ################################################################################
 
+# -e: Exit immediately if a command exits with a non-zero status.
+# -u: Treat unset variables as an error when substituting.
+set -eu
+
 # Define some useful text style and color
 _BOLD=$(/bin/tput bold)
 _NORMAL=$(/bin/tput sgr0)
@@ -38,6 +42,15 @@ readonly _BOLD _NORMAL _RED _GREEN _YELLOW _AQUA
 _LNG="eng"
 [[ "$LANG" =~ "it_IT" ]] && _LNG="ita"
 
+# Check if $HOME is defined, otherwise many commands can't work
+if [[ -z $HOME ]]; then
+	[[ $_LNG = ita ]] && echo "ERRORE: la variabile d'ambiente $HOME è vuota,"\
+		"è impossibile ottenere il percordo per la home dell'utente." 1>&2
+	[[ $_LNG = eng ]] && echo "ERROR: $HOME variable not set properly,"\
+		"it is impossible to get the path of user's home." 1>&2
+	exit 1
+fi
+
 #
 # Function to convert file size in a format easier to read, it receives file
 #  size in bytes.
@@ -45,17 +58,20 @@ _LNG="eng"
 #
 function human_size {
 	_NUM=$1
-	if [[ _NUM -ge 1000000000 ]]; then
+	if [[ $_NUM -ge 1000000000 ]]; then
 		_NUM="$(( _NUM / 1000000000 )) GB"
-	elif [[ _NUM -ge 1000000 ]]; then
+	elif [[ $_NUM -ge 1000000 ]]; then
 		_NUM="$(( _NUM / 1000000 )) MB"
-	elif [[ _NUM -ge 1000 ]]; then
+	elif [[ $_NUM -ge 1000 ]]; then
 		_NUM="$(( _NUM / 1000 )) kB"
-	elif [[ _NUM -ge 0 ]]; then
+	elif [[ $_NUM -ge 0 ]]; then
 		_NUM="$_NUM B"
 	else
-		[[ $_LNG = ita ]] && echo "ERRORE: impossibile convertire numeri negativi."
-		[[ $_LNG = eng ]] && echo "ERROR: it's not possible to convert negative numbers."
+		[[ $_LNG = ita ]] && echo "ERRORE: impossibile convertire numeri"\
+			"negativi." 1>&2
+		[[ $_LNG = eng ]] && echo "ERROR: it's not possible to convert"\
+			"negative numbers." 1>&2
+		exit 1
 	fi
 	echo "$_NUM"
 }
@@ -69,20 +85,31 @@ function end_msg {
 	_MOD=$1
 	_MSG=$2
 	if [[ $_MOD = ok ]]; then
-		[[ $_LNG = ita ]] && echo "${_BOLD}[${_GREEN}ESEGUITO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
-		[[ $_LNG = eng ]] && echo "${_BOLD}[${_GREEN}DONE${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_GREEN}ESEGUITO${_NORMAL}"\
+			"${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_GREEN}DONE${_NORMAL}${_BOLD}]"\
+			"$_MSG ${_NORMAL}"
 	elif [[ $_MOD = no ]]; then
-		[[ $_LNG = ita ]] && echo "${_BOLD}[${_RED}ANNULLATO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
-		[[ $_LNG = eng ]] && echo "${_BOLD}[${_RED}CANCELED${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_RED}ANNULLATO${_NORMAL}${_BOLD}]"\
+			"$_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_RED}CANCELED${_NORMAL}${_BOLD}]"\
+			"$_MSG ${_NORMAL}"
 	elif [[ $_MOD = skip ]]; then
-		[[ $_LNG = ita ]] && echo "${_BOLD}[${_AQUA}SALTATO${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
-		[[ $_LNG = eng ]] && echo "${_BOLD}[${_AQUA}SKIPPED${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_AQUA}SALTATO${_NORMAL}${_BOLD}]"\
+			"$_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_AQUA}SKIPPED${_NORMAL}${_BOLD}]"\
+			"$_MSG ${_NORMAL}"
 	elif [[ $_MOD = warn ]]; then
-		[[ $_LNG = ita ]] && echo "${_BOLD}[${_YELLOW}ATTENZIONE${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
-		[[ $_LNG = eng ]] && echo "${_BOLD}[${_YELLOW}WARNING${_NORMAL}${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = ita ]] && echo "${_BOLD}[${_YELLOW}ATTENZIONE${_NORMAL}"\
+			"${_BOLD}] $_MSG ${_NORMAL}"
+		[[ $_LNG = eng ]] && echo "${_BOLD}[${_YELLOW}WARNING${_NORMAL}"\
+			"${_BOLD}] $_MSG ${_NORMAL}"
 	else
-		[[ $_LNG = ita ]] && echo "ERRORE: modalità sconosciuta, vedere funzione end_msg()."
-		[[ $_LNG = eng ]] && echo "ERROR: unknown option, see end_msg() function."
+		[[ $_LNG = ita ]] && echo "ERRORE: modalità sconosciuta, vedere"\
+			"funzione end_msg()." 1>&2
+		[[ $_LNG = eng ]] && echo "ERROR: unknown option, see end_msg()"\
+			"function." 1>&2
+		exit 1
 	fi
 }
 
@@ -94,14 +121,21 @@ function qst_msg {
 	_MOD=$1
 	_MSG=$2
 	if [[ $_MOD = yes ]]; then
-		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [S/n]?${_NORMAL} "
-		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [Y/n]?${_NORMAL} "
+		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
+			"$_MSG [S/n]?${_NORMAL} "
+		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
+			"$_MSG [Y/n]?${_NORMAL} "
 	elif [[ $_MOD = no ]]; then
-		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [s/N]?${_NORMAL} "
-		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} $_MSG [y/N]?${_NORMAL} "
+		[[ $_LNG = ita ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
+			"$_MSG [s/N]?${_NORMAL} "
+		[[ $_LNG = eng ]] && echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
+			"$_MSG [y/N]?${_NORMAL} "
 	else
-		[[ $_LNG = ita ]] && echo "ERRORE: risposta predefinita sconosciuta, vedere funzione qst_msg()."
-		[[ $_LNG = eng ]] && echo "ERROR: unknown default answer, see qst_msg() function."
+		[[ $_LNG = ita ]] && echo "ERRORE: risposta predefinita sconosciuta,"\
+			"vedere funzione qst_msg()." 1>&2
+		[[ $_LNG = eng ]] && echo "ERROR: unknown default answer, see"\
+			"qst_msg() function." 1>&2
+		exit 1
 	fi
 }
 
@@ -112,8 +146,8 @@ function qst_msg {
 function check_root {
 	if [[ "$(id -u)" = "0" ]]
 	then
-		echo "This script should not be executed as root."
-		echo "Please retry running it as user."
+		echo "This script should not be executed as root." 1>&2
+		echo "Please retry running it as user." 1>&2
 		exit 126
 	fi
 }
@@ -124,11 +158,15 @@ function check_root {
 #
 function check_args {
 	if [[ $# -gt 0 ]] ; then
-		[[ $_LNG = ita ]] && echo "Errore! Sono stati forniti i seguenti argomenti:"
-		[[ $_LNG = eng ]] && echo "Error! Some arguments have been provided:"
-		echo -en "\t" ; for i in "$@" ; do echo -n "$i" ; echo -n " " ; done ; echo ; echo
-		[[ $_LNG = ita ]] && echo "Cleanupdate non ha bisogno di alcun argomento."
-		[[ $_LNG = eng ]] && echo "Cleanupdate doesn't need any argument."
+		[[ $_LNG = ita ]] && echo "Errore! Sono stati forniti i seguenti"\
+			"argomenti:" 1>&2
+		[[ $_LNG = eng ]] && echo "Error! Some arguments have been provided:"\
+			1>&2
+		echo -en "\t" ; for i in "$@" ; do echo -n "$i" 1>&2 ; \
+			echo -n " " 1>&2 ; done ; echo ; echo
+		[[ $_LNG = ita ]] && echo "Cleanupdate non ha bisogno di alcuni"\
+			"argomento." 1>&2
+		[[ $_LNG = eng ]] && echo "Cleanupdate doesn't need any argument." 1>&2
 		exit 1
 	fi
 }
@@ -177,20 +215,20 @@ function sys_update {
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		# Look for orphan packages, they could be pkgs removed from repositories
 		#  and moved to AUR, better not to upgrade them silently.
-		_ORP=$(/bin/pacman -Qdtq)
+		set +e
+		_ORP=$( /bin/pacman -Qdtq )
+		set -e
 		if [[ -n $_ORP ]]; then
 			[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
 			[[ $_LNG = eng ]] && end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
 			$_SUDO /bin/pacman --color always -Rs $_ORP
 		fi
 		# Check if pacaur or yaourt are installed
-		_PAC=$( /bin/pacman -Q pacaur 2> /dev/null )
-		_YAU=$( /bin/pacman -Q yaourt 2> /dev/null )
-		if [[ -n $_PAC ]]; then
+		if [[ -x /bin/pacaur ]]; then
 			/bin/pacaur -Syua --color always
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
-		elif [[ -n $_YAU ]]; then
+		elif [[ -x /bin/yaourt ]]; then
 			/bin/yaourt -Sua --color
 			[[ $_LNG = ita ]] && end_msg "ok" "Aggiornamento AUR"
 			[[ $_LNG = eng ]] && end_msg "ok" "AUR upgrade"
@@ -220,7 +258,9 @@ function clean_pkg {
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want search for orphaned packages"
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		_ORP=$(/bin/pacman -Qdtq)
+		set +e
+		_ORP=$( /bin/pacman -Qdtq )
+		set -e
 		if [[ -n $_ORP ]]; then
 			$_SUDO /bin/pacman --color always -Rs $_ORP
 			[[ $_LNG = ita ]] && end_msg "ok" "Pacchetti orfani"
@@ -297,16 +337,21 @@ function clean_pkg {
 	#  useless (there is 'foo.conf.pacnew' and not 'foo.conf'), finally warn the
 	#  user about it.
 	unset i
+	declare -a _PACNEW=""
 	while IFS= read -r -d '' file; do
 		_PACNEW[i++]="$file"
 	done < <(/bin/find /etc -name "*.pacnew" -print0 2>/dev/null)
 	unset j
-	for i in "${_PACNEW[@]}"; do
-		_PACCONF=${i//\.pacnew/}
-		[[ -f "$_PACCONF" ]] || _ORPHPACNEW[j++]="$_PACCONF.pacnew"
-	done
+	declare -a _ORPHPACNEW=""
+	if [[ -n $_PACNEW ]]; then
+		for i in "${_PACNEW[@]}"; do
+			_PACCONF=${i//\.pacnew/}
+			[[ -f "$_PACCONF" ]] || _ORPHPACNEW[j++]="$_PACCONF.pacnew"
+		done
+	fi
+
 	[[ ${#_PACNEW[@]} -eq ${#_ORPHPACNEW[@]} || ${#_PACNEW[@]} -eq 0 ]] && _PACNCTRL=false || _PACNCTRL=true
-	if [[ ${#_ORPHPACNEW[@]} -gt 0 ]]; then
+	if [[ -n $_ORPHPACNEW ]]; then
 		echo
 		for i in "${_ORPHPACNEW[@]}"; do
 			echo "$i"
@@ -361,14 +406,14 @@ function clean_file {
 		# This part checks the existence of thumbnails and cache folders, then
 		#  calculate the total space they take.
 		_OLD=0
-		[[ -d "$HOME/.thumbnails" ]] && (( _OLD+=$( /bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
-						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d "$HOME/.thumbnails" ]] && (( _OLD+=$( /bin/find "$HOME/.thumbnails" -empty -type d -atime +30 -print0 |\
-						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d "$HOME/.cache" ]] && (( _OLD+=$( /bin/find "$HOME/.cache" -type f -atime +30 -print0 |\
-						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
-		[[ -d "$HOME/.cache" ]] && (( _OLD+=$( /bin/find "$HOME/.cache" -empty -type d -atime +30 -print0 |\
-						/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 ) ))
+		[[ -d "$HOME/.thumbnails" ]] && _OLD=$(echo "$_OLD+$( /bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
+			/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+		[[ -d "$HOME/.thumbnails" ]] && _OLD=$(echo "$_OLD+$( /bin/find "$HOME/.thumbnails" -empty -type d -atime +30 -print0 |\
+			/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+		[[ -d "$HOME/.cache" ]] && _OLD=$(echo "$_OLD+$( /bin/find "$HOME/.cache" -type f -atime +30 -print0 |\
+			/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+		[[ -d "$HOME/.cache" ]] && _OLD=$(echo "$_OLD+$( /bin/find "$HOME/.cache" -empty -type d -atime +30 -print0 |\
+			/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
 		if [[ $_OLD -gt 0 ]]; then
 			_OLD=$(human_size "$_OLD")
 			[[ $_LNG = ita ]] && qst_msg "yes" "L'eliminazione di questi file libererà $_OLD di spazio su disco, vuoi procedere"
@@ -409,6 +454,7 @@ function clean_file {
 		# Null separated output will be used just to have less problem with
 		#  strange characters.
 		unset i
+		declare -a _RES=""
 		while IFS= read -r -d '' file; do
 			_RES[i++]="$file"
 		done < <(/bin/find "$HOME" -name "*~" -user "$USER" -print0 2>/dev/null)
@@ -421,7 +467,7 @@ function clean_file {
 		while IFS= read -r -d '' file; do
 			_RES[i++]="$file"
 		done < <(/bin/find "$HOME" -name "Thumbs.db" -user "$USER" -print0 2>/dev/null)
-		if [[ ${#_RES[@]} -gt 0 ]]; then
+		if [[ -n $_RES ]]; then
 			# Print every residual file
 			for i in "${_RES[@]}"; do
 				echo "$i"
@@ -429,7 +475,7 @@ function clean_file {
 			# Calculate space taken by residual files
 			_RESP=0
 			for i in "${_RES[@]}"; do
-				(( _RESP+=$( /bin/du -b "$i" | /bin/cut -f 1 ) ))
+				_RESP=$( echo "$_RESP+$( /bin/du -b "$i" | /bin/cut -f 1 )" | bc )
 			done
 			_RESP=$(human_size "$_RESP")
 			[[ $_LNG = ita ]] && qst_msg "no" "Ci sono ${#_RES[@]} file residui che occupano $_RESP di spazio su disco, desideri rimuoverli"
@@ -464,26 +510,27 @@ function clean_file {
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		if [[ -d "$HOME/.local/share/Trash/files" ]]; then
 			unset i
+			declare -a _TRASH=""
 			while IFS= read -r -d '' file; do
 				_TRASH[i++]="$file"
 			done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 			# This for loop counts total space taken by files and prints every
 			#  file name next to the file size.
 			_TRASP=0
-			for i in "${_TRASH[@]}"; do
-				_FILENAME=$(basename "$i")
-				_FILESIZE=$(/bin/du -bs "$i" | /bin/cut -f 1)
-				(( _TRASP+=_FILESIZE ))
-				_FILESIZE=$(human_size "$_FILESIZE")
-				echo -ne "   $_FILESIZE   \t"
-				if [[ -d "$i" ]]; then
-					_FILENAME+="/"
-					echo "${_BOLD}$_FILENAME${_NORMAL}"
-				else
-					echo "$_FILENAME"
-				fi
-			done
-			if [[ ${#_TRASH[@]} -gt 0 ]]; then
+			if [[ -n $_TRASH ]]; then
+				for i in "${_TRASH[@]}"; do
+					_FILENAME=$( basename "$i" )
+					_FILESIZE=$( /bin/du -bs "$i" | /bin/cut -f 1 )
+					_TRASP=$( echo "$_TRASP+$_FILESIZE" | bc )
+					_FILESIZE=$( human_size "$_FILESIZE" )
+					echo -ne "   $_FILESIZE   \t"
+					if [[ -d "$i" ]]; then
+						_FILENAME+="/"
+						echo "${_BOLD}$_FILENAME${_NORMAL}"
+					else
+						echo "$_FILENAME"
+					fi
+				done
 				_TRASP=$(human_size "$_TRASP")
 				[[ $_LNG = ita ]] && qst_msg "no" "Sono presenti ${#_TRASH[@]} elementi che occupano $_TRASP di spazio sul disco, desideri eliminarli definitivamente"
 				[[ $_LNG = eng ]] && qst_msg "no" "There are ${#_TRASH[@]} items that take $_TRASP of disk space, do you want do definetely delete them"
@@ -898,7 +945,7 @@ declare -r _SUDO="/bin/sudo"
 # Launch the long search for residual file and put everything in background,
 #  this way the second execution will be faster on hard disk, because everything
 #  is already in cache.
-/bin/find "$HOME" 2>/dev/null >/dev/null &
+/bin/find "$HOME" 2>&1 >/dev/null &
 
 main
 
