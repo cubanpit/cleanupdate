@@ -27,7 +27,7 @@
 
 # -e: Exit immediately if a command exits with a non-zero status.
 # -u: Treat unset variables as an error when substituting.
-set -eu
+#set -eu
 
 # Define some useful text style and color
 _BOLD=$(/bin/tput bold)
@@ -215,9 +215,9 @@ function sys_update {
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		# Look for orphan packages, they could be pkgs removed from repositories
 		#  and moved to AUR, better not to upgrade them silently.
-		set +e
+		#set +e
 		_ORP=$( /bin/pacman -Qdtq )
-		set -e
+		#set -e
 		if [[ -n $_ORP ]]; then
 			[[ $_LNG = ita ]] && end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
 			[[ $_LNG = eng ]] && end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
@@ -258,9 +258,9 @@ function clean_pkg {
 	[[ $_LNG = eng ]] && qst_msg "yes" "Do you want search for orphaned packages"
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		set +e
+		#set +e
 		_ORP=$( /bin/pacman -Qdtq )
-		set -e
+		#set -e
 		if [[ -n $_ORP ]]; then
 			$_SUDO /bin/pacman --color always -Rs $_ORP
 			[[ $_LNG = ita ]] && end_msg "ok" "Pacchetti orfani"
