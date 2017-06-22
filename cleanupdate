@@ -54,6 +54,16 @@ if [[ -z $HOME ]]; then
 	exit 1
 fi
 
+# Function to clear the terminal, scrollback included
+function clear_term {
+	if [[ $DESKTOP_SESSION =~ "plasma" ]]; then
+		# KDE guys don't clear the scrollback after a simple 'reset'
+		clear && echo -en "\e[3J"
+	else
+		tput reset
+	fi
+}
+
 #
 # Function to convert file size in a format easier to read, it receives file
 #  size in bytes.
@@ -779,6 +789,9 @@ function clean_file {
 # Function containing pacman troubleshooting
 #
 function trouble_shoot {
+_AGAIN=true
+while [[ $_AGAIN = true ]]; do
+	clear
 	if [[ $_LNG = ita ]]; then
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Indicare quale di questi"\
 			"messaggi restituisce il gestore di pacchetti:\n${_NORMAL}"
@@ -793,11 +806,11 @@ function trouble_shoot {
 			"database: File già esistente"
 		echo -e "\nSe il problema non è qui elencato si consiglia di chiedere"\
 			"aiuto sul forum online della propria distribuzione."
-		echo "${_BOLD}[0] ->${_NORMAL} Torna al menù principale"
-		echo -en "\n${_BOLD}Numero: ${_NORMAL}"
+		echo "${_BOLD}[q|0] ->${_NORMAL} Torna al menù principale"
+		echo -en "\n${_BOLD}Opzione: ${_NORMAL}"
 		read -r -n1 _SURE
 		case $_SURE in
-			0) 	main
+			q|0) 	_AGAIN=false
 				;;
 			1)	echo ; echo
 				echo "Questo messaggio di errore compare quando il gestore"\
@@ -817,6 +830,9 @@ function trouble_shoot {
 					"lanciare il seguente comando di installazione fornendo il"\
 					"nome del pacchetto che causa il problema 'sudo pacman -S"\
 					"--force nomepacchetto'."
+				echo
+				echo -n "Premi un tasto qualsiasi per continuare. "
+				read -rs -n1
 				;;
 			2) 	echo ; echo
 				echo "Questo messaggio di errore segnala l'impossibilità di"\
@@ -828,6 +844,9 @@ function trouble_shoot {
 				echo "  sudo pacman-key --init"
 				echo "  sudo pacman-key --populate arch manjaro"
 				echo "  sudo pacman-key --refresh-keys"
+				echo
+				echo -n "Premi un tasto qualsiasi per continuare. "
+				read -rs -n1
 				;;
 			3) 	echo ; echo
 				echo "Questo messaggio di errore compare quando il gestore"\
@@ -843,6 +862,9 @@ function trouble_shoot {
 					"tramite 'pacman-mirrors'."
 				echo "Il comando consigliato per generare velocemente una"\
 					"nuova lista dei mirror è 'sudo pacman-mirrors -f10'."
+				echo
+				echo -n "Premi un tasto qualsiasi per continuare. "
+				read -rs -n1
 				;;
 			4) 	echo ; echo
 				echo "Questo messaggio di errore segnala la presenza di un"\
@@ -855,9 +877,14 @@ function trouble_shoot {
 					"pacman sia da parte dei gestori software da interfaccia"\
 					"grafica) è possibile eliminare il file di lock lanciando"\
 					"il comando 'sudo rm /var/lib/pacman/db.lck'."
+				echo
+				echo -n "Premi un tasto qualsiasi per continuare. "
+				read -rs -n1
 				;;
 			*)	echo ; echo
-				echo "Non esiste l'opzione '$_SURE'."
+				echo -n "Non esiste l'opzione '$_SURE'. Premi un tasto"\
+					"qualsiasi per continuare. "
+				read -rs -n1
 		esac
 	elif [[ $_LNG = eng ]]; then
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Select the error"\
@@ -872,11 +899,11 @@ function trouble_shoot {
 			"(unable to lock database)"
 		echo -e "\nIf the problem is not listed here ask to your"\
 			"distribution's online forum for help."
-		echo "${_BOLD}[0] ->${_NORMAL} Return to main menu"
-		echo -en "\n${_BOLD}Number: ${_NORMAL}"
+		echo "${_BOLD}[q|0] ->${_NORMAL} Return to main menu"
+		echo -en "\n${_BOLD}Option: ${_NORMAL}"
 		read -r -n1 _SURE
 		case $_SURE in
-			0) 	main
+			q|0) 	_AGAIN=false
 				;;
 			1)	echo ; echo
 				echo "This error message appears when the pckage manager needs"\
@@ -892,6 +919,9 @@ function trouble_shoot {
 					"necessary; to use it read from the error message the name"\
 					"of the package in question and execute 'sudo pacman -S"\
 					"--force packagename'."
+				echo
+				echo -n "Press any key to continue. "
+				read -rs -n1
 				;;
 			2) 	echo ; echo
 				echo "This error message appears if pacman fails to verify the"\
@@ -902,6 +932,9 @@ function trouble_shoot {
 				echo "  sudo pacman-key --init"
 				echo "  sudo pacman-key --populate arch manjaro"
 				echo "  sudo pacman-key --refresh-keys"
+				echo
+				echo -n "Press any key to continue. "
+				read -rs -n1
 				;;
 			3) 	echo ; echo
 				echo "This error message appears if pacman fails to download"\
@@ -915,6 +948,9 @@ function trouble_shoot {
 					"accomplish that."
 				echo "To generate a new mirrorlist in few seconds the"\
 					"suggested command is 'sudo pacman-mirrors -f10'."
+				echo
+				echo -n "Press any key to continue. "
+				read -rs -n1
 				;;
 			4) 	echo ; echo
 				echo "This error message appears when pacman finds a lock"\
@@ -925,11 +961,17 @@ function trouble_shoot {
 					"(from pacman or from any graphical package management"\
 					"software) is in progress, then the lock file can be"\
 					"removed launching 'sudo rm /var/lib/pacman/db.lck'."
+				echo
+				echo -n "Press any key to continue. "
+				read -rs -n1
 				;;
 			*)	echo ; echo
-				echo "There is no '$_SURE' option."
+				echo -n "There is no '$_SURE' option. Press any key to"\
+					"continue. "
+				read -rs -n1
 		esac
 	fi
+done
 }
 
 #
@@ -1133,13 +1175,6 @@ function main {
 			7)
 				clear
 				trouble_shoot
-				echo
-				if [[ $_LNG = ita ]]; then
-					echo "Finito! Premi un tasto qualsiasi per continuare. "
-				else
-					echo "Finished! Press any key to continue. "
-				fi
-				read -rs -n1
 				;;
 			8)
 				clear
@@ -1157,7 +1192,8 @@ function main {
 				fi
 				;;
 			q|0)
-				clear && exit 0
+				clear_term
+				exit 0
 				;;
 			*)
 				echo
