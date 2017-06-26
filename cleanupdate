@@ -235,9 +235,7 @@ function sys_update {
 	else
 		$_SUDO /bin/pacman -Syu --color always
 	fi
-	if [[ "$?" = 0 &&\
-		"$($_SUDO /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than";\
-		echo "$?")" = 0 ]]; then
+	if $_SUDO /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than"; then
 	if [[ $_LNG = ita ]]; then
 		qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
 	else
@@ -438,10 +436,10 @@ function clean_pkg {
 			fi
 		else
 			if [[ $_LNG = ita ]]; then
-				echo "Il database di pacman non risiede su un "\
+				echo "Il database di pacman non risiede su un"\
 					"disco rotazionale, non è necessario eseguire la deframmentazione."
 			else
-				echo "The pacman database lives on a non "\
+				echo "The pacman database lives on a non"\
 					"rotational disk, defragmentation is not needed."
 			fi
 			if [[ $_LNG = ita ]]; then
@@ -662,7 +660,7 @@ function clean_file {
 				qst_msg "no" "There are ${#_RES[@]} residual files that take $_RESP of disk space, do you want to remove them"
 			fi
 			read -r _SURE
-			if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y )) || ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
+			if [[ ( $_LNG != ita && ( $_SURE = y || $_SURE = Y )) || ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
 				# Remove every residual file
 				for i in "${_RES[@]}"; do
 					/bin/rm -f "$i"
@@ -737,7 +735,7 @@ function clean_file {
 					qst_msg "no" "There are ${#_TRASH[@]} items that take $_TRASP of disk space, do you want do definetely delete them"
 				fi
 				read -r _SURE
-				if [[ ( $_LNG = eng && ( $_SURE = y || $_SURE = Y ) ) || ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
+				if [[ ( $_LNG != ita && ( $_SURE = y || $_SURE = Y ) ) || ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
 					/bin/rm -rf "$HOME/.local/share/Trash/files"
 					/bin/rm -rf "$HOME/.local/share/Trash/info"
 					if [[ $_LNG = ita ]]; then
@@ -789,7 +787,7 @@ function clean_file {
 # Function containing pacman troubleshooting
 #
 function trouble_shoot {
-_AGAIN=true
+	_AGAIN=true
 while [[ $_AGAIN = true ]]; do
 	clear
 	if [[ $_LNG = ita ]]; then
@@ -886,7 +884,7 @@ while [[ $_AGAIN = true ]]; do
 					"qualsiasi per continuare. "
 				read -rs -n1
 		esac
-	elif [[ $_LNG = eng ]]; then
+	else
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Select the error"\
 			"message printed by the package manager:\n${_NORMAL}"
 		echo "${_BOLD}[1] ->${_NORMAL} error: failed to commit transaction"\
@@ -1133,9 +1131,9 @@ function main {
 				clean_file
 				echo
 				if [[ $_LNG = ita ]]; then
-					echo "Finito! Premi un tasto qualsiasi per continuare. "
+					echo -n "Finito! Premi un tasto qualsiasi per continuare. "
 				else
-					echo "Finished! Press any key to continue. "
+					echo -n "Finished! Press any key to continue. "
 				fi
 				read -rs -n1
 				;;
@@ -1144,9 +1142,9 @@ function main {
 				sys_update
 				echo
 				if [[ $_LNG = ita ]]; then
-					echo "Finito! Premi un tasto qualsiasi per continuare. "
+					echo -n "Finito! Premi un tasto qualsiasi per continuare. "
 				else
-					echo "Finished! Press any key to continue. "
+					echo -n "Finished! Press any key to continue. "
 				fi
 				read -rs -n1
 				;;
@@ -1155,9 +1153,9 @@ function main {
 				clean_pkg
 				echo
 				if [[ $_LNG = ita ]]; then
-					echo "Finito! Premi un tasto qualsiasi per continuare. "
+					echo -n "Finito! Premi un tasto qualsiasi per continuare. "
 				else
-					echo "Finished! Press any key to continue. "
+					echo -n "Finished! Press any key to continue. "
 				fi
 				read -rs -n1
 				;;
@@ -1166,9 +1164,9 @@ function main {
 				clean_file
 				echo
 				if [[ $_LNG = ita ]]; then
-					echo "Finito! Premi un tasto qualsiasi per continuare. "
+					echo -n "Finito! Premi un tasto qualsiasi per continuare. "
 				else
-					echo "Finished! Press any key to continue. "
+					echo -n "Finished! Press any key to continue. "
 				fi
 				read -rs -n1
 				;;
@@ -1185,10 +1183,10 @@ function main {
 				fi
 				;;
 			9)
-				if [[ $_LNG = eng ]]; then
-					_LNG="ita"
-				else
+				if [[ $_LNG = ita ]]; then
 					_LNG="eng"
+				else
+					_LNG="ita"
 				fi
 				;;
 			q|0)
