@@ -54,16 +54,6 @@ if [[ -z $HOME ]]; then
 	exit 1
 fi
 
-# Function to clear the terminal, scrollback included
-function clear_term {
-	if [[ $DESKTOP_SESSION =~ "plasma" ]]; then
-		# KDE guys don't clear the scrollback after a simple 'reset'
-		clear && echo -en "\e[3J"
-	else
-		tput reset
-	fi
-}
-
 #
 # Function to convert file size in a format easier to read, it receives file
 #  size in bytes.
@@ -266,18 +256,22 @@ else
 fi
 read -r _SURE
 if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-	# Look for orphan packages, they could be pkgs removed from repositories
-	#  and moved to AUR, better not to upgrade them silently.
-	set +e
-	_ORP=$( /bin/pacman -Qdtq )
-	set -e
-	if [[ -n $_ORP ]]; then
-		if [[ $_LNG = ita ]]; then
-			end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
-		else
-			end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
+	if [[ $_ORPHCHECK = false ]]; then
+		# Look for orphan packages, they could be pkgs removed from repositories
+		#  and moved to AUR, better not to upgrade them silently.
+		_ORP=""
+		if /bin/pacman -Qdtq ; then
+			_ORP=$( /bin/pacman -Qdtq )
 		fi
-		$_SUDO /bin/pacman --color always -Rs $_ORP
+		if [[ -n $_ORP ]]; then
+			if [[ $_LNG = ita ]]; then
+				end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
+			else
+				end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
+			fi
+			$_SUDO /bin/pacman --color always -Rs $_ORP
+		fi
+		_ORPHCHECK=true
 	fi
 	# Check if pacaur or yaourt are installed
 	if [[ -x /bin/pacaur ]]; then
@@ -327,41 +321,45 @@ function clean_pkg {
 	else
 		echo " ${_BOLD}::Packages cleaning::${_NORMAL} "
 	fi
+	if [[ $_ORPHCHECK = false ]]; then
 	echo
-	if [[ $_LNG = ita ]]; then
-		qst_msg "yes" "Desideri cercare pacchetti orfani?"
-	else
-		qst_msg "yes" "Do you want search for orphaned packages"
-	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		set +e
-		_ORP=$( /bin/pacman -Qdtq )
-		set -e
-		if [[ -n $_ORP ]]; then
-			$_SUDO /bin/pacman --color always -Rs $_ORP
-			if [[ $_LNG = ita ]]; then
-				end_msg "ok" "Pacchetti orfani"
-			else
-				end_msg "ok" "Orphaned packages"
-			fi
-		else
-			if [[ $_LNG = ita ]]; then
-				echo "Non è presente alcun pacchetto orfano."
-			else
-				echo "There isn't any orphaned package."
-			fi
-			if [[ $_LNG = ita ]]; then
-				end_msg "skip" "Pacchetti orfani"
-			else
-				end_msg "skip" "Orphaned packages"
-			fi
-		fi
-	else
 		if [[ $_LNG = ita ]]; then
-			end_msg "no" "Pacchetti orfani"
+			qst_msg "yes" "Desideri cercare pacchetti orfani?"
 		else
-			end_msg "no" "Orphaned packages"
+			qst_msg "yes" "Do you want search for orphaned packages"
+		fi
+		read -r _SURE
+		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+			_ORP=""
+			if /bin/pacman -Qdtq ; then
+				_ORP=$( /bin/pacman -Qdtq )
+			fi
+			if [[ -n $_ORP ]]; then
+				$_SUDO /bin/pacman --color always -Rs $_ORP
+				if [[ $_LNG = ita ]]; then
+					end_msg "ok" "Pacchetti orfani"
+				else
+					end_msg "ok" "Orphaned packages"
+				fi
+			else
+				if [[ $_LNG = ita ]]; then
+					echo "Non è presente alcun pacchetto orfano."
+				else
+					echo "There isn't any orphaned package."
+				fi
+				if [[ $_LNG = ita ]]; then
+					end_msg "skip" "Pacchetti orfani"
+				else
+					end_msg "skip" "Orphaned packages"
+				fi
+			fi
+			_ORPHCHECK=true
+		else
+			if [[ $_LNG = ita ]]; then
+				end_msg "no" "Pacchetti orfani"
+			else
+				end_msg "no" "Orphaned packages"
+			fi
 		fi
 	fi
 	echo
@@ -469,7 +467,9 @@ function clean_pkg {
 		declare -i j=0
 		for i in "${_PACNEW[@]}"; do
 			_PACCONF=${i//\.pacnew/}
-			[[ -f "$_PACCONF" ]] && _ORPHPACNEW[j++]="$_PACCONF.pacnew"
+			if [[ ! -f "$_PACCONF" ]]; then
+				_ORPHPACNEW[j++]="$_PACCONF.pacnew"
+			fi
 		done
 	fi
 
@@ -632,16 +632,32 @@ function clean_file {
 		declare -a _RES=""
 		while IFS= read -r -d '' file; do
 			_RES[i++]="$file"
-		done < <(/bin/find "$HOME" -name "*~" -user "$USER" -print0 2>/dev/null)
+		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
+			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
+			-o -path "*/.git" -prune -o -name "*~" -user "$USER" -print0\
+			2>/dev/null)
 		while IFS= read -r -d '' file; do
 			_RES[i++]="$file"
-		done < <(/bin/find "$HOME" -name ".*.swp" -user "$USER" -print0 2>/dev/null)
+		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
+			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
+			-o -path "*/.git" -prune -o -name ".*.swp" -user "$USER" -print0\
+			2>/dev/null)
 		while IFS= read -r -d '' file; do
 			_RES[i++]="$file"
-		done < <(/bin/find "$HOME" -name "Desktop.ini" -user "$USER" -print0 2>/dev/null)
+		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
+			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
+			-o -path "*/.git" -prune -o -name "Desktop.ini" -user "$USER"\
+			-print0 2>/dev/null)
 		while IFS= read -r -d '' file; do
 			_RES[i++]="$file"
-		done < <(/bin/find "$HOME" -name "Thumbs.db" -user "$USER" -print0 2>/dev/null)
+		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
+			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
+			-o -path "*/.git" -prune -o -name "Thumbs.db" -user "$USER" -print0\
+			2>/dev/null)
 		if [[ -n ${_RES[0]} ]]; then
 			# Print every residual file
 			unset i
@@ -1083,6 +1099,12 @@ function main {
 	while true; do
 		clear
 		unset _SURE
+
+		# This variable is used to perform only one time 'per cycle' the check
+		#  for orphan packages, otherwise the check will occur before AUR update
+		#  and inside 'Clean packages' function.
+		_ORPHCHECK=false
+
 		echo
 		echo "      _                                  _       _        "
 		echo "  ___| | ___  __ _ _ __  _   _ _ __   __| | __ _| |_ ___  "
@@ -1190,7 +1212,8 @@ function main {
 				fi
 				;;
 			q|0)
-				clear_term
+				# Clear terminal, scrollback included
+				clear && echo -en "\e[3J"
 				exit 0
 				;;
 			*)
@@ -1220,7 +1243,10 @@ declare -r _SUDO="/bin/sudo"
 # Launch the long search for residual file and put everything in background,
 #  this way the second execution will be faster on hard disk, because everything
 #  is already in cache.
-/bin/find "$HOME" >/dev/null 2>&1 &
+/bin/find "$HOME" -name "*Steam*" -prune -o -path "$HOME/.cache" -prune -o\
+	-path "$HOME/.thumbnails" -prune -o -path "$HOME/.mozilla" -prune -o\
+	-path "$HOME/.thunderbird" -prune -o -path "*/.git" -prune -o\
+	-print >/dev/null 2>&1 &
 
 main
 
