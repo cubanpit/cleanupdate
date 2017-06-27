@@ -1,5 +1,5 @@
 [Desktop Entry]
-Version=0.6
+Version=0.7
 Name=cleanupdate
 Type=Application
 Comment=Clean and Update System
@@ -10,4 +10,5 @@ Icon=cleanupdate
 Categories=ConsoleOnly;System;
 GenericName=System Maintenance Helper
 GenericName[it]=Manutenzione del Sistema
-Keywords=system;clean;
+Keywords=system;update;clean;
+Keywords[it]=sistema;aggiornamenti;pulizia;
