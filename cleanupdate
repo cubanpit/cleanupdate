@@ -40,7 +40,9 @@ readonly _BOLD _NORMAL _RED _GREEN _YELLOW _AQUA
 
 # Default language is English, but Italian it's available
 _LNG="eng"
-[[ "$LANG" =~ "it_IT" ]] && _LNG="ita"
+if [[ "$LANG" =~ "it_IT" ]]; then
+	_LNG="ita"
+fi
 
 # Check if $HOME is defined, otherwise many commands can't work
 if [[ -z $HOME ]]; then
@@ -216,16 +218,17 @@ function sys_update {
 	fi
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		_DISTRO=$(/bin/grep -i manjaro /etc/lsb-release)
+		_DISTRO=""
+		_DISTRO=$( /bin/grep -i manjaro /etc/lsb-release )
 		if [[ -n $_DISTRO &&\
-			"$(/bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
-			/bin/cut -d' ' -f2)" != "$(/bin/date +%Y-%m-%d)" ]]; then
-		$_SUDO /bin/pacman-mirrors -f10
-		$_SUDO /bin/pacman -Syyu --color always
+			"$( /bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
+			/bin/cut -d' ' -f2 )" != "$( /bin/date +%Y-%m-%d )" ]]; then
+		/bin/sudo /bin/pacman-mirrors -f10
+		/bin/sudo /bin/pacman -Syyu --color always
 	else
-		$_SUDO /bin/pacman -Syu --color always
+		/bin/sudo /bin/pacman -Syu --color always
 	fi
-	if $_SUDO /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than"; then
+	if /bin/sudo /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than"; then
 	if [[ $_LNG = ita ]]; then
 		qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
 	else
@@ -233,7 +236,7 @@ function sys_update {
 	fi
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		$_SUDO /bin/pacman -Syuu --color always
+		/bin/sudo /bin/pacman -Syuu --color always
 	fi
 fi
 if [[ $_LNG = ita ]]; then
@@ -259,17 +262,26 @@ if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 	if [[ $_ORPHCHECK = false ]]; then
 		# Look for orphan packages, they could be pkgs removed from repositories
 		#  and moved to AUR, better not to upgrade them silently.
-		_ORP=""
-		if /bin/pacman -Qdtq ; then
-			_ORP=$( /bin/pacman -Qdtq )
+		declare -a _ORP=""
+		if /bin/pacman -Qdtq >/dev/null ; then
+			readarray -t _ORP < <( /bin/pacman -Qdtq )
 		fi
-		if [[ -n $_ORP ]]; then
+		if [[ -n ${_ORP[0]} ]]; then
 			if [[ $_LNG = ita ]]; then
 				end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
 			else
 				end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
 			fi
-			$_SUDO /bin/pacman --color always -Rs $_ORP
+			# This strange conditional structure handle errors from the pacman
+			#  command, for example when the user answer 'No' to a pacman
+			#  question the script shouldn't crash.
+			# This is far from elegant, because it handles also other errors
+			#  like trivial ones.
+			if /bin/sudo /bin/pacman --color always -Rs "${_ORP[@]}" ; then
+				echo
+			else
+				echo
+			fi
 		fi
 		_ORPHCHECK=true
 	fi
@@ -330,12 +342,21 @@ function clean_pkg {
 		fi
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-			_ORP=""
-			if /bin/pacman -Qdtq ; then
-				_ORP=$( /bin/pacman -Qdtq )
+			declare -a _ORP=""
+			if /bin/pacman -Qdtq >/dev/null; then
+				readarray -t _ORP < <( /bin/pacman -Qdtq )
 			fi
-			if [[ -n $_ORP ]]; then
-				$_SUDO /bin/pacman --color always -Rs $_ORP
+			if [[ -n ${_ORP[0]} ]]; then
+				# This strange conditional structure handle errors from the pacman
+				#  command, for example when the user answer 'No' to a pacman
+				#  question the script shouldn't crash.
+				# This is far from elegant, because it handles also other errors
+				#  like trivial ones.
+				if /bin/sudo /bin/pacman --color always -Rs "${_ORP[@]}" ; then
+					echo
+				else
+					echo
+				fi
 				if [[ $_LNG = ita ]]; then
 					end_msg "ok" "Pacchetti orfani"
 				else
@@ -370,7 +391,7 @@ function clean_pkg {
 	fi
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		$_SUDO /bin/paccache -rk2 --nocolor
+		/bin/sudo /bin/paccache -rk2 --nocolor
 		if [[ $_LNG = ita ]]; then
 			end_msg "ok" "Pulizia cache pacchetti installati"
 		else
@@ -391,7 +412,7 @@ function clean_pkg {
 	fi
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		$_SUDO /bin/paccache -ruk0 --nocolor
+		/bin/sudo /bin/paccache -ruk0 --nocolor
 		if [[ $_LNG = ita ]]; then
 			end_msg "ok" "Pulizia cache pacchetti non installati"
 		else
@@ -426,7 +447,7 @@ function clean_pkg {
 				&& _ROTAT=true
 		fi
 		if [[ "$_ROTAT" = true ]]; then
-			$_SUDO /bin/pacman-optimize --nocolor
+			/bin/sudo /bin/pacman-optimize --nocolor
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Ottimizzazione database"
 			else
@@ -491,7 +512,7 @@ function clean_pkg {
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 			for i in "${_ORPHPACNEW[@]}"; do
-				$_SUDO /bin/rm -f "$i"
+				/bin/sudo /bin/rm -f "$i"
 			done
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "File di configurazione orfani"
@@ -535,7 +556,7 @@ function clean_file {
 		fi
 		read -r _SURE
 		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-			$_SUDO /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks | /bin/tail -n 1
+			/bin/sudo /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks | /bin/tail -n 1
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Pulizia file di log"
 			else
@@ -560,14 +581,22 @@ function clean_file {
 		# This part checks the existence of thumbnails and cache folders, then
 		#  calculate the total space they take.
 		_OLD=0
-		[[ -d "$HOME/.thumbnails" ]] && _OLD=$(echo "$_OLD+$( /bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
-			/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
-		[[ -d "$HOME/.thumbnails" ]] && _OLD=$(echo "$_OLD+$( /bin/find "$HOME/.thumbnails" -empty -type d -atime +30 -print0 |\
-			/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
-		[[ -d "$HOME/.cache" ]] && _OLD=$(echo "$_OLD+$( /bin/find "$HOME/.cache" -type f -atime +30 -print0 |\
-			/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
-		[[ -d "$HOME/.cache" ]] && _OLD=$(echo "$_OLD+$( /bin/find "$HOME/.cache" -empty -type d -atime +30 -print0 |\
-			/bin/du --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+		if [[ -d "$HOME/.thumbnails" ]]; then
+			_OLD=$(echo "$_OLD+$( /bin/find "$HOME/.thumbnails" -type f\
+				-atime +30 -print0 | /bin/du --files0-from=- -cb |\
+				/bin/tail -1 | /bin/cut -f 1 )" | bc)
+			_OLD=$(echo "$_OLD+$( /bin/find "$HOME/.thumbnails" -empty -type d\
+				-atime +30 -print0 | /bin/du --files0-from=- -cb |\
+				/bin/tail -1 | /bin/cut -f 1 )" | bc)
+		fi
+		if [[ -d "$HOME/.thumbnails" ]]; then
+			_OLD=$(echo "$_OLD+$( /bin/find "$HOME/.cache" -name pacaur\
+				-prune -o \( -type f -atime +30 -print0 \) | /bin/du\
+				--files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+			_OLD=$(echo "$_OLD+$( /bin/find "$HOME/.cache" -name pacaur\
+				-prune -o \( -empty -type d -atime +30 -print0 \) | /bin/du\
+				--files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+		fi
 		if [[ $_OLD -gt 0 ]]; then
 			_OLD=$(human_size "$_OLD")
 			if [[ $_LNG = ita ]]; then
@@ -577,14 +606,19 @@ function clean_file {
 			fi
 			read -r _SURE
 			if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-				[[ -d "$HOME/.thumbnails" ]] && /bin/find "$HOME/.thumbnails" -type f \
-					-atime +30 -print0 | xargs -0 /bin/rm -f
-				[[ -d "$HOME/.cache" ]] && /bin/find "$HOME/.cache" -name 'pacaur' -prune \
-					-o \( -type f -atime +30 -print0 \)  | xargs -0 /bin/rm -f
-				[[ -d "$HOME/.thumbnails" ]] && /bin/find "$HOME/.thumbnails" -empty \
-					-type d -atime +30 -print0 | xargs -0 /bin/rm -rf
-				[[ -d "$HOME/.cache" ]] && /bin/find "$HOME/.cache" -name 'pacaur' -prune \
-					-o \( -empty -type d -atime +30 -print0 \) | xargs -0 /bin/rm -rf
+				if [[ -d "$HOME/.thumbnails" ]]; then
+					/bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
+						xargs -0 /bin/rm -f
+					/bin/find "$HOME/.thumbnails" -empty -type d -atime +30\
+						-print0 | xargs -0 /bin/rm -rf
+				fi
+				if [[ -d "$HOME/.cache" ]]; then
+					/bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
+						\( -type f -atime +30 -print0 \) | xargs -0 /bin/rm -f
+					/bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
+						\( -empty -type d -atime +30 -print0 \) | xargs -0\
+						/bin/rm -rf
+				fi
 				if [[ $_LNG = ita ]]; then
 					end_msg "ok" "Pulizia cache e miniature"
 				else
@@ -1238,7 +1272,6 @@ function main {
 
 check_root
 check_args "$@"
-declare -r _SUDO="/bin/sudo"
 
 # Launch the long search for residual file and put everything in background,
 #  this way the second execution will be faster on hard disk, because everything
