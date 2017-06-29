@@ -277,11 +277,10 @@ if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 			#  question the script shouldn't crash.
 			# This is far from elegant, because it handles also other errors
 			#  like trivial ones.
-			if /bin/sudo /bin/pacman --color always -Rs "${_ORP[@]}" ; then
-				echo
-			else
-				echo
-			fi
+			set +e
+			/bin/sudo /bin/pacman --color always -Rs "${_ORP[@]}"
+			set -e
+			echo
 		fi
 		_ORPHCHECK=true
 	fi
@@ -352,11 +351,10 @@ function clean_pkg {
 				#  question the script shouldn't crash.
 				# This is far from elegant, because it handles also other errors
 				#  like trivial ones.
-				if /bin/sudo /bin/pacman --color always -Rs "${_ORP[@]}" ; then
-					echo
-				else
-					echo
-				fi
+				set +e
+				/bin/sudo /bin/pacman --color always -Rs "${_ORP[@]}"
+				set -e
+				echo
 				if [[ $_LNG = ita ]]; then
 					end_msg "ok" "Pacchetti orfani"
 				else
