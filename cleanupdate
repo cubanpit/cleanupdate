@@ -219,7 +219,9 @@ function sys_update {
 	read -r _SURE
 	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
 		_DISTRO=""
-		_DISTRO=$( /bin/grep -i manjaro /etc/lsb-release )
+		if [[ -f /etc/lsb-release ]]; then
+			_DISTRO=$( /bin/grep -i manjaro /etc/lsb-release )
+		fi
 		if [[ -n $_DISTRO &&\
 			"$( /bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
 			/bin/cut -d' ' -f2 )" != "$( /bin/date +%Y-%m-%d )" ]]; then
