@@ -62,15 +62,15 @@ fi
 # Usage: human_size "size in bytes"
 #
 function human_size {
-	_NUM=$1
-	if [[ $_NUM -ge 1000000000 ]]; then
-		_NUM="$(( _NUM / 1000000000 )) GB"
-	elif [[ $_NUM -ge 1000000 ]]; then
-		_NUM="$(( _NUM / 1000000 )) MB"
-	elif [[ $_NUM -ge 1000 ]]; then
-		_NUM="$(( _NUM / 1000 )) kB"
-	elif [[ $_NUM -ge 0 ]]; then
-		_NUM="$_NUM B"
+	local num=$1
+	if [[ $num -ge 1000000000 ]]; then
+		num="$(( num / 1000000000 )) GB"
+	elif [[ $num -ge 1000000 ]]; then
+		num="$(( num / 1000000 )) MB"
+	elif [[ $num -ge 1000 ]]; then
+		num="$(( num / 1000 )) kB"
+	elif [[ $num -ge 0 ]]; then
+		num="$num B"
 	else
 		if [[ $_LNG = ita ]]; then
 			echo "ERRORE: impossibile convertire numeri negativi." 1>&2
@@ -79,7 +79,7 @@ function human_size {
 		fi
 		exit 1
 	fi
-	echo "$_NUM"
+	echo "$num"
 }
 
 #
@@ -87,39 +87,39 @@ function human_size {
 #  executed, has been cenceled or has been skipped because unuseful.
 # Usage: end_msg "ok|no|skip|warn" "message"
 function end_msg {
-	_MOD=$1
-	_MSG=$2
-	if [[ $_MOD = ok ]]; then
+	local mod=$1
+	local msg=$2
+	if [[ $mod = ok ]]; then
 		if [[ $_LNG = ita ]]; then
 			echo "${_BOLD}[${_GREEN}ESEGUITO${_NORMAL}"\
-				"${_BOLD}] $_MSG ${_NORMAL}"
+				"${_BOLD}] $msg ${_NORMAL}"
 		else
 			echo "${_BOLD}[${_GREEN}DONE${_NORMAL}${_BOLD}]"\
-				"$_MSG ${_NORMAL}"
+				"$msg ${_NORMAL}"
 		fi
-	elif [[ $_MOD = no ]]; then
+	elif [[ $mod = no ]]; then
 		if [[ $_LNG = ita ]]; then
 			echo "${_BOLD}[${_RED}ANNULLATO${_NORMAL}${_BOLD}]"\
-				"$_MSG ${_NORMAL}"
+				"$msg ${_NORMAL}"
 		else
 			echo "${_BOLD}[${_RED}CANCELED${_NORMAL}${_BOLD}]"\
-				"$_MSG ${_NORMAL}"
+				"$msg ${_NORMAL}"
 		fi
-	elif [[ $_MOD = skip ]]; then
+	elif [[ $mod = skip ]]; then
 		if [[ $_LNG = ita ]]; then
 			echo "${_BOLD}[${_AQUA}SALTATO${_NORMAL}${_BOLD}]"\
-				"$_MSG ${_NORMAL}"
+				"$msg ${_NORMAL}"
 		else
 			echo "${_BOLD}[${_AQUA}SKIPPED${_NORMAL}${_BOLD}]"\
-				"$_MSG ${_NORMAL}"
+				"$msg ${_NORMAL}"
 		fi
-	elif [[ $_MOD = warn ]]; then
+	elif [[ $mod = warn ]]; then
 		if [[ $_LNG = ita ]]; then
 			echo "${_BOLD}[${_YELLOW}ATTENZIONE${_NORMAL}"\
-				"${_BOLD}] $_MSG ${_NORMAL}"
+				"${_BOLD}] $msg ${_NORMAL}"
 		else
 			echo "${_BOLD}[${_YELLOW}WARNING${_NORMAL}"\
-				"${_BOLD}] $_MSG ${_NORMAL}"
+				"${_BOLD}] $msg ${_NORMAL}"
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
@@ -136,23 +136,23 @@ function end_msg {
 # Usage: qst_msg "yes|no" "question"
 #
 function qst_msg {
-	_MOD=$1
-	_MSG=$2
-	if [[ $_MOD = yes ]]; then
+	local mod=$1
+	local msg=$2
+	if [[ $mod = yes ]]; then
 		if [[ $_LNG = ita ]]; then
 			echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
-				"$_MSG [S/n]?${_NORMAL} "
+				"$msg [S/n]?${_NORMAL} "
 		else
 			echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
-				"$_MSG [Y/n]?${_NORMAL} "
+				"$msg [Y/n]?${_NORMAL} "
 		fi
-	elif [[ $_MOD = no ]]; then
+	elif [[ $mod = no ]]; then
 		if [[ $_LNG = ita ]]; then
 			echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
-				"$_MSG [s/N]?${_NORMAL} "
+				"$msg [s/N]?${_NORMAL} "
 		else
 			echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
-				"$_MSG [y/N]?${_NORMAL} "
+				"$msg [y/N]?${_NORMAL} "
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
@@ -201,6 +201,66 @@ function check_args {
 }
 
 #
+# This function checks if there is any orphan package and asks the user if he
+#  wants to remove them.
+#
+function orph_pkgs {
+	if [[ $orphcheck = false ]]; then
+		# Look for orphan packages, they could be pkgs removed from repositories
+		#  and moved to AUR, better not to upgrade them silently.
+		echo
+		if [[ $_LNG = ita ]]; then
+			echo "Ricerca pacchetti orfani in corso..."
+		else
+			echo "Looking for orphan packages..."
+		fi
+		declare -a _ORP=""
+		if /bin/pacman -Qdtq >/dev/null ; then
+			readarray -t _ORP < <( /bin/pacman -Qdtq )
+		fi
+		if [[ -n ${_ORP[0]} ]]; then
+			orphcheck=true
+			if [[ $_LNG = ita ]]; then
+				end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
+			else
+				end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
+			fi
+			for i in "${_ORP[@]}"; do
+				echo "$i"
+			done | /bin/column -x
+			if [[ $_LNG = ita ]]; then
+				qst_msg "yes" "Sono presenti ${#_ORP[@]} pacchetti orfani, desideri rimuoverli"
+			else
+				qst_msg "yes" "There are ${#_ORP[@]} orphaned packages, do you want to remove them"
+			fi
+			read -r sure
+			if [[ $sure != "n" && $sure != "N" ]]; then
+				/bin/sudo /bin/pacman --color always --noconfirm -Rs "${_ORP[@]}"
+				if [[ $_LNG = ita ]]; then
+					end_msg "ok" "Pacchetti orfani"
+				else
+					end_msg "ok" "Orphan packages"
+				fi
+			else
+				if [[ $_LNG = ita ]]; then
+					end_msg "no" "Pacchetti orfani"
+				else
+					end_msg "no" "Orphan packages"
+				fi
+			fi
+			echo
+		else
+			if [[ $_LNG = ita ]]; then
+				end_msg "skip" "Non sono presenti pacchetti orfani."
+			else
+				end_msg "skip" "There are no orphan packages."
+			fi
+			echo
+		fi
+	fi
+}
+
+#
 # Function containing all system update operation.
 # Database sync, package upgrade, AUR upgrade.
 #
@@ -216,8 +276,8 @@ function sys_update {
 	else
 		qst_msg "yes" "Do you want to upgrade official packages"
 	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+	read -r sure
+	if [[ $sure != "n" && $sure != "N" ]]; then
 		_DISTRO=""
 		if [[ -f /etc/lsb-release ]]; then
 			_DISTRO=$( /bin/grep -i manjaro /etc/lsb-release )
@@ -225,103 +285,106 @@ function sys_update {
 		if [[ -n $_DISTRO &&\
 			"$( /bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
 			/bin/cut -d' ' -f2 )" != "$( /bin/date +%Y-%m-%d )" ]]; then
-		/bin/sudo /bin/pacman-mirrors -f10
-		/bin/sudo /bin/pacman -Syyu --color always
-	else
-		/bin/sudo /bin/pacman -Syu --color always
-	fi
-	if /bin/sudo /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than"; then
-	if [[ $_LNG = ita ]]; then
-		qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
-	else
-		qst_msg "yes" "There are packages with newer version than those in repository, do you want to downgrade them"
-	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		/bin/sudo /bin/pacman -Syuu --color always
-	fi
-fi
-if [[ $_LNG = ita ]]; then
-	end_msg "ok" "Aggiornamento pacchetti ufficiali"
-else
-	end_msg "ok" "Official packages upgrade"
-fi
-else
-	if [[ $_LNG = ita ]]; then
-		end_msg "no" "Aggiornamento pacchetti ufficiali"
-	else
-		end_msg "no" "Official packages upgrade"
-	fi
-fi
-echo
-if [[ $_LNG = ita ]]; then
-	qst_msg "yes" "Desideri aggiornare i pacchetti di AUR"
-else
-	qst_msg "yes" "Do you want to upgrade AUR packages"
-fi
-read -r _SURE
-if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-	if [[ $_ORPHCHECK = false ]]; then
-		# Look for orphan packages, they could be pkgs removed from repositories
-		#  and moved to AUR, better not to upgrade them silently.
-		declare -a _ORP=""
-		if /bin/pacman -Qdtq >/dev/null ; then
-			readarray -t _ORP < <( /bin/pacman -Qdtq )
+			/bin/sudo /bin/pacman-mirrors --sync -f10
 		fi
-		if [[ -n ${_ORP[0]} ]]; then
+		declare -a _UPD=""
+		if [[ -n $(/bin/checkupdates) ]]; then
+			readarray -t _UPD < <( /bin/checkupdates )
+		fi
+		if [[ -n ${_UPD[0]} ]]; then
+			for i in "${_UPD[@]}"; do
+				echo "$i"
+			done | /bin/column -x
 			if [[ $_LNG = ita ]]; then
-				end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
+				qst_msg "yes" "Ci sono ${#_UPD[@]} aggiornamenti disponibili, desideri installarli"
 			else
-				end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
+				qst_msg "yes" "There are ${#_UPD[@]} available updates, do you want to install them"
 			fi
-			# This strange conditional structure handle errors from the pacman
-			#  command, for example when the user answer 'No' to a pacman
-			#  question the script shouldn't crash.
-			# This is far from elegant, because it handles also other errors
-			#  like trivial ones.
-			set +e
-			/bin/sudo /bin/pacman --color always -Rs "${_ORP[@]}"
-			set -e
-			echo
-		fi
-		_ORPHCHECK=true
-	fi
-	# Check if pacaur or yaourt are installed
-	if [[ -x /bin/pacaur ]]; then
-		/bin/pacaur -Syua --color always
-		if [[ $_LNG = ita ]]; then
-			end_msg "ok" "Aggiornamento AUR"
+			read -r sure
+			if [[ $sure != "n" && $sure != "N" ]]; then
+				/bin/sudo /bin/pacman -Syu --color always --noconfirm
+				if /bin/sudo /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than"; then
+					echo
+					if [[ $_LNG = ita ]]; then
+						qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
+					else
+						qst_msg "yes" "There are packages with newer version than those in repository, do you want to downgrade them"
+					fi
+					read -r sure
+					if [[ $sure != "n" && $sure != "N" ]]; then
+						/bin/sudo /bin/pacman -Syuu --color always --noconfirm
+					fi
+				fi
+				if [[ $_LNG = ita ]]; then
+					end_msg "ok" "Aggiornamento pacchetti ufficiali"
+				else
+					end_msg "ok" "Official packages upgrade"
+				fi
+			else
+				if [[ $_LNG = ita ]]; then
+					end_msg "no" "Aggiornamento pacchetti ufficiali"
+				else
+					end_msg "no" "Official packages upgrade"
+				fi
+			fi
 		else
-			end_msg "ok" "AUR upgrade"
-		fi
-	elif [[ -x /bin/yaourt ]]; then
-		/bin/yaourt -Sua --color
-		if [[ $_LNG = ita ]]; then
-			end_msg "ok" "Aggiornamento AUR"
-		else
-			end_msg "ok" "AUR upgrade"
+			if [[ $_LNG = ita ]]; then
+				echo "Non sono disponibili nuovi aggiornamenti."
+				end_msg "skip" "Aggiornamento pacchetti ufficiali"
+			else
+				echo "There isn't any available update."
+				end_msg "skip" "Official packages upgrade"
+			fi
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
-			echo "Non risulta installato né 'yaourt' né 'pacaur', non è"\
-				"possibile accedere agli aggiornamenti AUR tramite questo script."
+			end_msg "no" "Aggiornamento pacchetti ufficiali"
 		else
-			echo "You don't have neither 'yaourt' nor 'pacaur' installed,"\
-				"you can't access AUR updates through this script."
-		fi
-		if [[ $_LNG = ita ]]; then
-			end_msg "skip" "Aggiornamento AUR"
-		else
-			end_msg "skip" "AUR upgrade"
+			end_msg "no" "Official packages upgrade"
 		fi
 	fi
-else
+	echo
 	if [[ $_LNG = ita ]]; then
-		end_msg "no" "Aggiornamento AUR"
+		qst_msg "yes" "Desideri aggiornare i pacchetti di AUR"
 	else
-		end_msg "no" "AUR upgrade"
+		qst_msg "yes" "Do you want to upgrade AUR packages"
 	fi
-fi
+	read -r sure
+	if [[ $sure != "n" && $sure != "N" ]]; then
+		orph_pkgs
+		# Check if pacaur or yaourt are installed
+		if [[ -x /bin/pacaur ]]; then
+			/bin/pacaur -Syua --color always
+			if [[ $_LNG = ita ]]; then
+				end_msg "ok" "Aggiornamento AUR"
+			else
+				end_msg "ok" "AUR upgrade"
+			fi
+		elif [[ -x /bin/yaourt ]]; then
+			/bin/yaourt -Sua --color
+			if [[ $_LNG = ita ]]; then
+				end_msg "ok" "Aggiornamento AUR"
+			else
+				end_msg "ok" "AUR upgrade"
+			fi
+		else
+			if [[ $_LNG = ita ]]; then
+				echo "Non risulta installato né 'yaourt' né 'pacaur', non è"\
+					"possibile accedere agli aggiornamenti AUR tramite questo script."
+				end_msg "skip" "Aggiornamento AUR"
+			else
+				echo "You don't have neither 'yaourt' nor 'pacaur' installed,"\
+					"you can't access AUR updates through this script."
+				end_msg "skip" "AUR upgrade"
+			fi
+		fi
+	else
+		if [[ $_LNG = ita ]]; then
+			end_msg "no" "Aggiornamento AUR"
+		else
+			end_msg "no" "AUR upgrade"
+		fi
+	fi
 }
 
 #
@@ -334,63 +397,14 @@ function clean_pkg {
 	else
 		echo " ${_BOLD}::Packages cleaning::${_NORMAL} "
 	fi
-	if [[ $_ORPHCHECK = false ]]; then
-	echo
-		if [[ $_LNG = ita ]]; then
-			qst_msg "yes" "Desideri cercare pacchetti orfani?"
-		else
-			qst_msg "yes" "Do you want search for orphaned packages"
-		fi
-		read -r _SURE
-		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-			declare -a _ORP=""
-			if /bin/pacman -Qdtq >/dev/null; then
-				readarray -t _ORP < <( /bin/pacman -Qdtq )
-			fi
-			if [[ -n ${_ORP[0]} ]]; then
-				# This strange conditional structure handle errors from the pacman
-				#  command, for example when the user answer 'No' to a pacman
-				#  question the script shouldn't crash.
-				# This is far from elegant, because it handles also other errors
-				#  like trivial ones.
-				set +e
-				/bin/sudo /bin/pacman --color always -Rs "${_ORP[@]}"
-				set -e
-				echo
-				if [[ $_LNG = ita ]]; then
-					end_msg "ok" "Pacchetti orfani"
-				else
-					end_msg "ok" "Orphaned packages"
-				fi
-			else
-				if [[ $_LNG = ita ]]; then
-					echo "Non è presente alcun pacchetto orfano."
-				else
-					echo "There isn't any orphaned package."
-				fi
-				if [[ $_LNG = ita ]]; then
-					end_msg "skip" "Pacchetti orfani"
-				else
-					end_msg "skip" "Orphaned packages"
-				fi
-			fi
-			_ORPHCHECK=true
-		else
-			if [[ $_LNG = ita ]]; then
-				end_msg "no" "Pacchetti orfani"
-			else
-				end_msg "no" "Orphaned packages"
-			fi
-		fi
-	fi
-	echo
+	orph_pkgs
 	if [[ $_LNG = ita ]]; then
 		qst_msg "yes" "Desideri pulire la cache dei pacchetti installati (conservando le ultime 2 versioni)"
 	else
 		qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)"
 	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+	read -r sure
+	if [[ $sure != "n" && $sure != "N" ]]; then
 		/bin/sudo /bin/paccache -rk2 --nocolor
 		if [[ $_LNG = ita ]]; then
 			end_msg "ok" "Pulizia cache pacchetti installati"
@@ -410,8 +424,8 @@ function clean_pkg {
 	else
 		qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages"
 	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+	read -r sure
+	if [[ $sure != "n" && $sure != "N" ]]; then
 		/bin/sudo /bin/paccache -ruk0 --nocolor
 		if [[ $_LNG = ita ]]; then
 			end_msg "ok" "Pulizia cache pacchetti non installati"
@@ -426,27 +440,33 @@ function clean_pkg {
 		fi
 	fi
 	echo
-	if [[ $_LNG = ita ]]; then
-		qst_msg "yes" "Desideri ottimizzare (deframmentare) il database di pacman"
+	# This part of the script try to check if the disk containing
+	#  pacman database is a solid state drive.
+	local rotat=false
+	if [[ -d "/var/lib/pacman" ]]; then # check database existence
+		# Find disk on which database is located
+		_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | \
+			/bin/cut -d' ' -f 1 | /bin/sed -E 's/(\/dev\/|[0-9])//g')
+		# Discover if database disk exist as device and is rotational
+		[[ -n $_DISK && -b "/dev/$_DISK" && \
+			-e "/sys/block/$_DISK/queue/rotational" && \
+			$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] \
+			&& rotat=true
 	else
-		qst_msg "yes" "Do you want to optimize (defragment) pacman database"
-	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
-		# This part of the script try to check if the disk containing
-		#  pacman database is a solid state drive.
-		_ROTAT=false
-		if [[ -d "/var/lib/pacman" ]]; then # check database existence
-			# Find disk on which database is located
-			_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | \
-				/bin/cut -d' ' -f 1 | /bin/sed -E 's/(\/dev\/|[0-9])//g')
-			# Discover if database disk exist as device and is rotational
-			[[ -n $_DISK && -b "/dev/$_DISK" && \
-				-e "/sys/block/$_DISK/queue/rotational" && \
-				$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] \
-				&& _ROTAT=true
+		if [[ $_LNG = ita ]]; then
+			end_msg "warn" "Il database di pacman non è stato trovato al percorso predefinito, se non è stato spostato manualmente sussiste un problema."
+		else
+			end_msg "warn" "It is impossible to find pacman database at default path, if you have not changed it manually there is a problem in this system."
 		fi
-		if [[ "$_ROTAT" = true ]]; then
+	fi
+	if [[ "$rotat" = true ]]; then
+		if [[ $_LNG = ita ]]; then
+			qst_msg "yes" "Desideri ottimizzare (deframmentare) il database di pacman"
+		else
+			qst_msg "yes" "Do you want to optimize (defragment) pacman database"
+		fi
+		read -r sure
+		if [[ $sure != "n" && $sure != "N" ]]; then
 			/bin/sudo /bin/pacman-optimize --nocolor
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Ottimizzazione database"
@@ -455,23 +475,20 @@ function clean_pkg {
 			fi
 		else
 			if [[ $_LNG = ita ]]; then
-				echo "Il database di pacman non risiede su un"\
-					"disco rotazionale, non è necessario eseguire la deframmentazione."
+				end_msg "no" "Ottimizzazione database"
 			else
-				echo "The pacman database lives on a non"\
-					"rotational disk, defragmentation is not needed."
-			fi
-			if [[ $_LNG = ita ]]; then
-				end_msg "skip" "Ottimizzazione database"
-			else
-				end_msg "skip" "Database optimization"
+				end_msg "no" "Database optimization"
 			fi
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
-			end_msg "no" "Ottimizzazione database"
+			echo "Il database di pacman non risiede su un disco"\
+				"rotazionale, non è necessario eseguire la deframmentazione."
+			end_msg "skip" "Ottimizzazione database"
 		else
-			end_msg "no" "Database optimization"
+			echo "The pacman database lives on a non"\
+				"rotational disk, defragmentation is not needed."
+			end_msg "skip" "Database optimization"
 		fi
 	fi
 	# Here we'll check for '.pacnew' files, then catch '.pacnew' files that are
@@ -484,7 +501,6 @@ function clean_pkg {
 	done < <(/bin/find /etc -name "*.pacnew" -print0 2>/dev/null)
 	declare -a _ORPHPACNEW=""
 	if [[ -n ${_PACNEW[0]} ]]; then
-		unset i
 		declare -i j=0
 		for i in "${_PACNEW[@]}"; do
 			_PACCONF=${i//\.pacnew/}
@@ -493,7 +509,6 @@ function clean_pkg {
 			fi
 		done
 	fi
-
 	if [[ ${#_PACNEW[@]} -eq ${#_ORPHPACNEW[@]} || ${#_PACNEW[@]} -eq 0 ]]; then
 		_PACNCTRL=false
 	else
@@ -509,8 +524,8 @@ function clean_pkg {
 		else
 			qst_msg "yes" "These are ${#_ORPHPACNEW[@]} orphan '.pacnew' files (read documentation [8] for further information), do you want to erase them"
 		fi
-		read -r _SURE
-		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		read -r sure
+		if [[ $sure != "n" && $sure != "N" ]]; then
 			for i in "${_ORPHPACNEW[@]}"; do
 				/bin/sudo /bin/rm -f "$i"
 			done
@@ -554,8 +569,8 @@ function clean_file {
 		else
 			qst_msg "yes" "Do you want to clean log files to save disk space"
 		fi
-		read -r _SURE
-		if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+		read -r sure
+		if [[ $sure != "n" && $sure != "N" ]]; then
 			/bin/sudo /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks | /bin/tail -n 1
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Pulizia file di log"
@@ -576,8 +591,8 @@ function clean_file {
 	else
 		qst_msg "yes" "Do you want to estimate disk space taken by old cache and thumbnails"
 	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+	read -r sure
+	if [[ $sure != "n" && $sure != "N" ]]; then
 		# This part checks the existence of thumbnails and cache folders, then
 		#  calculate the total space they take.
 		_OLD=0
@@ -604,8 +619,8 @@ function clean_file {
 			else
 				qst_msg "yes" "The deletion of these files frees $_OLD of disk space, do you want to continue"
 			fi
-			read -r _SURE
-			if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+			read -r sure
+			if [[ $sure != "n" && $sure != "N" ]]; then
 				if [[ -d "$HOME/.thumbnails" ]]; then
 					/bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
 						xargs -0 /bin/rm -f
@@ -635,13 +650,10 @@ function clean_file {
 			if [[ $_LNG = ita ]]; then
 				echo "Non c'è necessità di eliminare alcun"\
 					"file, le cartelle sono sufficientemente pulite."
+				end_msg "skip" "Pulizia cache e miniature"
 			else
 				echo "There is no need to delete any file,"\
 					"these folders are pretty clean."
-			fi
-			if [[ $_LNG = ita ]]; then
-				end_msg "skip" "Pulizia cache e miniature"
-			else
 				end_msg "skip" "Thumbs and cache cleaning"
 			fi
 		fi
@@ -658,8 +670,8 @@ function clean_file {
 	else
 		qst_msg "yes" "Do you want to search for residual files"
 	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+	read -r sure
+	if [[ $sure != "n" && $sure != "N" ]]; then
 		# Null separated output will be used just to have less problem with
 		#  strange characters.
 		declare -i i=0
@@ -694,10 +706,9 @@ function clean_file {
 			2>/dev/null)
 		if [[ -n ${_RES[0]} ]]; then
 			# Print every residual file
-			unset i
 			for i in "${_RES[@]}"; do
 				echo "$i"
-			done
+			done | /bin/column -x
 			# Calculate space taken by residual files
 			_RESP=0
 			for i in "${_RES[@]}"; do
@@ -709,8 +720,8 @@ function clean_file {
 			else
 				qst_msg "no" "There are ${#_RES[@]} residual files that take $_RESP of disk space, do you want to remove them"
 			fi
-			read -r _SURE
-			if [[ ( $_LNG != ita && ( $_SURE = y || $_SURE = Y )) || ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
+			read -r sure
+			if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
 				# Remove every residual file
 				for i in "${_RES[@]}"; do
 					/bin/rm -f "$i"
@@ -730,12 +741,9 @@ function clean_file {
 		else
 			if [[ $_LNG = ita ]]; then
 				echo "Non sono presenti file residui."
-			else
-				echo "There are no residual files."
-			fi
-			if [[ $_LNG = ita ]]; then
 				end_msg "skip" "Pulizia file residui"
 			else
+				echo "There are no residual files."
 				end_msg "skip" "Residual files cleaning"
 			fi
 		fi
@@ -752,8 +760,8 @@ function clean_file {
 	else
 		qst_msg "yes" "Do you want to check trash status"
 	fi
-	read -r _SURE
-	if [[ $_SURE != "n" && $_SURE != "N" ]]; then
+	read -r sure
+	if [[ $sure != "n" && $sure != "N" ]]; then
 		if [[ -d "$HOME/.local/share/Trash/files" ]]; then
 			declare -i i=0
 			declare -a _TRASH=""
@@ -762,7 +770,6 @@ function clean_file {
 			done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 			# This for loop counts total space taken by files and prints every
 			#  file name next to the file size.
-			unset i
 			_TRASP=0
 			if [[ -n ${_TRASH[0]} ]]; then
 				for i in "${_TRASH[@]}"; do
@@ -784,8 +791,8 @@ function clean_file {
 				else
 					qst_msg "no" "There are ${#_TRASH[@]} items that take $_TRASP of disk space, do you want do definetely delete them"
 				fi
-				read -r _SURE
-				if [[ ( $_LNG != ita && ( $_SURE = y || $_SURE = Y ) ) || ( $_LNG = ita && ( $_SURE = s || $_SURE = S ) ) ]]; then
+				read -r sure
+				if [[ ( $_LNG != ita && ( $sure = y || $sure = Y ) ) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
 					/bin/rm -rf "$HOME/.local/share/Trash/files"
 					/bin/rm -rf "$HOME/.local/share/Trash/info"
 					if [[ $_LNG = ita ]]; then
@@ -803,24 +810,18 @@ function clean_file {
 			else
 				if [[ $_LNG = ita ]]; then
 					echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
-				else
-					echo "Trash is completely empty, there is no need to clean it."
-				fi
-				if [[ $_LNG = ita ]]; then
 					end_msg "skip" "Pulizia cestino"
 				else
+					echo "Trash is completely empty, there is no need to clean it."
 					end_msg "skip" "Trash cleaning"
 				fi
 			fi
 		else
 			if [[ $_LNG = ita ]]; then
 				echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
-			else
-				echo "Trash is completely empty, there is no need to clean it."
-			fi
-			if [[ $_LNG = ita ]]; then
 				end_msg "skip" "Pulizia cestino"
 			else
+				echo "Trash is completely empty, there is no need to clean it."
 				end_msg "skip" "Trash cleaning"
 			fi
 		fi
@@ -837,8 +838,8 @@ function clean_file {
 # Function containing pacman troubleshooting
 #
 function trouble_shoot {
-	_AGAIN=true
-while [[ $_AGAIN = true ]]; do
+	local again=true
+while [[ $again = true ]]; do
 	clear
 	if [[ $_LNG = ita ]]; then
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Indicare quale di questi"\
@@ -856,9 +857,9 @@ while [[ $_AGAIN = true ]]; do
 			"aiuto sul forum online della propria distribuzione."
 		echo "${_BOLD}[q|0] ->${_NORMAL} Torna al menù principale"
 		echo -en "\n${_BOLD}Opzione: ${_NORMAL}"
-		read -r -n1 _SURE
-		case $_SURE in
-			q|0) 	_AGAIN=false
+		read -r -n1 sure
+		case $sure in
+			q|0) 	again=false
 				;;
 			1)	echo ; echo
 				echo "Questo messaggio di errore compare quando il gestore"\
@@ -930,7 +931,7 @@ while [[ $_AGAIN = true ]]; do
 				read -rs -n1
 				;;
 			*)	echo ; echo
-				echo -n "Non esiste l'opzione '$_SURE'. Premi un tasto"\
+				echo -n "Non esiste l'opzione '$sure'. Premi un tasto"\
 					"qualsiasi per continuare. "
 				read -rs -n1
 		esac
@@ -949,9 +950,9 @@ while [[ $_AGAIN = true ]]; do
 			"distribution's online forum for help."
 		echo "${_BOLD}[q|0] ->${_NORMAL} Return to main menu"
 		echo -en "\n${_BOLD}Option: ${_NORMAL}"
-		read -r -n1 _SURE
-		case $_SURE in
-			q|0) 	_AGAIN=false
+		read -r -n1 sure
+		case $sure in
+			q|0) 	again=false
 				;;
 			1)	echo ; echo
 				echo "This error message appears when the pckage manager needs"\
@@ -1014,7 +1015,7 @@ while [[ $_AGAIN = true ]]; do
 				read -rs -n1
 				;;
 			*)	echo ; echo
-				echo -n "There is no '$_SURE' option. Press any key to"\
+				echo -n "There is no '$sure' option. Press any key to"\
 					"continue. "
 				read -rs -n1
 		esac
@@ -1132,12 +1133,12 @@ EOF
 function main {
 	while true; do
 		clear
-		unset _SURE
+		unset sure
 
 		# This variable is used to perform only one time 'per cycle' the check
 		#  for orphan packages, otherwise the check will occur before AUR update
 		#  and inside 'Clean packages' function.
-		_ORPHCHECK=false
+		local orphcheck=false
 
 		echo
 		echo "      _                                  _       _        "
@@ -1176,8 +1177,8 @@ function main {
 			echo
 			echo -n " Select an option : "
 		fi
-		read -rs -n1 _SURE
-		case $_SURE in
+		read -rs -n1 sure
+		case $sure in
 			1)
 				clear
 				sys_update
@@ -1254,10 +1255,10 @@ function main {
 				echo
 				echo
 				if [[ $_LNG = ita ]]; then
-					echo -n " Non esiste l'opzione '$_SURE'. Premi un tasto"\
+					echo -n " Non esiste l'opzione '$sure'. Premi un tasto"\
 						"qualsiasi per continuare. "
 				else
-					echo -n " There is no '$_SURE' option. Press any key to"\
+					echo -n " There is no '$sure' option. Press any key to"\
 						"continue. "
 				fi
 				read -rs -n1
