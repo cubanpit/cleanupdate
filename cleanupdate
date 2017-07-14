@@ -214,28 +214,28 @@ function orph_pkgs {
 		else
 			echo "Looking for orphan packages..."
 		fi
-		declare -a _ORP=""
+		local -a orphans=""
 		if /bin/pacman -Qdtq >/dev/null ; then
-			readarray -t _ORP < <( /bin/pacman -Qdtq )
+			readarray -t orphans < <( /bin/pacman -Qdtq )
 		fi
-		if [[ -n ${_ORP[0]} ]]; then
+		if [[ -n ${orphans[0]} ]]; then
 			orphcheck=true
 			if [[ $_LNG = ita ]]; then
 				end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
 			else
 				end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
 			fi
-			for i in "${_ORP[@]}"; do
+			for i in "${orphans[@]}"; do
 				echo "$i"
 			done | /bin/column -x
 			if [[ $_LNG = ita ]]; then
-				qst_msg "yes" "Sono presenti ${#_ORP[@]} pacchetti orfani, desideri rimuoverli"
+				qst_msg "yes" "Sono presenti ${#orphans[@]} pacchetti orfani, desideri rimuoverli"
 			else
-				qst_msg "yes" "There are ${#_ORP[@]} orphaned packages, do you want to remove them"
+				qst_msg "yes" "There are ${#orphans[@]} orphaned packages, do you want to remove them"
 			fi
 			read -r sure
 			if [[ $sure != "n" && $sure != "N" ]]; then
-				/bin/sudo /bin/pacman --color always --noconfirm -Rs "${_ORP[@]}"
+				/bin/sudo /bin/pacman --color always --noconfirm -Rs "${orphans[@]}"
 				if [[ $_LNG = ita ]]; then
 					end_msg "ok" "Pacchetti orfani"
 				else
@@ -278,27 +278,29 @@ function sys_update {
 	fi
 	read -r sure
 	if [[ $sure != "n" && $sure != "N" ]]; then
-		_DISTRO=""
+		local distro=""
 		if [[ -f /etc/lsb-release ]]; then
-			_DISTRO=$( /bin/grep -i manjaro /etc/lsb-release )
+			if /bin/grep -iq manjaro /etc/lsb-release ; then
+				distro="manjaro"
+			fi
 		fi
-		if [[ -n $_DISTRO &&\
-			"$( /bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
-			/bin/cut -d' ' -f2 )" != "$( /bin/date +%Y-%m-%d )" ]]; then
+		if [[ "$distro" = manjaro &&\
+			$( /bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
+			/bin/cut -d' ' -f2 ) != $( /bin/date +%Y-%m-%d ) ]]; then
 			/bin/sudo /bin/pacman-mirrors --sync -f10
 		fi
-		declare -a _UPD=""
+		local -a updates=""
 		if [[ -n $(/bin/checkupdates) ]]; then
-			readarray -t _UPD < <( /bin/checkupdates )
+			readarray -t updates < <( /bin/checkupdates )
 		fi
-		if [[ -n ${_UPD[0]} ]]; then
-			for i in "${_UPD[@]}"; do
+		if [[ -n ${updates[0]} ]]; then
+			for i in "${updates[@]}"; do
 				echo "$i"
 			done | /bin/column -x
 			if [[ $_LNG = ita ]]; then
-				qst_msg "yes" "Ci sono ${#_UPD[@]} aggiornamenti disponibili, desideri installarli"
+				qst_msg "yes" "Ci sono ${#updates[@]} aggiornamenti disponibili, desideri installarli"
 			else
-				qst_msg "yes" "There are ${#_UPD[@]} available updates, do you want to install them"
+				qst_msg "yes" "There are ${#updates[@]} available updates, do you want to install them"
 			fi
 			read -r sure
 			if [[ $sure != "n" && $sure != "N" ]]; then
@@ -443,14 +445,15 @@ function clean_pkg {
 	# This part of the script try to check if the disk containing
 	#  pacman database is a solid state drive.
 	local rotat=false
-	if [[ -d "/var/lib/pacman" ]]; then # check database existence
+	if [[ -d /var/lib/pacman ]]; then
 		# Find disk on which database is located
-		_DISK=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | \
+		local disk
+		disk=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | \
 			/bin/cut -d' ' -f 1 | /bin/sed -E 's/(\/dev\/|[0-9])//g')
 		# Discover if database disk exist as device and is rotational
-		[[ -n $_DISK && -b "/dev/$_DISK" && \
-			-e "/sys/block/$_DISK/queue/rotational" && \
-			$(/bin/cat "/sys/block/$_DISK/queue/rotational") -eq 1 ]] \
+		[[ -n $disk && -b "/dev/$disk" && \
+			-e "/sys/block/$disk/queue/rotational" && \
+			$(/bin/cat "/sys/block/$disk/queue/rotational") -eq 1 ]] \
 			&& rotat=true
 	else
 		if [[ $_LNG = ita ]]; then
@@ -494,39 +497,34 @@ function clean_pkg {
 	# Here we'll check for '.pacnew' files, then catch '.pacnew' files that are
 	#  useless (there is 'foo.conf.pacnew' and not 'foo.conf'), finally warn the
 	#  user about it.
-	declare -i i=0
-	declare -a _PACNEW=""
+	local -i i=0
+	local -a pacnews=""
 	while IFS= read -r -d '' file; do
-		_PACNEW[i++]="$file"
+		pacnews[i++]="$file"
 	done < <(/bin/find /etc -name "*.pacnew" -print0 2>/dev/null)
-	declare -a _ORPHPACNEW=""
-	if [[ -n ${_PACNEW[0]} ]]; then
-		declare -i j=0
-		for i in "${_PACNEW[@]}"; do
-			_PACCONF=${i//\.pacnew/}
-			if [[ ! -f "$_PACCONF" ]]; then
-				_ORPHPACNEW[j++]="$_PACCONF.pacnew"
+	local -a orphan_pacnews=""
+	if [[ -n ${pacnews[0]} ]]; then
+		local -i j=0
+		for i in "${pacnews[@]}"; do
+			local pacold=${i//\.pacnew/}
+			if [[ ! -f "$pacold" ]]; then
+				orphan_pacnews[j++]="$pacold.pacnew"
 			fi
 		done
 	fi
-	if [[ ${#_PACNEW[@]} -eq ${#_ORPHPACNEW[@]} || ${#_PACNEW[@]} -eq 0 ]]; then
-		_PACNCTRL=false
-	else
-		_PACNCTRL=true
-	fi
-	if [[ -n ${_ORPHPACNEW[0]} ]]; then
+	if [[ -n ${orphan_pacnews[0]} ]]; then
 		echo
-		for i in "${_ORPHPACNEW[@]}"; do
+		for i in "${orphan_pacnews[@]}"; do
 			echo "$i"
 		done
 		if [[ $_LNG = ita ]]; then
-			qst_msg "yes" "Sono presenti questi ${#_ORPHPACNEW[@]} file '.pacnew' orfani (consultare la documentazione [8] per maggiori informazioni), vuoi eliminarli"
+			qst_msg "yes" "Sono presenti questi ${#orphan_pacnews[@]} file '.pacnew' orfani (consultare la documentazione [8] per maggiori informazioni), vuoi eliminarli"
 		else
-			qst_msg "yes" "These are ${#_ORPHPACNEW[@]} orphan '.pacnew' files (read documentation [8] for further information), do you want to erase them"
+			qst_msg "yes" "These are ${#orphan_pacnews[@]} orphan '.pacnew' files (read documentation [8] for further information), do you want to erase them"
 		fi
 		read -r sure
 		if [[ $sure != "n" && $sure != "N" ]]; then
-			for i in "${_ORPHPACNEW[@]}"; do
+			for i in "${orphan_pacnews[@]}"; do
 				/bin/sudo /bin/rm -f "$i"
 			done
 			if [[ $_LNG = ita ]]; then
@@ -542,7 +540,7 @@ function clean_pkg {
 			fi
 		fi
 	fi
-	if [[ $_PACNCTRL = true ]]; then
+	if ! [[ ${#pacnews[@]} -eq ${#orphan_pacnews[@]} || ${#pacnews[@]} -eq 0 ]]; then
 		echo
 		if [[ $_LNG = ita ]]; then
 			end_msg "warn" "Sono presenti nuove versioni di alcuni file di configurazione. Valutare le modifiche tramite il comando 'pacdiff'. Consultare la documentazione [8] per maggiori informazioni."
@@ -595,29 +593,29 @@ function clean_file {
 	if [[ $sure != "n" && $sure != "N" ]]; then
 		# This part checks the existence of thumbnails and cache folders, then
 		#  calculate the total space they take.
-		_OLD=0
+		local oldsize=0
 		if [[ -d "$HOME/.thumbnails" ]]; then
-			_OLD=$(echo "$_OLD+$( /bin/find "$HOME/.thumbnails" -type f\
+			oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -type f\
 				-atime +30 -print0 | /bin/du --files0-from=- -cb |\
 				/bin/tail -1 | /bin/cut -f 1 )" | bc)
-			_OLD=$(echo "$_OLD+$( /bin/find "$HOME/.thumbnails" -empty -type d\
+			oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -empty -type d\
 				-atime +30 -print0 | /bin/du --files0-from=- -cb |\
 				/bin/tail -1 | /bin/cut -f 1 )" | bc)
 		fi
 		if [[ -d "$HOME/.thumbnails" ]]; then
-			_OLD=$(echo "$_OLD+$( /bin/find "$HOME/.cache" -name pacaur\
+			oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
 				-prune -o \( -type f -atime +30 -print0 \) | /bin/du\
 				--files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
-			_OLD=$(echo "$_OLD+$( /bin/find "$HOME/.cache" -name pacaur\
+			oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
 				-prune -o \( -empty -type d -atime +30 -print0 \) | /bin/du\
 				--files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
 		fi
-		if [[ $_OLD -gt 0 ]]; then
-			_OLD=$(human_size "$_OLD")
+		if [[ $oldsize -gt 0 ]]; then
+			oldsize=$(human_size "$oldsize")
 			if [[ $_LNG = ita ]]; then
-				qst_msg "yes" "L'eliminazione di questi file libererà $_OLD di spazio su disco, vuoi procedere"
+				qst_msg "yes" "L'eliminazione di questi file libererà $oldsize di spazio su disco, vuoi procedere"
 			else
-				qst_msg "yes" "The deletion of these files frees $_OLD of disk space, do you want to continue"
+				qst_msg "yes" "The deletion of these files frees $oldsize of disk space, do you want to continue"
 			fi
 			read -r sure
 			if [[ $sure != "n" && $sure != "N" ]]; then
@@ -674,56 +672,56 @@ function clean_file {
 	if [[ $sure != "n" && $sure != "N" ]]; then
 		# Null separated output will be used just to have less problem with
 		#  strange characters.
-		declare -i i=0
-		declare -a _RES=""
+		local -i i=0
+		local -a residfiles=""
 		while IFS= read -r -d '' file; do
-			_RES[i++]="$file"
+			residfiles[i++]="$file"
 		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
 			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
 			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
 			-o -path "*/.git" -prune -o -name "*~" -user "$USER" -print0\
 			2>/dev/null)
 		while IFS= read -r -d '' file; do
-			_RES[i++]="$file"
+			residfiles[i++]="$file"
 		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
 			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
 			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
 			-o -path "*/.git" -prune -o -name ".*.swp" -user "$USER" -print0\
 			2>/dev/null)
 		while IFS= read -r -d '' file; do
-			_RES[i++]="$file"
+			residfiles[i++]="$file"
 		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
 			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
 			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
 			-o -path "*/.git" -prune -o -name "Desktop.ini" -user "$USER"\
 			-print0 2>/dev/null)
 		while IFS= read -r -d '' file; do
-			_RES[i++]="$file"
+			residfiles[i++]="$file"
 		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
 			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
 			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
 			-o -path "*/.git" -prune -o -name "Thumbs.db" -user "$USER" -print0\
 			2>/dev/null)
-		if [[ -n ${_RES[0]} ]]; then
+		if [[ -n ${residfiles[0]} ]]; then
 			# Print every residual file
-			for i in "${_RES[@]}"; do
+			for i in "${residfiles[@]}"; do
 				echo "$i"
 			done | /bin/column -x
 			# Calculate space taken by residual files
-			_RESP=0
-			for i in "${_RES[@]}"; do
-				_RESP=$( echo "$_RESP+$( /bin/du -b "$i" | /bin/cut -f 1 )" | bc )
+			local residsize=0
+			for i in "${residfiles[@]}"; do
+				residsize=$( echo "$residsize+$( /bin/du -b "$i" | /bin/cut -f 1 )" | bc )
 			done
-			_RESP=$(human_size "$_RESP")
+			residsize=$(human_size "$residsize")
 			if [[ $_LNG = ita ]]; then
-				qst_msg "no" "Ci sono ${#_RES[@]} file residui che occupano $_RESP di spazio su disco, desideri rimuoverli"
+				qst_msg "no" "Ci sono ${#residfiles[@]} file residui che occupano $residsize di spazio su disco, desideri rimuoverli"
 			else
-				qst_msg "no" "There are ${#_RES[@]} residual files that take $_RESP of disk space, do you want to remove them"
+				qst_msg "no" "There are ${#residfiles[@]} residual files that take $residsize of disk space, do you want to remove them"
 			fi
 			read -r sure
 			if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
 				# Remove every residual file
-				for i in "${_RES[@]}"; do
+				for i in "${residfiles[@]}"; do
 					/bin/rm -f "$i"
 				done
 				if [[ $_LNG = ita ]]; then
@@ -763,33 +761,35 @@ function clean_file {
 	read -r sure
 	if [[ $sure != "n" && $sure != "N" ]]; then
 		if [[ -d "$HOME/.local/share/Trash/files" ]]; then
-			declare -i i=0
-			declare -a _TRASH=""
+			local -i i=0
+			local -a trashfiles=""
 			while IFS= read -r -d '' file; do
-				_TRASH[i++]="$file"
+				trashfiles[i++]="$file"
 			done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 			# This for loop counts total space taken by files and prints every
 			#  file name next to the file size.
-			_TRASP=0
-			if [[ -n ${_TRASH[0]} ]]; then
-				for i in "${_TRASH[@]}"; do
-					_FILENAME=$( basename "$i" )
-					_FILESIZE=$( /bin/du -bs "$i" | /bin/cut -f 1 )
-					_TRASP=$( echo "$_TRASP+$_FILESIZE" | bc )
-					_FILESIZE=$( human_size "$_FILESIZE" )
-					echo -ne "   $_FILESIZE   \t"
+			local trashsize=0
+			if [[ -n ${trashfiles[0]} ]]; then
+				for i in "${trashfiles[@]}"; do
+					local filename
+					filename=$( basename "$i" )
+					local filesize
+					filesize=$( /bin/du -bs "$i" | /bin/cut -f 1 )
+					trashsize=$( echo "$trashsize+$filesize" | bc )
+					filesize=$( human_size "$filesize" )
+					echo -ne "   $filesize   \t"
 					if [[ -d "$i" ]]; then
-						_FILENAME+="/"
-						echo "${_BOLD}$_FILENAME${_NORMAL}"
+						filename+="/"
+						echo "${_BOLD}$filename${_NORMAL}"
 					else
-						echo "$_FILENAME"
+						echo "$filename"
 					fi
 				done
-				_TRASP=$(human_size "$_TRASP")
+				trashsize=$(human_size "$trashsize")
 				if [[ $_LNG = ita ]]; then
-					qst_msg "no" "Sono presenti ${#_TRASH[@]} elementi che occupano $_TRASP di spazio sul disco, desideri eliminarli definitivamente"
+					qst_msg "no" "Sono presenti ${#trashfiles[@]} elementi che occupano $trashsize di spazio sul disco, desideri eliminarli definitivamente"
 				else
-					qst_msg "no" "There are ${#_TRASH[@]} items that take $_TRASP of disk space, do you want do definetely delete them"
+					qst_msg "no" "There are ${#trashfiles[@]} items that take $trashsize of disk space, do you want do definetely delete them"
 				fi
 				read -r sure
 				if [[ ( $_LNG != ita && ( $sure = y || $sure = Y ) ) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
