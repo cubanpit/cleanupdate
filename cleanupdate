@@ -400,45 +400,76 @@ function clean_pkg {
 		echo " ${_BOLD}::Packages cleaning::${_NORMAL} "
 	fi
 	orph_pkgs
+
 	if [[ $_LNG = ita ]]; then
-		qst_msg "yes" "Desideri pulire la cache dei pacchetti installati (conservando le ultime 2 versioni)"
+		echo "Controllo cache dei pacchetti installati in corso..."
 	else
-		qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)"
+		echo "Checking installed package cache..."
 	fi
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]; then
-		/bin/sudo /bin/paccache -rk2 --nocolor
+	if /bin/paccache -dk2 | /bin/grep -q "no candidate packages found for pruning"; then
 		if [[ $_LNG = ita ]]; then
-			end_msg "ok" "Pulizia cache pacchetti installati"
+			echo "Pulizia cache non necessaria."
+			end_msg "skip" "Pulizia cache pacchetti installati"
 		else
-			end_msg "ok" "Installed packages cache cleaning"
+			echo "Cache cleaning not required."
+			end_msg "skip" "Installed packages cache cleaning"
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
-			end_msg "no" "Pulizia cache pacchetti installati"
+			qst_msg "yes" "Desideri pulire la cache dei pacchetti installati (conservando le ultime 2 versioni)"
 		else
-			end_msg "no" "Installed packages cache cleaning"
+			qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)"
+		fi
+		read -r sure
+		if [[ $sure != "n" && $sure != "N" ]]; then
+			/bin/sudo /bin/paccache -rk2 --nocolor
+			if [[ $_LNG = ita ]]; then
+				end_msg "ok" "Pulizia cache pacchetti installati"
+			else
+				end_msg "ok" "Installed packages cache cleaning"
+			fi
+		else
+			if [[ $_LNG = ita ]]; then
+				end_msg "no" "Pulizia cache pacchetti installati"
+			else
+				end_msg "no" "Installed packages cache cleaning"
+			fi
 		fi
 	fi
 	echo
 	if [[ $_LNG = ita ]]; then
-		qst_msg "yes" "Desideri pulire completamente la cache dei pacchetti non installati"
+		echo "Controllo cache dei pacchetti disinstallati in corso..."
 	else
-		qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages"
+		echo "Checking uninstalled package cache..."
 	fi
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]; then
-		/bin/sudo /bin/paccache -ruk0 --nocolor
+	if /bin/paccache -duk0 | /bin/grep -q "no candidate packages found for pruning"; then
 		if [[ $_LNG = ita ]]; then
-			end_msg "ok" "Pulizia cache pacchetti non installati"
+			echo "Pulizia cache non necessaria."
+			end_msg "skip" "Pulizia cache pacchetti disinstallati"
 		else
-			end_msg "ok" "Uninstalled packages cache cleaning"
+			echo "Cache cleaning not required."
+			end_msg "skip" "Uninstalled packages cache cleaning"
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
-			end_msg "no" "Pulizia cache pacchetti non installati"
+			qst_msg "yes" "Desideri pulire completamente la cache dei pacchetti disinstallati"
 		else
-			end_msg "no" "Uninstalled packages cache cleaning"
+			qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages"
+		fi
+		read -r sure
+		if [[ $sure != "n" && $sure != "N" ]]; then
+			/bin/sudo /bin/paccache -ruk0 --nocolor
+			if [[ $_LNG = ita ]]; then
+				end_msg "ok" "Pulizia cache pacchetti disinstallati"
+			else
+				end_msg "ok" "Uninstalled packages cache cleaning"
+			fi
+		else
+			if [[ $_LNG = ita ]]; then
+				end_msg "no" "Pulizia cache pacchetti disinstallati"
+			else
+				end_msg "no" "Uninstalled packages cache cleaning"
+			fi
 		fi
 	fi
 	echo
@@ -1131,6 +1162,7 @@ EOF
 # This function prints the menu and handles choice of different options.
 #
 function main {
+	local sure
 	while true; do
 		clear
 		unset sure
