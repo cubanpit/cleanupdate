@@ -528,7 +528,7 @@ function clean_pkg {
 	# Here we'll check for '.pacnew' files, then catch '.pacnew' files that are
 	#  useless (there is 'foo.conf.pacnew' and not 'foo.conf'), finally warn the
 	#  user about it.
-	local -i i=0
+	local i=0
 	local -a pacnews=""
 	while IFS= read -r -d '' file; do
 		pacnews[i++]="$file"
@@ -571,7 +571,7 @@ function clean_pkg {
 			fi
 		fi
 	fi
-	if ! [[ ${#pacnews[@]} -eq ${#orphan_pacnews[@]} || ${#pacnews[@]} -eq 0 ]]; then
+	if [[ -n ${pacnews[0]} && ( ${#pacnews[@]} -gt ${#orphan_pacnews[@]} || -z ${orphan_pacnews[0]} ) ]]; then
 		echo
 		if [[ $_LNG = ita ]]; then
 			end_msg "warn" "Sono presenti nuove versioni di alcuni file di configurazione. Valutare le modifiche tramite il comando 'pacdiff'. Consultare la documentazione [8] per maggiori informazioni."
@@ -616,81 +616,73 @@ function clean_file {
 	fi
 	echo
 	if [[ $_LNG = ita ]]; then
-		qst_msg "yes" "Desideri stimare lo spazio occupato dai file poco recenti nella cache e tra le miniature"
+		echo "Stima dello spazio occupato da cache e miniature poco recenti in"\
+			"corso..."
 	else
-		qst_msg "yes" "Do you want to estimate disk space taken by old cache and thumbnails"
+		echo "Calculating disk space taken by old cache and thumbnails..."
 	fi
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]; then
-		# This part checks the existence of thumbnails and cache folders, then
-		#  calculate the total space they take.
-		local oldsize=0
-		if [[ -d "$HOME/.thumbnails" ]]; then
-			oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -type f\
-				-atime +30 -print0 | /bin/du --files0-from=- -cb |\
-				/bin/tail -1 | /bin/cut -f 1 )" | bc)
-			oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -empty -type d\
-				-atime +30 -print0 | /bin/du --files0-from=- -cb |\
-				/bin/tail -1 | /bin/cut -f 1 )" | bc)
+	# This part checks the existence of thumbnails and cache folders, then
+	#  calculate the total space they take.
+	local oldsize=0
+	if [[ -d "$HOME/.thumbnails" ]]; then
+		oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -type f\
+			-atime +30 -print0 | /bin/du --files0-from=- -cb |\
+			/bin/tail -1 | /bin/cut -f 1 )" | bc)
+		oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -empty -type d\
+			-atime +30 -print0 | /bin/du --files0-from=- -cb |\
+			/bin/tail -1 | /bin/cut -f 1 )" | bc)
+	fi
+	if [[ -d "$HOME/.thumbnails" ]]; then
+		oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
+			-prune -o \( -type f -atime +30 -print0 \) | /bin/du\
+			--files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+		oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
+			-prune -o \( -empty -type d -atime +30 -print0 \) | /bin/du\
+			--files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+	fi
+	if [[ $oldsize -gt 0 ]]; then
+		oldsize=$(human_size "$oldsize")
+		if [[ $_LNG = ita ]]; then
+			qst_msg "yes" "L'eliminazione di questi file libererà $oldsize di spazio su disco, vuoi procedere"
+		else
+			qst_msg "yes" "The deletion of these files frees $oldsize of disk space, do you want to continue"
 		fi
-		if [[ -d "$HOME/.thumbnails" ]]; then
-			oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
-				-prune -o \( -type f -atime +30 -print0 \) | /bin/du\
-				--files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
-			oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
-				-prune -o \( -empty -type d -atime +30 -print0 \) | /bin/du\
-				--files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
-		fi
-		if [[ $oldsize -gt 0 ]]; then
-			oldsize=$(human_size "$oldsize")
-			if [[ $_LNG = ita ]]; then
-				qst_msg "yes" "L'eliminazione di questi file libererà $oldsize di spazio su disco, vuoi procedere"
-			else
-				qst_msg "yes" "The deletion of these files frees $oldsize of disk space, do you want to continue"
+		read -r sure
+		if [[ $sure != "n" && $sure != "N" ]]; then
+			if [[ -d "$HOME/.thumbnails" ]]; then
+				/bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
+					xargs -0 /bin/rm -f
+				/bin/find "$HOME/.thumbnails" -empty -type d -atime +30\
+					-print0 | xargs -0 /bin/rm -rf
 			fi
-			read -r sure
-			if [[ $sure != "n" && $sure != "N" ]]; then
-				if [[ -d "$HOME/.thumbnails" ]]; then
-					/bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
-						xargs -0 /bin/rm -f
-					/bin/find "$HOME/.thumbnails" -empty -type d -atime +30\
-						-print0 | xargs -0 /bin/rm -rf
-				fi
-				if [[ -d "$HOME/.cache" ]]; then
-					/bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
-						\( -type f -atime +30 -print0 \) | xargs -0 /bin/rm -f
-					/bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
-						\( -empty -type d -atime +30 -print0 \) | xargs -0\
-						/bin/rm -rf
-				fi
-				if [[ $_LNG = ita ]]; then
-					end_msg "ok" "Pulizia cache e miniature"
-				else
-					end_msg "ok" "Thumbs and cache cleaning"
-				fi
+			if [[ -d "$HOME/.cache" ]]; then
+				/bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
+					\( -type f -atime +30 -print0 \) | xargs -0 /bin/rm -f
+				/bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
+					\( -empty -type d -atime +30 -print0 \) | xargs -0\
+					/bin/rm -rf
+			fi
+			if [[ $_LNG = ita ]]; then
+				end_msg "ok" "Pulizia cache e miniature"
 			else
-				if [[ $_LNG = ita ]]; then
-					end_msg "no" "Pulizia cache e miniature"
-				else
-					end_msg "no" "Thumbs and cache cleaning"
-				fi
+				end_msg "ok" "Thumbs and cache cleaning"
 			fi
 		else
 			if [[ $_LNG = ita ]]; then
-				echo "Non c'è necessità di eliminare alcun"\
-					"file, le cartelle sono sufficientemente pulite."
-				end_msg "skip" "Pulizia cache e miniature"
+				end_msg "no" "Pulizia cache e miniature"
 			else
-				echo "There is no need to delete any file,"\
-					"these folders are pretty clean."
-				end_msg "skip" "Thumbs and cache cleaning"
+				end_msg "no" "Thumbs and cache cleaning"
 			fi
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
-			end_msg "no" "Pulizia cache e miniature"
+			echo "Non c'è necessità di eliminare alcun"\
+				"file, le cartelle sono sufficientemente pulite."
+			end_msg "skip" "Pulizia cache e miniature"
 		else
-			end_msg "no" "Thumbs and cache cleaning"
+			echo "There is no need to delete any file,"\
+				"these folders are pretty clean."
+			end_msg "skip" "Thumbs and cache cleaning"
 		fi
 	fi
 	echo
@@ -703,7 +695,7 @@ function clean_file {
 	if [[ $sure != "n" && $sure != "N" ]]; then
 		# Null separated output will be used just to have less problem with
 		#  strange characters.
-		local -i i=0
+		local i=0
 		local -a residfiles=""
 		while IFS= read -r -d '' file; do
 			residfiles[i++]="$file"
