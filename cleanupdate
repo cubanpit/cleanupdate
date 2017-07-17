@@ -792,7 +792,7 @@ function clean_file {
 	read -r sure
 	if [[ $sure != "n" && $sure != "N" ]]; then
 		if [[ -d "$HOME/.local/share/Trash/files" ]]; then
-			local -i i=0
+			local i=0
 			local -a trashfiles=""
 			while IFS= read -r -d '' file; do
 				trashfiles[i++]="$file"
