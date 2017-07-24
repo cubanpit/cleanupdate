@@ -29,6 +29,42 @@
 # -u: Treat unset variables as an error when substituting.
 set -eu
 
+# Default language is English, but Italian it's available
+_LNG="eng"
+if [[ "$LANG" =~ "it_IT" ]]; then
+	_LNG="ita"
+fi
+
+#
+# Function that prints warning message and wait for user input when the script
+#  terminates unexpectedly.
+#
+function exit_trap {
+	echo
+	if [[ $_LNG = ita ]]; then
+		echo "Lo script è terminato in modo non previsto. Premere un tasto"\
+			"qualsiasi per uscire."
+	else
+		echo "Script terminated unexpectedly. Press any key to exit."
+	fi
+	read -rs -n1
+}
+
+# Define trap for any type of EXIT, calls the previous defined function
+trap exit_trap EXIT
+
+# Check if /bin/tput is installed, otherwise some commands can't work
+if [[ ! -x /bin/tput ]]; then
+	if [[ $_LNG = ita ]]; then
+		echo "ERRORE: /bin/tput non è presente sul sistema, verificare che la"\
+			"libreria 'ncurses' sia installata correttamente." 1>&2
+	else
+		echo "ERROR: /bin/tput is not present in the system, verify that"\
+			"verify that 'ncurses' library is properly installed." 1>&2
+	fi
+	exit 1
+fi
+
 # Define some useful text style and color
 _BOLD=$(/bin/tput bold)
 _NORMAL=$(/bin/tput sgr0)
@@ -37,12 +73,6 @@ _GREEN=$(/bin/tput setaf 2)
 _YELLOW=$(/bin/tput setaf 3)
 _AQUA=$(/bin/tput setaf 6)
 readonly _BOLD _NORMAL _RED _GREEN _YELLOW _AQUA
-
-# Default language is English, but Italian it's available
-_LNG="eng"
-if [[ "$LANG" =~ "it_IT" ]]; then
-	_LNG="ita"
-fi
 
 # Check if $HOME is defined, otherwise many commands can't work
 if [[ -z $HOME ]]; then
@@ -1271,6 +1301,8 @@ function main {
 				fi
 				;;
 			q|0)
+				# Clear trap rules
+				trap - EXIT
 				# Clear terminal, scrollback included
 				clear && echo -en "\e[3J"
 				exit 0
