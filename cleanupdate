@@ -53,14 +53,22 @@ function exit_trap {
 # Define trap for any type of EXIT, calls the previous defined function
 trap exit_trap EXIT
 
+# Initialise logfile with current date and time
+logfile="/tmp/cleanupdate.log"
+echo -e "\n$(date -R) --- Cleanupdate errors log\n" >> $logfile
+
+# Define alias to print errors in stderr and in a logfile
+print_errors="tee --append $logfile"
+
 # Check if /bin/tput is installed, otherwise some commands can't work
 if [[ ! -x /bin/tput ]]; then
 	if [[ $_LNG = ita ]]; then
 		echo "ERRORE: /bin/tput non è presente sul sistema, verificare che la"\
-			"libreria 'ncurses' sia installata correttamente." 1>&2
+			"libreria 'ncurses' sia installata correttamente." | $print_errors
 	else
 		echo "ERROR: /bin/tput is not present in the system, verify that"\
-			"verify that 'ncurses' library is properly installed." 1>&2
+			"verify that 'ncurses' library is properly installed." | \
+			$print_errors
 	fi
 	exit 1
 fi
@@ -78,10 +86,11 @@ readonly _BOLD _NORMAL _RED _GREEN _YELLOW _AQUA
 if [[ -z $HOME ]]; then
 	if [[ $_LNG = ita ]]; then
 		echo "ERRORE: la variabile d'ambiente $HOME è vuota,"\
-			"è impossibile ottenere il percordo per la home dell'utente." 1>&2
+			"è impossibile ottenere il percorso per la home dell'utente." | \
+			$print_errors
 	else
 		echo "ERROR: $HOME variable not set properly,"\
-			"it is impossible to get the path of user's home." 1>&2
+			"it is impossible to get the path of user's home." | $print_errors
 	fi
 	exit 1
 fi
@@ -103,9 +112,11 @@ function human_size {
 		num="$num B"
 	else
 		if [[ $_LNG = ita ]]; then
-			echo "ERRORE: impossibile convertire numeri negativi." 1>&2
+			echo "ERRORE: impossibile convertire numeri negativi." | \
+				$print_errors
 		else
-			echo "ERROR: it's not possible to convert negative numbers." 1>&2
+			echo "ERROR: it's not possible to convert negative numbers." | \
+				$print_errors
 		fi
 		exit 1
 	fi
@@ -153,9 +164,10 @@ function end_msg {
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
-			echo "ERRORE: modalità sconosciuta, vedere funzione end_msg()." 1>&2
+			echo "ERRORE: modalità sconosciuta, vedere funzione end_msg()." | \
+				$print_errors
 		else
-			echo "ERROR: unknown option, see end_msg() function." 1>&2
+			echo "ERROR: unknown option, see end_msg() function." | $print_errors
 		fi
 		exit 1
 	fi
@@ -187,9 +199,10 @@ function qst_msg {
 	else
 		if [[ $_LNG = ita ]]; then
 			echo "ERRORE: risposta predefinita sconosciuta, vedere funzione"\
-				"qst_msg()." 1>&2
+				"qst_msg()." | $print_errors
 		else
-			echo "ERROR: unknown default answer, see qst_msg() function." 1>&2
+			echo "ERROR: unknown default answer, see qst_msg() function." | \
+				$print_errors
 		fi
 		exit 1
 	fi
@@ -202,8 +215,8 @@ function qst_msg {
 function check_root {
 	if [[ "$(id -u)" = "0" ]]
 	then
-		echo "This script should not be executed as root." 1>&2
-		echo "Please retry running it as user." 1>&2
+		echo "This script should not be executed as root." | $print_errors
+		echo "Please retry running it as user." | $print_errors
 		exit 126
 	fi
 }
@@ -215,16 +228,19 @@ function check_root {
 function check_args {
 	if [[ $# -gt 0 ]] ; then
 		if [[ $_LNG = ita ]]; then
-			echo "Errore! Sono stati forniti i seguenti argomenti:" 1>&2
+			echo "Errore! Sono stati forniti i seguenti argomenti:" | \
+				$print_errors
 		else
-			echo "Error! Some arguments have been provided:" 1>&2
+			echo "Error! Some arguments have been provided:" | $print_errors
 		fi
-		echo -en "\t" 1>&2 ; for i in "$@" ; do echo -n "$i" 1>&2 ; \
-			echo -n " " 1>&2 ; done ; echo 1>&2 ; echo 1>&2
+		echo -en "\t" | $print_errors ; for i in "$@" ; \
+		do echo -n "$i" | $print_errors ; echo -n " " | $print_errors ; done ; \
+		echo | $print_errors ; echo | $print_errors
 		if [[ $_LNG = ita ]]; then
-			echo "Cleanupdate non ha bisogno di alcuni argomento." 1>&2
+			echo "Cleanupdate non ha bisogno di alcuni argomento." | \
+				$print_errors
 		else
-			echo "Cleanupdate doesn't need any argument." 1>&2
+			echo "Cleanupdate doesn't need any argument." | $print_errors
 		fi
 		exit 1
 	fi
@@ -402,7 +418,8 @@ function sys_update {
 		else
 			if [[ $_LNG = ita ]]; then
 				echo "Non risulta installato né 'yaourt' né 'pacaur', non è"\
-					"possibile accedere agli aggiornamenti AUR tramite questo script."
+					"possibile accedere agli aggiornamenti AUR tramite questo"\
+					"script."
 				end_msg "skip" "Aggiornamento AUR"
 			else
 				echo "You don't have neither 'yaourt' nor 'pacaur' installed,"\
