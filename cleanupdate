@@ -647,23 +647,48 @@ function clean_file {
 	if [[ "$(/bin/cat /proc/1/comm)" = systemd ]]; then
 		echo
 		if [[ $_LNG = ita ]]; then
-			qst_msg "yes" "Desideri ripulire i file di log per guadagnare spazio su disco"
+			echo "Controllo della dimensione dei log in corso..."
 		else
-			qst_msg "yes" "Do you want to clean log files to save disk space"
+			echo "Checking journal log disk usage..."
 		fi
-		read -r sure
-		if [[ $sure != "n" && $sure != "N" ]]; then
-			/bin/sudo /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks | /bin/tail -n 1
+		local log_size
+		log_size=$(journalctl --disk-usage | sed -e "s/[a-z]//g" | \
+			sed -e "s/\s\+/ /g" | cut -d" " -f 2)
+		if echo "$log_size" | grep -q G ; then
+			log_size=1000
+		else
+			log_size=1
+		fi
+		log_size=$(echo "$log_size*$(journalctl --disk-usage | \
+			sed -e "s/[A-Za-z ]//g" | sed -e "s/\..*$//g")" | bc)
+		if [[ $log_size -ge 100 ]]; then
 			if [[ $_LNG = ita ]]; then
-				end_msg "ok" "Pulizia file di log"
+				qst_msg "yes" "Potrebbe essere utile ripulire i file di log, vuoi procedere"
 			else
-				end_msg "ok" "Log files cleaning"
+				qst_msg "yes" "It may be useful to clean log files, do you want to continue"
+			fi
+			read -r sure
+			if [[ $sure != "n" && $sure != "N" ]]; then
+				/bin/sudo /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks | /bin/tail -n 1
+				if [[ $_LNG = ita ]]; then
+					end_msg "ok" "Pulizia file di log"
+				else
+					end_msg "ok" "Log files cleaning"
+				fi
+			else
+				if [[ $_LNG = ita ]]; then
+					end_msg "no" "Pulizia file di log"
+				else
+					end_msg "no" "Log files cleaning"
+				fi
 			fi
 		else
 			if [[ $_LNG = ita ]]; then
-				end_msg "no" "Pulizia file di log"
+				echo "I file di log non occupano eccessivo spazio su disco."
+				end_msg "skip" "Pulizia file di log"
 			else
-				end_msg "no" "Log files cleaning"
+				echo "Log files do not use significant disk space."
+				end_msg "skip" "Log files cleaning"
 			fi
 		fi
 	fi
@@ -740,156 +765,136 @@ function clean_file {
 	fi
 	echo
 	if [[ $_LNG = ita ]]; then
-		qst_msg "yes" "Desideri cercare file residui"
+		echo "Ricerca di file residui in corso..."
 	else
-		qst_msg "yes" "Do you want to search for residual files"
+		echo "Searching residual file..."
 	fi
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]; then
-		# Null separated output will be used just to have less problem with
-		#  strange characters.
-		local i=0
-		local -a residfiles=""
-		while IFS= read -r -d '' file; do
-			residfiles[i++]="$file"
-		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
-			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
-			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
-			-o -path "*/.git" -prune -o -name "*~" -user "$USER" -print0\
-			2>/dev/null)
-		while IFS= read -r -d '' file; do
-			residfiles[i++]="$file"
-		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
-			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
-			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
-			-o -path "*/.git" -prune -o -name ".*.swp" -user "$USER" -print0\
-			2>/dev/null)
-		while IFS= read -r -d '' file; do
-			residfiles[i++]="$file"
-		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
-			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
-			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
-			-o -path "*/.git" -prune -o -name "Desktop.ini" -user "$USER"\
-			-print0 2>/dev/null)
-		while IFS= read -r -d '' file; do
-			residfiles[i++]="$file"
-		done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
-			"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
-			-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
-			-o -path "*/.git" -prune -o -name "Thumbs.db" -user "$USER" -print0\
-			2>/dev/null)
-		if [[ -n ${residfiles[0]} ]]; then
-			# Print every residual file
+	# Null separated output will be used just to have less problem with
+	#  strange characters.
+	local i=0
+	local -a residfiles=""
+	while IFS= read -r -d '' file; do
+		residfiles[i++]="$file"
+	done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+		"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
+		-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
+		-o -path "*/.git" -prune -o -name "*~" -user "$USER" -print0\
+		2>/dev/null)
+	while IFS= read -r -d '' file; do
+		residfiles[i++]="$file"
+	done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+		"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
+		-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
+		-o -path "*/.git" -prune -o -name ".*.swp" -user "$USER" -print0\
+		2>/dev/null)
+	while IFS= read -r -d '' file; do
+		residfiles[i++]="$file"
+	done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+		"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
+		-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
+		-o -path "*/.git" -prune -o -name "Desktop.ini" -user "$USER"\
+		-print0 2>/dev/null)
+	while IFS= read -r -d '' file; do
+		residfiles[i++]="$file"
+	done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+		"$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
+		-path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
+		-o -path "*/.git" -prune -o -name "Thumbs.db" -user "$USER" -print0\
+		2>/dev/null)
+	if [[ -n ${residfiles[0]} ]]; then
+		# Print every residual file
+		for i in "${residfiles[@]}"; do
+			echo "$i"
+		done | /bin/column -x
+		# Calculate space taken by residual files
+		local residsize=0
+		for i in "${residfiles[@]}"; do
+			residsize=$( echo "$residsize+$( /bin/du -b "$i" | /bin/cut -f 1 )" | bc )
+		done
+		residsize=$(human_size "$residsize")
+		if [[ $_LNG = ita ]]; then
+			qst_msg "no" "Ci sono ${#residfiles[@]} file residui che occupano $residsize di spazio su disco, desideri rimuoverli"
+		else
+			qst_msg "no" "There are ${#residfiles[@]} residual files that take $residsize of disk space, do you want to remove them"
+		fi
+		read -r sure
+		if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
+			# Remove every residual file
 			for i in "${residfiles[@]}"; do
-				echo "$i"
-			done | /bin/column -x
-			# Calculate space taken by residual files
-			local residsize=0
-			for i in "${residfiles[@]}"; do
-				residsize=$( echo "$residsize+$( /bin/du -b "$i" | /bin/cut -f 1 )" | bc )
+				/bin/rm -f "$i"
 			done
-			residsize=$(human_size "$residsize")
 			if [[ $_LNG = ita ]]; then
-				qst_msg "no" "Ci sono ${#residfiles[@]} file residui che occupano $residsize di spazio su disco, desideri rimuoverli"
+				end_msg "ok" "Pulizia file residui"
 			else
-				qst_msg "no" "There are ${#residfiles[@]} residual files that take $residsize of disk space, do you want to remove them"
-			fi
-			read -r sure
-			if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
-				# Remove every residual file
-				for i in "${residfiles[@]}"; do
-					/bin/rm -f "$i"
-				done
-				if [[ $_LNG = ita ]]; then
-					end_msg "ok" "Pulizia file residui"
-				else
-					end_msg "ok" "Residual files cleaning"
-				fi
-			else
-				if [[ $_LNG = ita ]]; then
-					end_msg "no" "Pulizia file residui"
-				else
-					end_msg "no" "Residual files cleaning"
-				fi
+				end_msg "ok" "Residual files cleaning"
 			fi
 		else
 			if [[ $_LNG = ita ]]; then
-				echo "Non sono presenti file residui."
-				end_msg "skip" "Pulizia file residui"
+				end_msg "no" "Pulizia file residui"
 			else
-				echo "There are no residual files."
-				end_msg "skip" "Residual files cleaning"
+				end_msg "no" "Residual files cleaning"
 			fi
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
-			end_msg "no" "Pulizia file residui"
+			echo "Non sono presenti file residui."
+			end_msg "skip" "Pulizia file residui"
 		else
-			end_msg "no" "Residual files search"
+			echo "There are no residual files."
+			end_msg "skip" "Residual files cleaning"
 		fi
 	fi
 	echo
 	if [[ $_LNG = ita ]]; then
-		qst_msg "yes" "Desideri controllare lo stato del cestino"
+		echo "Stima dimensioni dei file nel cestino in corso..."
 	else
-		qst_msg "yes" "Do you want to check trash status"
+		echo "Checking trash files size..."
 	fi
-	read -r sure
-	if [[ $sure != "n" && $sure != "N" ]]; then
-		if [[ -d "$HOME/.local/share/Trash/files" ]]; then
-			local i=0
-			local -a trashfiles=""
-			while IFS= read -r -d '' file; do
-				trashfiles[i++]="$file"
-			done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
-			# This for loop counts total space taken by files and prints every
-			#  file name next to the file size.
-			local trashsize=0
-			if [[ -n ${trashfiles[0]} ]]; then
-				for i in "${trashfiles[@]}"; do
-					local filename
-					filename=$( basename "$i" )
-					local filesize
-					filesize=$( /bin/du -bs "$i" | /bin/cut -f 1 )
-					trashsize=$( echo "$trashsize+$filesize" | bc )
-					filesize=$( human_size "$filesize" )
-					echo -ne "   $filesize   \t"
-					if [[ -d "$i" ]]; then
-						filename+="/"
-						echo "${_BOLD}$filename${_NORMAL}"
-					else
-						echo "$filename"
-					fi
-				done
-				trashsize=$(human_size "$trashsize")
-				if [[ $_LNG = ita ]]; then
-					qst_msg "no" "Sono presenti ${#trashfiles[@]} elementi che occupano $trashsize di spazio sul disco, desideri eliminarli definitivamente"
+	if [[ -d "$HOME/.local/share/Trash/files" ]]; then
+		local i=0
+		local -a trashfiles=""
+		while IFS= read -r -d '' file; do
+			trashfiles[i++]="$file"
+		done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
+		# This for loop counts total space taken by files and prints every
+		#  file name next to the file size.
+		local trashsize=0
+		if [[ -n ${trashfiles[0]} ]]; then
+			for i in "${trashfiles[@]}"; do
+				local filename
+				filename=$( basename "$i" )
+				local filesize
+				filesize=$( /bin/du -bs "$i" | /bin/cut -f 1 )
+				trashsize=$( echo "$trashsize+$filesize" | bc )
+				filesize=$( human_size "$filesize" )
+				echo -ne "   $filesize   \t"
+				if [[ -d "$i" ]]; then
+					filename+="/"
+					echo "${_BOLD}$filename${_NORMAL}"
 				else
-					qst_msg "no" "There are ${#trashfiles[@]} items that take $trashsize of disk space, do you want do definetely delete them"
+					echo "$filename"
 				fi
-				read -r sure
-				if [[ ( $_LNG != ita && ( $sure = y || $sure = Y ) ) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
-					/bin/rm -rf "$HOME/.local/share/Trash/files"
-					/bin/rm -rf "$HOME/.local/share/Trash/info"
-					if [[ $_LNG = ita ]]; then
-						end_msg "ok" "Pulizia cestino"
-					else
-						end_msg "ok" "Trash cleaning"
-					fi
+			done
+			trashsize=$(human_size "$trashsize")
+			if [[ $_LNG = ita ]]; then
+				qst_msg "no" "Sono presenti ${#trashfiles[@]} elementi che occupano $trashsize di spazio sul disco, desideri eliminarli definitivamente"
+			else
+				qst_msg "no" "There are ${#trashfiles[@]} items that take $trashsize of disk space, do you want do definetely delete them"
+			fi
+			read -r sure
+			if [[ ( $_LNG != ita && ( $sure = y || $sure = Y ) ) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
+				/bin/rm -rf "$HOME/.local/share/Trash/files"
+				/bin/rm -rf "$HOME/.local/share/Trash/info"
+				if [[ $_LNG = ita ]]; then
+					end_msg "ok" "Pulizia cestino"
 				else
-					if [[ $_LNG = ita ]]; then
-						end_msg "no" "Pulizia cestino"
-					else
-						end_msg "no" "Trash cleaning"
-					fi
+					end_msg "ok" "Trash cleaning"
 				fi
 			else
 				if [[ $_LNG = ita ]]; then
-					echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
-					end_msg "skip" "Pulizia cestino"
+					end_msg "no" "Pulizia cestino"
 				else
-					echo "Trash is completely empty, there is no need to clean it."
-					end_msg "skip" "Trash cleaning"
+					end_msg "no" "Trash cleaning"
 				fi
 			fi
 		else
@@ -903,9 +908,11 @@ function clean_file {
 		fi
 	else
 		if [[ $_LNG = ita ]]; then
-			end_msg "no" "Pulizia cestino"
+			echo "Il cestino è completamente vuoto, non c'è alcun bisogno di svuotarlo."
+			end_msg "skip" "Pulizia cestino"
 		else
-			end_msg "no" "Trash cleaning"
+			echo "Trash is completely empty, there is no need to clean it."
+			end_msg "skip" "Trash cleaning"
 		fi
 	fi
 }
