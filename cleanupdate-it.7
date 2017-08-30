@@ -10,28 +10,28 @@ come gestore di pacchetti, in particolare basato su Arch Linux.
 ."
 .SS Aggiornamento del sistema
 .PP
-.B Aggiornamento dei pacchetti dai repository ufficiali:
-Nel caso in cui il sistema installato sia Manjaro Linux viene aggiornata la lista dei mirror tramite
-.BR pacman-mirrors "(8), "
-se non è già stata aggiornata nel giorno corrente. Dopodiché effettua l'aggiornamento di tutti i pacchetti, tramite il comando
+.B Aggiornamento pacchetti dai repository ufficiali:
+Nel caso in cui il sistema installato sia Manjaro Linux aggiorna la lista dei mirror tramite
+.BR "pacman-mirrors" "(8),"
+se non è già stata aggiornata nel giorno corrente, dopodiché effettua l'aggiornamento di tutti i pacchetti, tramite il comando
 .BR "pacman -Syu" "."
 Il comando notifica se la versione installata di un pacchetto è più recente di quella nei repository, in questo caso dovrebbe venire proposto automaticamente un downgrade (abbassamento di versione) dei pacchetti problematici, tramite il comando
 .BR "pacman -Syuu" "."
 .PP
-.B Aggiornamento dei pacchetti da AUR:
+.B Aggiornamento pacchetti da AUR:
 Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se necessario. Può utilizzare come strumenti (in ordine di priorità)
-.BR pacaur "(8) "
+.BR "pacaur" "(8)"
 oppure
-.BR yaourt "(8). "
+.BR "yaourt" "(8)."
 Prima di controllare gli aggiornamenti lo script esegue un controllo per la presenza di pacchetti orfani, può essere utile nel caso in cui dei pacchetti installati come dipendenze vengano dismessi dai repository ufficiali di Arch Linux per essere trasferiti nei repository AUR.
 ."
 .SS Pulizia pacchetti
 .PP
-.B Ricerca e rimozione dei pacchetti orfani:
+.B Ricerca e rimozione pacchetti orfani:
 Effettua una ricerca dei pacchetti orfani, cioè quelli installati come dipendenza di un altro pacchetto attualmente non più installato sul sistema, o le cui dipendenze sono state modificate. Il comando utilizzato per la ricerca è
 .BR "pacman -Qdtq" "."
 .PP
-.B Pulizia della cache dei pacchetti installati:
+.B Pulizia cache dei pacchetti installati:
 Elimina le vecchie versioni dei pacchetti installati che
 .B pacman
 tiene come backup
@@ -40,10 +40,67 @@ di
 .BR "pacman" ") tramite" " paccache" ","
 lasciando solo le ultime due versioni che possono essere utili per effettuare un
 .I downgrade
-(abbassamento di versione) di un pacchetto. Il gestore di pacchetti pacman come comportamento predefinito mantiene un backup di tutte le vecchie versioni dei pacchetti installati, compresi quelli non più presenti sul sistema. Questo utilissimo backup può occupare col tempo molto spazio su disco ed è quindi consigliabile ripulirlo.
+(abbassamento di versione) di un pacchetto. Il gestore di pacchetti pacman come comportamento predefinito mantiene un backup di tutte le vecchie versioni dei pacchetti installati, compresi quelli non più presenti sul sistema.
 .PP
-.B Pulizia della cache dei pacchetti non installati:
+.B Pulizia cache dei pacchetti non installati:
 Come la voce precedente, ma per i pacchetti non più installati sul sistema. Non essendoci necessità di effettuare downgrade non conserva neanche una versione di backup.
+.PP
+.B Ottimizzazione database di pacman:
+Esegue una deframmentazione del database di
+.B pacman
+tramite il comando
+.BR "pacman-optimize" "."
+La procedura viene automaticamente saltata nel caso in cui il database di
+.B pacman
+risieda su un disco a stato solido (non rotazionale).
+.PP
+.B Verifica file di configurazione:
+Viene verificata la presenza di file
+.I *.pacnew
+nella cartella di sistema
+.IR "/etc" ","
+questi file vengono creati da
+.B pacman
+quando un pacchetto aggiorna il proprio file di configurazione, questo per evitare di sovrascrivere i file di configurazione modificati dall'utente; nel caso in cui il file
+.I pacnew
+non abbia un corrispondente file di configurazione (stesso nome ma senza
+.IR ".pacnew" ")"
+allora non ha nessuna utilità e viene considerato orfano. Nel caso in cui siano presenti file
+.I pacnew
+non orfani è consigliata la consultazione degli stessi tramite il comando
+.IR "pacdiff" ","
+maggiori informazioni tramite
+.B pacdiff --help
+o all'indirizzo <https://wiki.archlinux.org/index.php/Pacman/Pacnew_and_Pacsave_(Italiano)>.
+."
+.SS Pulizia file
+.PP
+.B Pulizia log:
+Come impostazione predefinita viene conservata una quantità eccessiva di log da parte di
+.BR "journalctl" "(1),"
+vengono quindi rimossi i log in eccedenza tramite il comando
+.BR "journalctl --vacuum-size=200M --vacuum-time=2weeks" "."
+Questo passaggio viene automaticamente saltato se il sistema di avvio non è
+.BR "systemd" "(1)."
+.PP
+.B Pulizia cache e miniature:
+Ricerca nelle cartelle
+.IR "/home/cubanpit/.cache" " e " "/home/cubanpit/.thumbnails"
+file con l'ultimo accesso risalente a più di 30 giorni prima e li cancella, elimina anche le eventuali cartelle vuote che si trovano all'interno.
+.PP
+.B Ricerca file residui:
+Effettua una ricerca in tutta la cartella
+.I home
+dell'utente dei file che si chiamano
+.IR "Thumbs.db" ", " "Desktop.ini" ", " ".*.swp" " e " "*~" "."
+I primi due sono file creati dai sistemi Windows ed inutili su di un sistema Linux. Gli ultimi due tipi di file sono file temporanei creati da molte applicazioni come salvataggio temporaneo di sicurezza del lavoro in corso, si consiglia quindi di salvare i propri documenti in tutte le applicazioni aperte prima di eseguire questa procedura.
+.PP
+.B Pulizia cestino:
+Cancella tutti i file presenti nel cestino dell'utente, i cui file sono contenuti in
+.IR "/home/cubanpit/.local/share/Trash/files" "."
 ."
 .SH OPZIONI
-cleanupdate al momento non richiede alcuna opzione di utilizzo, nel caso in cui vengano forniti argomenti si interrompe restituendo un errore.
+cleanupdate al momento non richiede alcuna configurazione e non accetta alcuna opzione per il suo utilizzo, nel caso in cui vengano forniti argomenti si interrompe restituendo un errore.
+."
+.SH SEGNALAZIONE BUG
+<https://github.com/cubanpit/cleanupdate>
