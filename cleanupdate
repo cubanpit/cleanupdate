@@ -257,58 +257,55 @@ function check_args {
 #  wants to remove them.
 #
 function orph_pkgs {
-	if [[ $orphcheck = false ]]; then
-		# Look for orphan packages, they could be pkgs removed from repositories
-		#  and moved to AUR, better not to upgrade them silently.
-		echo
+	# Look for orphan packages, they could be pkgs removed from repositories
+	#  and moved to AUR, better not to upgrade them silently.
+	echo
+	if [[ $_LNG = ita ]]; then
+		echo "Ricerca pacchetti orfani in corso..."
+	else
+		echo "Looking for orphan packages..."
+	fi
+	local -a orphans=""
+	if /bin/pacman -Qdtq >/dev/null ; then
+		readarray -t orphans < <( /bin/pacman -Qdtq )
+	fi
+	if [[ -n ${orphans[0]} ]]; then
 		if [[ $_LNG = ita ]]; then
-			echo "Ricerca pacchetti orfani in corso..."
+			end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
 		else
-			echo "Looking for orphan packages..."
+			end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
 		fi
-		local -a orphans=""
-		if /bin/pacman -Qdtq >/dev/null ; then
-			readarray -t orphans < <( /bin/pacman -Qdtq )
+		for i in "${orphans[@]}"; do
+			echo "$i"
+		done | /bin/column -x
+		if [[ $_LNG = ita ]]; then
+			qst_msg "yes" "Sono presenti ${#orphans[@]} pacchetti orfani, desideri rimuoverli"
+		else
+			qst_msg "yes" "There are ${#orphans[@]} orphaned packages, do you want to remove them"
 		fi
-		if [[ -n ${orphans[0]} ]]; then
-			orphcheck=true
+		read -r sure
+		if [[ $sure != "n" && $sure != "N" ]]; then
+			/bin/sudo /bin/pacman --color always --noconfirm -Rs "${orphans[@]}"
 			if [[ $_LNG = ita ]]; then
-				end_msg "warn" "Sono presenti pacchetti orfani, se non sono stati installati volontariamente ne è consigliata la rimozione."
+				end_msg "ok" "Pacchetti orfani"
 			else
-				end_msg "warn" "There are orphan packages, if you haven't installed them explicitly it's a good choice to remove them."
+				end_msg "ok" "Orphan packages"
 			fi
-			for i in "${orphans[@]}"; do
-				echo "$i"
-			done | /bin/column -x
-			if [[ $_LNG = ita ]]; then
-				qst_msg "yes" "Sono presenti ${#orphans[@]} pacchetti orfani, desideri rimuoverli"
-			else
-				qst_msg "yes" "There are ${#orphans[@]} orphaned packages, do you want to remove them"
-			fi
-			read -r sure
-			if [[ $sure != "n" && $sure != "N" ]]; then
-				/bin/sudo /bin/pacman --color always --noconfirm -Rs "${orphans[@]}"
-				if [[ $_LNG = ita ]]; then
-					end_msg "ok" "Pacchetti orfani"
-				else
-					end_msg "ok" "Orphan packages"
-				fi
-			else
-				if [[ $_LNG = ita ]]; then
-					end_msg "no" "Pacchetti orfani"
-				else
-					end_msg "no" "Orphan packages"
-				fi
-			fi
-			echo
 		else
 			if [[ $_LNG = ita ]]; then
-				end_msg "skip" "Non sono presenti pacchetti orfani."
+				end_msg "no" "Pacchetti orfani"
 			else
-				end_msg "skip" "There are no orphan packages."
+				end_msg "no" "Orphan packages"
 			fi
-			echo
 		fi
+		echo
+	else
+		if [[ $_LNG = ita ]]; then
+			end_msg "skip" "Non sono presenti pacchetti orfani."
+		else
+			end_msg "skip" "There are no orphan packages."
+		fi
+		echo
 	fi
 }
 
@@ -1217,11 +1214,6 @@ function main {
 	while true; do
 		clear
 		unset sure
-
-		# This variable is used to perform only one time 'per cycle' the check
-		#  for orphan packages, otherwise the check will occur before AUR update
-		#  and inside 'Clean packages' function.
-		local orphcheck=false
 
 		echo
 		echo "      _                                  _       _        "
