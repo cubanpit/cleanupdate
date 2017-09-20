@@ -1,0 +1,35 @@
+.TH cleanupdate 7 "20 Settembre 2017"
+."
+.SH NAME
+cleanupdate - update and clean the system
+."
+.SH DESCRIPTION
+cleanupdate aims to give a simple terminal user interface to common cleaning and updating actions for any operating system that uses
+.BR pacman "(8)"
+as package manager; in particular it can take advantage from specific Manjaro Linux's functions, if present.
+."
+.SS System update
+.PP
+.B Package update from official repositories:
+If
+.BR "pacman-mirrors" "(8)"
+is installed (for example in Manjaro Linux) it is used to update the mirror list, then a system update is executed with the command
+.BR "pacman -Syu" "."
+The update process should notify the user in case a package is newer than the version present in repository, an automatic downgrade is suggested to the user, the commad used for it is
+.BR "pacman -Syuu" "."
+.PP
+.B Package update from AUR:
+The script updates packages from the AUR if an "AUR helper" is installed, at the moment are supported
+.BR "pacaur" "(8)"
+or
+.BR "yaourt" "(8),"
+chosen in this order of priority.
+Before checking updates the script verify the absence of orphan packages, this can be useful if a package installed as dependency to another one is moved from the official repository to the AUR.
+."
+
+
+.SH OPTIONS
+cleanupdate doesn't need any configuration and doesn't accept any options from command line, if any argument is given the script will exit immediately returning an error message.
+."
+.SH BUG REPORTS
+<https://github.com/cubanpit/cleanupdate>

@@ -1,25 +1,25 @@
-.TH cleanupdate 7 "17 August 2017"
+.TH cleanupdate 7 "20 Settembre 2017"
 ."
 .SH NOME
-cleanupdate - aggiorna e pulisce del sistema
+cleanupdate - aggiorna e pulisce il sistema
 ."
 .SH DESCRIZIONE
 cleanupdate è pensato per fornire un'interfaccia da terminale ma di semplice utilizzo per l'aggiornamento e la pulizia di un sistema operativo che utilizza
-.BR pacman "(8) "
-come gestore di pacchetti, in particolare basato su Arch Linux.
+.BR pacman "(8)"
+come gestore di pacchetti; sfruttando alcune peculiarità di Manjaro Linux, se disponibili.
 ."
 .SS Aggiornamento del sistema
 .PP
 .B Aggiornamento pacchetti dai repository ufficiali:
-Nel caso in cui il sistema installato sia Manjaro Linux aggiorna la lista dei mirror tramite
+Se sul sistema è presente
 .BR "pacman-mirrors" "(8),"
-se non è già stata aggiornata nel giorno corrente, dopodiché effettua l'aggiornamento di tutti i pacchetti, tramite il comando
+lo utilizza per l'aggiornamento della lista dei mirror, dopodiché effettua l'aggiornamento di tutti i pacchetti, tramite il comando
 .BR "pacman -Syu" "."
 Il comando notifica se la versione installata di un pacchetto è più recente di quella nei repository, in questo caso dovrebbe venire proposto automaticamente un downgrade (abbassamento di versione) dei pacchetti problematici, tramite il comando
 .BR "pacman -Syuu" "."
 .PP
 .B Aggiornamento pacchetti da AUR:
-Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se necessario. Può utilizzare come strumenti (in ordine di priorità)
+Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se è installato uno strumento per la gestione di questi pacchetti. Può utilizzare come strumenti (in ordine di priorità)
 .BR "pacaur" "(8)"
 oppure
 .BR "yaourt" "(8)."
