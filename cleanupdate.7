@@ -26,8 +26,83 @@ or
 chosen in this order of priority.
 Before checking updates the script verify the absence of orphan packages, this can be useful if a package installed as dependency to another one is moved from the official repository to the AUR.
 ."
-
-
+.SS Package cleaning
+.PP
+.B Research and removal of orphan packages:
+Searches for orphan packages, i.e. those installed as dependency to some other package no longer installed or whose dependencies have been modified.
+The command used for the research is
+.BR "pacman -Qdtq" "."
+.PP
+.B Installed packages cache cleaning:
+Removes old version of installed version, retained by
+.B pacman
+as backup.
+For this function the script uses
+.B paccache
+and leaves always the last two versions of every installed packages, these can be useful in case of needed package downgrade.
+.B pacman
+as default behavior retains every old versions of every packages installed on the system, even after the uninstallation process.
+.PP
+.B Uninstalled packages cache cleaning:
+Same as the previous paragraph, but for pacakges no longer installed on the system, in this case no old version are leaved in the package cache.
+.PP
+.B Pacman database optimization:
+Defragments the
+.B pacman
+database with the command
+.BR "pacman-optimize" "."
+This passage is automatically skipped if the database file is located on a non rotational disk, aka solid state drive.
+.PP
+.B Configuration file verification:
+The presence of
+.I *.pacnew
+in the
+.IR "/etc" ","
+system directory. these files are created by
+.B pacman
+when a package update its configuration files, this happens to avoid an overwrite of user modification to package configuration.
+If the
+.I pacnew
+file does not have a corresponding configuration file (same name without
+.IR ".pacnew" ")"
+then it has no reason to exist an is marked as orphan.
+If there are (non orphan)
+.I pacnew
+files it is recommended to consult those with the command
+.BR "pacdiff" ","
+you can find further information with
+.B pacdiff --help
+or at <https://wiki.archlinux.org/index.php/Pacman/Pacnew_and_Pacsave>.
+."
+.SS File cleaning
+.PP
+.B Log cleaning:
+As default behavior
+.BR "journalctl" "(1)"
+retains too much old information in log files, so this script clean old logs with the command
+.BR "journalctl --vacuum-size=200M --vacuum-time=2weeks" "."
+This function is automatically skipped if the init system is not
+.BR "systemd" "(1)"
+or the size of log files is estimated to be enough small.
+.PP
+.B Thumbnails and cache cleaning:
+The script research in
+.IR "$HOME/.cache" " e " "$HOME/.thumbnails"
+directories for files whose access time is more than 30 days old and deletes it, it also removes any empty directory in those paths.
+.PP
+.B Residual file research:
+The script research in the entire
+.I home
+directory for files that match
+.IR "Thumbs.db" ", " "Desktop.ini" ", " ".*.swp" " and " "*~" "."
+The first and the second are Windows temporary files, useless on a Linux system.
+The two others are temporary files created by many applications to backup unsaved changes, it is strongly suggested to save any open document during script execution.
+.PP
+.B Trash cleaning:
+It deletes every files in
+.IR "$HOME/.local/share/Trash/files" ","
+this should be the path to the user trash.
+."
 .SH OPTIONS
 cleanupdate doesn't need any configuration and doesn't accept any options from command line, if any argument is given the script will exit immediately returning an error message.
 ."
