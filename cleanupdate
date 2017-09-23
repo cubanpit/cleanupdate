@@ -327,16 +327,18 @@ function sys_update {
 	fi
 	read -r sure
 	if [[ $sure != "n" && $sure != "N" ]]; then
-		local distro=""
-		if [[ -f /etc/lsb-release ]]; then
-			if /bin/grep -iq manjaro /etc/lsb-release ; then
-				distro="manjaro"
-			fi
-		fi
-		if [[ "$distro" = manjaro &&\
+		if [[ -x /bin/pacman-mirrors && \
 			$( /bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
 			/bin/cut -d' ' -f2 ) != $( /bin/date +%Y-%m-%d ) ]]; then
-			/bin/sudo /bin/pacman-mirrors --sync -f10
+			if [[ $_LNG = ita ]]; then
+				qst_msg "yes" "La lista dei mirror non viene aggiornata da più di un giorno, desideri aggiornarla"
+			else
+				qst_msg "yes" "The mirror list is more than one day old, do you want to refresh it"
+			fi
+			read -r sure
+			if [[ $sure != "n" && $sure != "N" ]]; then
+				/bin/sudo /bin/pacman-mirrors --sync --fasttrack 10
+			fi
 		fi
 		local -a updates=""
 		if [[ -n $(/bin/checkupdates) ]]; then
@@ -919,22 +921,26 @@ function clean_file {
 #
 function trouble_shoot {
 	local again=true
+	local twidth
+	twidth=$(tput cols)
 while [[ $again = true ]]; do
 	clear
 	if [[ $_LNG = ita ]]; then
-		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Indicare quale di questi"\
-			"messaggi restituisce il gestore di pacchetti:\n${_NORMAL}"
+		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Indicare quale di"\
+			"questi messaggi restituisce il gestore di pacchetti:\n${_NORMAL}"\
+			| fmt -w "$twidth"
 		echo "${_BOLD}[1] ->${_NORMAL} errore: impossibile eseguire"\
-			"l'operazione richiesta (file in conflitto)"
+			"l'operazione richiesta (file in conflitto)" | fmt -w "$twidth"
 		echo "${_BOLD}[2] ->${_NORMAL} errore: impossibile eseguire"\
 			"l'operazione richiesta (il pacchetto non è valido oppure è"\
-			"corrotto (firma PGP))"
+			"corrotto (firma PGP))" | fmt -w "$twidth"
 		echo "${_BOLD}[3] ->${_NORMAL} errore: impossibile scaricare il"\
-			"pacchetto '...' da ..."
+			"pacchetto '...' da ..." | fmt -w "$twidth"
 		echo "${_BOLD}[4] ->${_NORMAL} errore: impossibile bloccare il"\
-			"database: File già esistente"
+			"database: File già esistente" | fmt -w "$twidth"
 		echo -e "\nSe il problema non è qui elencato si consiglia di chiedere"\
-			"aiuto sul forum online della propria distribuzione."
+			"aiuto sul forum online della propria distribuzione."\
+			| fmt -w "$twidth"
 		echo "${_BOLD}[q|0] ->${_NORMAL} Torna al menù principale"
 		echo -en "\n${_BOLD}Opzione: ${_NORMAL}"
 		read -r -n1 sure
@@ -946,11 +952,11 @@ while [[ $again = true ]]; do
 					"di pacchetti si accorge che per installare un determinato"\
 					"pacchetto sarebbe neccessario sovrascrivere un file già"\
 					"presente nel sistema. Il nome del file in questione viene"\
-					"stampato insieme al messaggio di errore."
-				echo "Ci sono due possibili soluzioni:"
+					"stampato insieme al messaggio di errore." | fmt -w "$twidth"
+				echo "Ci sono due possibili soluzioni:" | fmt -w "$twidth"
 				echo "-> se vengono segnalati solo pochi file è possibile"\
 					"rimuoverli manualmente tramite il comando 'sudo rm"\
-					"/percorso/completo/file';"
+					"/percorso/completo/file';" | fmt -w "$twidth"
 				echo "-> se i file sono molto numerosi è possibile"\
 					"automatizzare il processo dando al gestore di pacchetti"\
 					"il permesso di sovrascrivere i file in conflitto, questa"\
@@ -958,16 +964,17 @@ while [[ $again = true ]]; do
 					"effetti collaterali anche gravi, per utilizzarla bisogna"\
 					"lanciare il seguente comando di installazione fornendo il"\
 					"nome del pacchetto che causa il problema 'sudo pacman -S"\
-					"--force nomepacchetto'."
+					"--force nomepacchetto'." | fmt -w "$twidth"
 				echo
 				echo -n "Premi un tasto qualsiasi per continuare. "
 				read -rs -n1
 				;;
 			2) 	echo ; echo
 				echo "Questo messaggio di errore segnala l'impossibilità di"\
-					"verificare correttamente la provenienza di un pacchetto."
+					"verificare correttamente la provenienza di un pacchetto."\
+					| fmt -w "$twidth"
 				echo "Generalmente può essere risolto lanciando il seguenti"\
-					"comandi:"
+					"comandi:" | fmt -w "$twidth"
 				echo "  sudo rm -r /etc/pacman.d/gnupg"
 				echo "  sudo pacman -Sy gnupg archlinux-keyring manjaro-keyring"
 				echo "  sudo pacman-key --init"
@@ -980,17 +987,18 @@ while [[ $again = true ]]; do
 			3) 	echo ; echo
 				echo "Questo messaggio di errore compare quando il gestore"\
 					"di pacchetti non riesce a scaricare dai repository online"\
-					"i database o i pacchetti richiesti."
+					"i database o i pacchetti richiesti." | fmt -w "$twidth"
 				echo "La prima cosa da verificare è la corretta connessione"\
-					"ad una rete internet del sistema in uso."
+					"ad una rete internet del sistema in uso." | fmt -w "$twidth"
 				echo "Se il sistema risulta connesso ad internet ma il"\
 					"problema persiste è probabile che il gestore di pacchetti"\
 					"si stia rivolgendo ad un server non funzionante oppure"\
 					"obsoleto, è quindi necessario generare una nuova lista"\
 					"dei mirror; sui sistemi Manjaro Linux è possibile farlo"\
-					"tramite 'pacman-mirrors'."
+					"tramite 'pacman-mirrors'." | fmt -w "$twidth"
 				echo "Il comando consigliato per generare velocemente una"\
-					"nuova lista dei mirror è 'sudo pacman-mirrors -f10'."
+					"nuova lista dei mirror è 'sudo pacman-mirrors -f10'."\
+					| fmt -w "$twidth"
 				echo
 				echo -n "Premi un tasto qualsiasi per continuare. "
 				read -rs -n1
@@ -1000,34 +1008,36 @@ while [[ $again = true ]]; do
 					"file di lock, che indica un'operazione in corso da parte"\
 					"del gestore di pacchetti, a volte questo file non viene"\
 					"correttamente cancellato e rimane nonostante non ci sia"\
-					"alcuna operazione in corso."
+					"alcuna operazione in corso." | fmt -w "$twidth"
 				echo "Dopo aver controllato che non ci sia alcun processo"\
 					"di installazione/aggiornamento in atto (sia da parte di"\
 					"pacman sia da parte dei gestori software da interfaccia"\
 					"grafica) è possibile eliminare il file di lock lanciando"\
-					"il comando 'sudo rm /var/lib/pacman/db.lck'."
+					"il comando 'sudo rm /var/lib/pacman/db.lck'."\
+					| fmt -w "$twidth"
 				echo
 				echo -n "Premi un tasto qualsiasi per continuare. "
 				read -rs -n1
 				;;
 			*)	echo ; echo
 				echo -n "Non esiste l'opzione '$sure'. Premi un tasto"\
-					"qualsiasi per continuare. "
+					"qualsiasi per continuare. " | fmt -w "$twidth"
 				read -rs -n1
 		esac
 	else
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Select the error"\
-			"message printed by the package manager:\n${_NORMAL}"
+			"message printed by the package manager:\n${_NORMAL}"\
+			| fmt -w "$twidth"
 		echo "${_BOLD}[1] ->${_NORMAL} error: failed to commit transaction"\
-			"(conflicting files)"
+			"(conflicting files)" | fmt -w "$twidth"
 		echo "${_BOLD}[2] ->${_NORMAL} error: failed to commit transaction"\
-			"(invalid or corrupted package (PGP signature))"
+			"(invalid or corrupted package (PGP signature))" | fmt -w "$twidth"
 		echo "${_BOLD}[3] ->${_NORMAL} error: failed retrieving file '...'"\
-			"from ..."
+			"from ..." | fmt -w "$twidth"
 		echo "${_BOLD}[4] ->${_NORMAL} error: failed to init transaction"\
-			"(unable to lock database)"
+			"(unable to lock database)" | fmt -w "$twidth"
 		echo -e "\nIf the problem is not listed here ask to your"\
-			"distribution's online forum for help."
+			"distribution's online forum for help." | fmt -w "$twidth"
 		echo "${_BOLD}[q|0] ->${_NORMAL} Return to main menu"
 		echo -en "\n${_BOLD}Option: ${_NORMAL}"
 		read -r -n1 sure
@@ -1037,24 +1047,25 @@ while [[ $again = true ]]; do
 			1)	echo ; echo
 				echo "This error message appears when the pckage manager needs"\
 					"to overwrite an existing file in order to install a"\
-					"certain package."\
-					"The file name is printed in the error message."
+					"certain package. The file name is printed in the error"\
+					"message." | fmt -w "$twidth"
 				echo "There are two possible solutions:"
 				echo "-> if there are only a few conflicting files, they can"\
-					"be removed manually with 'sudo rm /path/to/file';"
+					"be removed manually with 'sudo rm /path/to/file';"\
+					| fmt -w "$twidth"
 				echo "-> if there are many conflicting files it is possible to"\
 					"give pacman permission to overwrite them; however this"\
 					"option can be dangerous and should be used only when"\
 					"necessary; to use it read from the error message the name"\
 					"of the package in question and execute 'sudo pacman -S"\
-					"--force packagename'."
+					"--force packagename'." | fmt -w "$twidth"
 				echo
 				echo -n "Press any key to continue. "
 				read -rs -n1
 				;;
 			2) 	echo ; echo
 				echo "This error message appears if pacman fails to verify the"\
-					"source of a package."
+					"source of a package." | fmt -w "$twidth"
 				echo "These commands should solve the problem:"
 				echo "  sudo rm -r /etc/pacman.d/gnupg"
 				echo "  sudo pacman -Sy gnupg archlinux-keyring manjaro-keyring"
@@ -1067,16 +1078,18 @@ while [[ $again = true ]]; do
 				;;
 			3) 	echo ; echo
 				echo "This error message appears if pacman fails to download"\
-					"needed packages or database from online repository."
+					"needed packages or database from online repository."\
+					| fmt -w "$twidth"
 				echo "Verify first that your system is properly connected to a"\
-					"network."
+					"network." | fmt -w "$twidth"
 				echo "If the problem persists, it is possible that pacman is"\
 					"trying to download files from a non working or obsolete"\
 					"server, in this case the mirror list should be updated;"\
 					"in a Manjaro Linux system you can use 'pacman-mirrors' to"\
-					"accomplish that."
+					"accomplish that." | fmt -w "$twidth"
 				echo "To generate a new mirrorlist in few seconds the"\
-					"suggested command is 'sudo pacman-mirrors -f10'."
+					"suggested command is 'sudo pacman-mirrors -f10'."\
+					| fmt -w "$twidth"
 				echo
 				echo -n "Press any key to continue. "
 				read -rs -n1
@@ -1085,125 +1098,24 @@ while [[ $again = true ]]; do
 				echo "This error message appears when pacman finds a lock"\
 					"file, which indicates that a package management"\
 					"transaction is in progress; however sometimes such files"\
-					"remain also after the transaction is finished."
+					"remain also after the transaction is finished."\
+					| fmt -w "$twidth"
 				echo "After making sure that no package management process"\
 					"(from pacman or from any graphical package management"\
 					"software) is in progress, then the lock file can be"\
-					"removed launching 'sudo rm /var/lib/pacman/db.lck'."
+					"removed launching 'sudo rm /var/lib/pacman/db.lck'."\
+					| fmt -w "$twidth"
 				echo
 				echo -n "Press any key to continue. "
 				read -rs -n1
 				;;
 			*)	echo ; echo
 				echo -n "There is no '$sure' option. Press any key to"\
-					"continue. "
+					"continue. " | fmt -w "$twidth"
 				read -rs -n1
 		esac
 	fi
 done
-}
-
-#
-# Function containing english documentation text.
-#
-function doc_eng {
-less -R << EOF
-Press 'q' to quit documentation
-
-${_BOLD}${_YELLOW}::Update system::${_NORMAL}
-
-${_BOLD}Update packages from repositories (pacman -Syu)${_NORMAL}
-Checks that local database is up to date with online repositories, compare packages version between database and installed packages, if versions are different runs update.
-It prints a warning if some packages are newer than those in repositories, it's possible to downgrade these packages with 'pacman -Syuu'.
-
-${_BOLD}Update packages from AUR (yaourt -Sua)${_NORMAL}
-Updates packages from AUR repository, if needed. It can use different tools for that: 'pacaur' or 'yaourt'.
-
-${_BOLD}${_YELLOW}::Packages cleaning::${_NORMAL}
-
-${_BOLD}Search and uninstall orphaned packages (pacman -Qdtq)${_NORMAL}
-Searches for packages installed as dependencies and no longer required, if there are any it asks before uninstalling them.
-
-${_BOLD}Clean the cache of installed packages (paccache -rk2)${_NORMAL}
-By default pacman keeps forever a backup of every version of every installed package, this backups can grow and fill the hard disk, so it must be cleaned from time to time. This command removes all backups for all installed packages keeping only two version, just in case it is necessary to perform a downgrade.
-
-${_BOLD}Clean the cache of uninstalled packages (paccache -ruk0)${_NORMAL}
-See previous command explanation. This works with unisnstalled packages and doesn't keep any backup version.
-
-${_BOLD}Optimize (defragment) pacman database (pacman-optimize)${_NORMAL}
-This command simply optimize access to pacman database, defragmenting it. For SSD it doesn't change anything in performances and it does a lot of writes, so it's not recommended.
-
-${_BOLD}Configuration files check${_NORMAL}
-Searches '*.pacnew' files in '/etc' directory, these are files created by 'pacman' when a package changes its configuration file, this way it doesn't overwrite valuable user's configurations; 'pacnew' files are useless (orphan) without the 'non pacnew' file (same filename without '.pacnew'), but sometimes they remain after package removal. If there is any useful '.pacnew' file you should consult the difference with the command 'pacdiff', further information in 'pacdiff --help' or at https://wiki.archlinux.org/index.php/Pacman/Pacnew_and_Pacsave.
-
-${_BOLD}${_YELLOW}::Files cleaning::${_NORMAL}
-
-${_BOLD}Log files cleaning${_NORMAL}
-Cleans log file if the total size is over 200MB or the age is over 1 week, using the command 'journalctl --vacuum-size=200M --vacuum-time=1weeks'. It runs only on systems with systemd as init.
-Log files contain informations about most important events that happens in an operating system while it is alive, they are useful to find out the cause of errors or malfunctions.
-
-${_BOLD}Clean old cache and thumbnail files${_NORMAL}
-Searches in '$HOME/.cache' and '$HOME/.thumbnails' for files with last access more than 30 days ago and delete them, delete also empty folders inside those directories. Cache and thumbnail files are not necessary and are used by user applications to load faster images thumbnails or information.
-
-${_BOLD}Search and clean residual files${_NORMAL}
-Searches for files with names matching 'Thumbs.db', 'Desktop.ini', '.*.swp' and '*~'. This files are temporary files from Windows (first and second one) and from Linux (last two) application, that store them to save some information during work; they're important when you're using some applications, but they should disappears few seconds later, sometimes they don't. You should save your document in every application in use before using this option.
-
-${_BOLD}Clean trash files (rm -rfv $HOME/.local/share/Trash/*)${_NORMAL}
-Simply cleans the user trash, files are located in '$HOME/.local/share/Trash/files'; prints all file names so the user at first glance can check deleted files and their number.
-
-Press 'q' to quit documentation
-EOF
-}
-
-#
-# Function containing italian documentation text.
-#
-function doc_ita {
-less -R << EOF
-Premere 'q' per uscire dalla documentazione
-
-${_BOLD}${_YELLOW}::Aggiornamento del sistema::${_NORMAL}
-
-${_BOLD}Aggiornamento dei pacchetti dai repository ufficiali (pacman -Syu)${_NORMAL}
-Nel caso in cui il sistema installato sia Manjaro Linux viene aggiornata la lista dei mirror nel caso in cui non sia già stata aggiornata nel giorno corrente. Dopodiché controlla che il database locale sia aggiornato, se ci sono differenze tra le versioni dei pacchetti installati e di quelli presenti nel database effettua l'upgrade (innalzamento di versione). Il comando notifica se la versione installata di un pacchetto è più recente di quella nei repository, in questo caso dovrebbe venire proposto automaticamente un downgrade (abbassamento di versione) dei pacchetti problematici, tramite il comando 'pacman -Syuu'.
-
-${_BOLD}Aggiornamento dei pacchetti di AUR (pacaur -Sua || yaourt -Sua)${_NORMAL}
-Effettua l'aggiornamento dei pacchetti provenienti dai repository AUR, se necessario. Può utilizzare come strumenti (in ordine di priorità) 'pacaur' oppure 'yaourt'. Prima di controllare gli aggiornamenti lo script esegue un controllo per la presenza di pacchetti orfani, può essere utile se non risolutivo nel caso in cui dei pacchetti installati come dipendenze vengano dismessi dai repository ufficiali di Arch Linux per essere trasferiti nei repository AUR.
-
-${_BOLD}${_YELLOW}::Pulizia pacchetti::${_NORMAL}
-
-${_BOLD}Ricerca e rimozione dei pacchetti orfani (pacman -Qdtq)${_NORMAL}
-Effettua una ricerca dei pacchetti orfani, cioè quelli installati come dipendenza di un altro pacchetto attualmente non più installato sul sistema, o le cui dipendenze sono state modificate.
-
-${_BOLD}Pulizia della cache dei pacchetti installati (paccache -rk2)${_NORMAL}
-Elimina le vecchie versioni dei pacchetti installati che pacman tiene come backup, lasciando le ultime due versioni. Il gestore di pacchetti pacman come comportamento predefinito tiene tutte le vecchie versioni dei pacchetti installati (e non), questo utilissimo backup può occupare col tempo molta memoria. È quindi consigliabile ripulire saltuariamente la cache dei pacchetti, lasciando solo le ultime versioni dei pacchetti, che possono risultare utili in caso di necessità di downgrade (installazione della versione precedente di un pacchetto).
-
-${_BOLD}Pulizia della cache dei pacchetti non installati (paccache -ruk0)${_NORMAL}
-Come la voce precedente, ma per i pacchetti non più installati sul sistema. Non essendoci necessità di effettuare downgrade non conserva neanche una versione di backup.
-
-${_BOLD}Ottimizzazione (deframmentazione) del database di pacman (pacman-optimize)${_NORMAL}
-Ottimizza l'accesso al database di pacman, deframmentandolo. Non è un'ottimizzazione utile nel caso in cui si utilizzi un SSD a causa del funzionamento stesso dei dischi a stato solido, inoltre causa inutili scritture sul disco che nel caso degli SSD sarebbe meglio limitare se non necessarie.
-
-${_BOLD}Verifica file di configurazione${_NORMAL}
-Viene verificata la presenza di file '*.pacnew' nella cartella di sistema '/etc', questi file vengono creati da 'pacman' quando un pacchetto aggiorna il proprio file di configurazione, questo per evitare di sovrascrivere i preziosi file di configurazione modificati dall'utente; nel caso in cui il file 'pacnew' non abbia un corrispondente file di configurazione (ha lo stesso nome ma senza '.pacnew') allora viene considerato orfano e non ha nessuna utilità. Nel caso in cui siano presenti file 'pacnew' non orfani è consigliata la consultazione degli stessi tramite il comando 'pacdiff', maggiori informazioni tramite 'pacdiff --help' o nella pagina https://wiki.archlinux.org/index.php/Pacman/Pacnew_and_Pacsave_(Italiano).
-
-${_BOLD}${_YELLOW}::Pulizia file::${_NORMAL}
-
-${_BOLD}Pulizia file di log${_NORMAL}
-Pulisce i file di log se la loro dimensione supera i 200MB o se sono più vecchi di 1 settimana tramite il comando 'journalctl --vacuum-size=200M --vacuum-time=1weeks'. Esegue questa operazione solo se il systema di init è 'systemd'.
-I file di log contengono un resoconto di tutti gli avvenimenti rilevanti che succedono durante il funzionamento del sistema operativo, sono molto utili per capire le cause di errori o malfunzionamenti.
-
-${_BOLD}Pulizia cache e miniature non recenti${_NORMAL}
-Ricerca nelle cartelle '$HOME/.cache' e '$HOME/.thumbnails' file con l'ultimo accesso risalente a più di 30 giorni prima e li cancella, elimina anche le eventuali cartelle vuote che si trovano all'interno. I file presenti in cache sono utilizzati dalle applicazioni per velocizzare alcune operazioni comuni (es. caricamento copertine album in un riproduttore multimediale), invece i thumbnails sono le miniature delle immagini che vengono utilizzate (es. dal gestore file) per caricare più velocemente le anteprime delle immagini presenti nel sistema.
-
-${_BOLD}Ricerca e rimozione file residui${_NORMAL}
-Effettua una ricerca sui file che si chiamano 'Thumbs.db', 'Desktop.ini', '.*.swp' e '*~'. I primi due sono file creati dai sistemi Windows ed inutili su di un sistema Linux, che possono comparire se si condividono alcune cartelle con il sistema operativo di casa Microsoft. Gli ultimi due tipi di file sono file temporanei creati da molte applicazioni come salvataggio temporaneo del lavoro in corso, utile nel caso in cui improvvisamente il sistema si spenga per esempio; può succedere che questi file rimangano nel sistema più a lungo del necessario, creando disordine ed occupando spazio. Si consiglia di salvare i propri documenti in tutte le applicazioni aperte prima di eseguire questa opzione.
-
-${_BOLD}Pulizia cestino (rm -rf $HOME/.local/share/Trash/*)${_NORMAL}
-Cancella tutti i file presenti nel cestino dell'utente, i cui file sono contenuti in '$HOME/.local/share/Trash/files', stampando tutti il nome dei file di modo che l'utente possa verificare velocemente l'entità dell'operazione.
-
-Premere 'q' per uscire dalla documentazione
-EOF
 }
 
 #
@@ -1309,9 +1221,9 @@ function main {
 			8)
 				clear
 				if [[ $_LNG = ita ]]; then
-					doc_ita
+					man -L it cleanupdate
 				else
-					doc_eng
+					man cleanupate
 				fi
 				;;
 			9)
