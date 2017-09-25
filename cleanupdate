@@ -243,10 +243,11 @@ function check_args {
 		do echo -n "$i" | print_errors ; echo -n " " | print_errors ; done ; \
 		echo | print_errors ; echo | print_errors
 		if [[ $_LNG = ita ]]; then
-			echo "Cleanupdate non ha bisogno di alcuni argomento." | \
-				print_errors
+			echo "Cleanupdate non ha bisogno di alcun argomento. Per maggiori"\
+				"leggere il manuale cleanupdate(7)." | print_errors
 		else
-			echo "Cleanupdate doesn't need any argument." | print_errors
+			echo "Cleanupdate doesn't need any argument. For further"\
+				"information read the manual page cleanupdate(7)."| print_errors
 		fi
 		exit 1
 	fi
@@ -340,7 +341,32 @@ function sys_update {
 				/bin/sudo /bin/pacman-mirrors --sync --fasttrack 10
 			fi
 		fi
+		if [[ -x /bin/checkupdates ]]; then
+			# If checkupdates has been executed before the script there is an
+			#  old database, so we remove it (this is useful only if the
+			#  mirrorlist has been modified, a condition should be added TODO)
+			local ckup_db
+			ckup_db="${TMPDIR:-/tmp}/checkup-db-${USER}/"
+			if [[ ! -e "$ckup_db/db.lck" && -d "$ckup_db" ]]; then
+				sudo /bin/rm -rf "$ckup_db"
+			fi
+		else
+			if [[ $_LNG = ita ]]; then
+				echo "ERRORE: /bin/checkupdates non è presente sul sistema,"\
+					"verificare che 'pacman' sia installato correttamente."\
+					| print_errors
+			else
+				echo "ERROR: /bin/checkupdates is not present in the system,"\
+					"verify that 'pacman' is properly installed." | print_errors
+			fi
+			exit 1
+		fi
 		local -a updates=""
+		if [[ $_LNG = ita ]]; then
+			echo "Ricerca aggiornamenti in corso..."
+		else
+			echo "Looking for updates..."
+		fi
 		if [[ -n $(/bin/checkupdates) ]]; then
 			readarray -t updates < <( /bin/checkupdates )
 		fi
