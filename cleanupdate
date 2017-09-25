@@ -286,7 +286,8 @@ function orph_pkgs {
 		fi
 		read -r sure
 		if [[ $sure != "n" && $sure != "N" ]]; then
-			/bin/sudo /bin/pacman --color always --noconfirm -Rs "${orphans[@]}"
+			/bin/sudo /bin/pacman --color always --noconfirm -Rs \
+				"${orphans[@]}" 2> >(print_errors)
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Pacchetti orfani"
 			else
@@ -338,51 +339,22 @@ function sys_update {
 			fi
 			read -r sure
 			if [[ $sure != "n" && $sure != "N" ]]; then
-				/bin/sudo /bin/pacman-mirrors --sync --fasttrack 10
-			fi
-		fi
-		if [[ -x /bin/checkupdates ]]; then
-			# If checkupdates has been executed before the script there is an
-			#  old database, so we remove it (this is useful only if the
-			#  mirrorlist has been modified, a condition should be added TODO)
-			local ckup_db
-			ckup_db="${TMPDIR:-/tmp}/checkup-db-${USER}/"
-			if [[ ! -e "$ckup_db/db.lck" && -d "$ckup_db" ]]; then
-				sudo /bin/rm -rf "$ckup_db"
+				/bin/sudo /bin/pacman-mirrors --sync --fasttrack 10 \
+					2> >(print_errors)
 			fi
 		else
-			if [[ $_LNG = ita ]]; then
-				echo "ERRORE: /bin/checkupdates non è presente sul sistema,"\
-					"verificare che 'pacman' sia installato correttamente."\
-					| print_errors
-			else
-				echo "ERROR: /bin/checkupdates is not present in the system,"\
-					"verify that 'pacman' is properly installed." | print_errors
-			fi
-			exit 1
+			/bin/sudo /bin/pacman -Sy 2> >(print_errors)
 		fi
-		local -a updates=""
 		if [[ $_LNG = ita ]]; then
 			echo "Ricerca aggiornamenti in corso..."
 		else
 			echo "Looking for updates..."
 		fi
-		if [[ -n $(/bin/checkupdates) ]]; then
-			readarray -t updates < <( /bin/checkupdates )
-		fi
-		if [[ -n ${updates[0]} ]]; then
-			for i in "${updates[@]}"; do
-				echo "$i"
-			done | /bin/column -x
-			if [[ $_LNG = ita ]]; then
-				qst_msg "yes" "Ci sono ${#updates[@]} aggiornamenti disponibili, desideri installarli"
-			else
-				qst_msg "yes" "There are ${#updates[@]} available updates, do you want to install them"
-			fi
-			read -r sure
-			if [[ $sure != "n" && $sure != "N" ]]; then
-				/bin/sudo /bin/pacman -Syu --color always --noconfirm
-				if /bin/sudo /bin/pacman -Syu 2>&1 | /bin/grep -q "is newer than"; then
+		if [[ -n $(/bin/pacman -Qu 2> /dev/null) ]]; then
+			# This way any pacman error during update doesn't stop the script
+			#  at least it doesn't check the updates as done.
+			if /bin/sudo /bin/pacman -Su --color always 2> >(print_errors); then
+				if /bin/sudo /bin/pacman -Su 2>&1 | /bin/grep -q "is newer than"; then
 					echo
 					if [[ $_LNG = ita ]]; then
 						qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
@@ -391,7 +363,8 @@ function sys_update {
 					fi
 					read -r sure
 					if [[ $sure != "n" && $sure != "N" ]]; then
-						/bin/sudo /bin/pacman -Syuu --color always --noconfirm
+						/bin/sudo /bin/pacman -Suu --color always --noconfirm \
+							2> >(print_errors)
 					fi
 				fi
 				if [[ $_LNG = ita ]]; then
@@ -433,14 +406,14 @@ function sys_update {
 		orph_pkgs
 		# Check if pacaur or yaourt are installed
 		if [[ -x /bin/pacaur ]]; then
-			/bin/pacaur -Syua --color always
+			/bin/pacaur -Syua --color always 2> >(print_errors)
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Aggiornamento AUR"
 			else
 				end_msg "ok" "AUR upgrade"
 			fi
 		elif [[ -x /bin/yaourt ]]; then
-			/bin/yaourt -Sua --color
+			/bin/yaourt -Sua --color 2> >(print_errors)
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Aggiornamento AUR"
 			else
@@ -500,7 +473,7 @@ function clean_pkg {
 		fi
 		read -r sure
 		if [[ $sure != "n" && $sure != "N" ]]; then
-			/bin/sudo /bin/paccache -rk2 --nocolor
+			/bin/sudo /bin/paccache -rk2 --nocolor 2> >(print_errors)
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Pulizia cache pacchetti installati"
 			else
@@ -536,7 +509,7 @@ function clean_pkg {
 		fi
 		read -r sure
 		if [[ $sure != "n" && $sure != "N" ]]; then
-			/bin/sudo /bin/paccache -ruk0 --nocolor
+			/bin/sudo /bin/paccache -ruk0 --nocolor 2> >(print_errors)
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Pulizia cache pacchetti disinstallati"
 			else
@@ -579,7 +552,7 @@ function clean_pkg {
 		fi
 		read -r sure
 		if [[ $sure != "n" && $sure != "N" ]]; then
-			/bin/sudo /bin/pacman-optimize --nocolor
+			/bin/sudo /bin/pacman-optimize --nocolor 2> >(print_errors)
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Ottimizzazione database"
 			else
@@ -634,7 +607,7 @@ function clean_pkg {
 		read -r sure
 		if [[ $sure != "n" && $sure != "N" ]]; then
 			for i in "${orphan_pacnews[@]}"; do
-				/bin/sudo /bin/rm -f "$i"
+				/bin/sudo /bin/rm -f "$i" 2> >(print_errors)
 			done
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "File di configurazione orfani"
@@ -694,7 +667,8 @@ function clean_file {
 			fi
 			read -r sure
 			if [[ $sure != "n" && $sure != "N" ]]; then
-				/bin/sudo /bin/journalctl --vacuum-size=200M --vacuum-time=2weeks | /bin/tail -n 1
+				/bin/sudo /bin/journalctl --vacuum-size=200M \
+					--vacuum-time=2weeks | /bin/tail -n 1 2> >(print_errors)
 				if [[ $_LNG = ita ]]; then
 					end_msg "ok" "Pulizia file di log"
 				else
@@ -754,16 +728,17 @@ function clean_file {
 		if [[ $sure != "n" && $sure != "N" ]]; then
 			if [[ -d "$HOME/.thumbnails" ]]; then
 				/bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 |\
-					xargs -0 /bin/rm -f
+					xargs -0 /bin/rm -f 2> >(print_errors)
 				/bin/find "$HOME/.thumbnails" -empty -type d -atime +30\
-					-print0 | xargs -0 /bin/rm -rf
+					-print0 | xargs -0 /bin/rm -rf 2> >(print_errors)
 			fi
 			if [[ -d "$HOME/.cache" ]]; then
 				/bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
-					\( -type f -atime +30 -print0 \) | xargs -0 /bin/rm -f
+					\( -type f -atime +30 -print0 \) | xargs -0 /bin/rm -f \
+					2> >(print_errors)
 				/bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
 					\( -empty -type d -atime +30 -print0 \) | xargs -0\
-					/bin/rm -rf
+					/bin/rm -rf 2> >(print_errors)
 			fi
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Pulizia cache e miniature"
@@ -846,7 +821,7 @@ function clean_file {
 		if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
 			# Remove every residual file
 			for i in "${residfiles[@]}"; do
-				/bin/rm -f "$i"
+				/bin/rm -f "$i" 2> >(print_errors)
 			done
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Pulizia file residui"
@@ -908,8 +883,8 @@ function clean_file {
 			fi
 			read -r sure
 			if [[ ( $_LNG != ita && ( $sure = y || $sure = Y ) ) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
-				/bin/rm -rf "$HOME/.local/share/Trash/files"
-				/bin/rm -rf "$HOME/.local/share/Trash/info"
+				/bin/rm -rf "$HOME/.local/share/Trash/files" 2> >(print_errors)
+				/bin/rm -rf "$HOME/.local/share/Trash/info" 2> >(print_errors)
 				if [[ $_LNG = ita ]]; then
 					end_msg "ok" "Pulizia cestino"
 				else
@@ -1154,13 +1129,10 @@ function main {
 		unset sure
 
 		echo
-		echo "      _                                  _       _        "
-		echo "  ___| | ___  __ _ _ __  _   _ _ __   __| | __ _| |_ ___  "
-		echo " / __| |/ _ \/ _\` | '_ \| | | | '_ \ / _\` |/ _\` | __/ _ \ "
-		echo "| (__| |  __/ (_| | | | | |_| | |_) | (_| | (_| | ||  __/ "
-		echo " \___|_|\___|\__,_|_| |_|\__,_| .__/ \__,_|\__,_|\__\___| "
-		echo "                              |_|                         "
-		echo
+		echo "                ┌─── ┐   ┐"
+		echo "                │    │   │"
+		echo "                └────└───┘"
+		echo "             cleanupdate v0.8"
 		if [[ $_LNG = ita ]]; then
 			echo " ┌────────────────────────────────────────┐"
 			echo " │    1.  Aggiorna e pulisci tutto        │"
