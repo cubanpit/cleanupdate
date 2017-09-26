@@ -27,7 +27,8 @@
 
 # -e: Exit immediately if a command exits with a non-zero status.
 # -u: Treat unset variables as an error when substituting.
-set -eu
+# -o pipefail: Pipe redirection raise an error if any command raise one.
+set -e -u -o pipefail
 
 # Default language is English, but Italian it's available
 _LNG="eng"
@@ -41,15 +42,17 @@ fi
 #
 function exit_trap {
 	echo 1>&2
+	echo 1>&2
 	if [[ $_LNG = ita ]]; then
 		echo "Lo script è terminato in modo non previsto. È possibile"\
-			"rileggere i messaggi di errore nel file '/tmp/cleanupdate.log"\
-			"fino al prossimo riavvio. Premere un tasto qualsiasi per"\
-			"uscire." 1>&2
+			"rileggere i messaggi di errore nel file '/tmp/cleanupdate.log'"\
+			"fino al prossimo riavvio." 1>&2
+		echo "Premere un tasto qualsiasi per uscire." 1>&2
 	else
 		echo "Script terminated unexpectedly. It is possible to read error"\
 			"messages also in '/tmp/cleanupdate.log' until the next reboot."\
-			"Press any key to exit." 1>&2
+			1>&2
+		echo "Press any key to exit." 1>&2
 	fi
 	read -rs -n1
 }
@@ -1219,9 +1222,18 @@ function main {
 			8)
 				clear
 				if [[ $_LNG = ita ]]; then
-					man -L it cleanupdate
+					if ! man -L it cleanupdate 2> >(print_errors); then
+						echo "Controllare le impostazioni di lingua del"\
+							"sistema." | print_errors
+						echo -n "Premi un tasto qualsiasi per continuare."
+						read -rs -n1
+					fi
 				else
-					man cleanupate
+					if ! man -L en cleanupate 2> >(print_errors); then
+						echo "Check the system's locale setting." | print_errors
+						echo -n "Press any key to continue. "
+						read -rs -n1
+					fi
 				fi
 				;;
 			9)
