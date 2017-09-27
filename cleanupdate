@@ -357,7 +357,11 @@ function sys_update {
 			# This way any pacman error during update doesn't stop the script
 			#  at least it doesn't check the updates as done.
 			if /bin/sudo /bin/pacman -Su --color always 2> >(print_errors); then
-				if /bin/sudo /bin/pacman -Su 2>&1 | /bin/grep -q "is newer than"; then
+				# Temporary disable 'pipefail' option, otherwise this condition
+				#  does not work, maybe there is a better solution. TODO
+				set +o pipefail
+				if /bin/sudo /bin/pacman -Su 2>&1 | \
+					/bin/grep -q "is newer than"; then
 					echo
 					if [[ $_LNG = ita ]]; then
 						qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
@@ -370,6 +374,7 @@ function sys_update {
 							2> >(print_errors)
 					fi
 				fi
+				set -o pipefail
 				if [[ $_LNG = ita ]]; then
 					end_msg "ok" "Aggiornamento pacchetti ufficiali"
 				else
@@ -662,7 +667,7 @@ function clean_file {
 		fi
 		log_size=$(echo "$log_size*$(journalctl --disk-usage | \
 			sed -e "s/[A-Za-z ]//g" | sed -e "s/\..*$//g")" | bc)
-		if [[ $log_size -ge 100 ]]; then
+		if [[ $log_size -ge 200 ]]; then
 			if [[ $_LNG = ita ]]; then
 				qst_msg "yes" "Potrebbe essere utile ripulire i file di log, vuoi procedere"
 			else
