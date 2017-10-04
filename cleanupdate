@@ -189,6 +189,13 @@ function end_msg {
 function qst_msg {
 	local mod=$1
 	local msg=$2
+	# Empty stdin buffer, this way the distract user can not answer to every
+	# question just pressing enter N times when the script begins.
+	local discard
+	set +e
+	read -r -t 0.1 -n 1000 discard
+	set -e
+	unset discard
 	if [[ $mod = yes ]]; then
 		if [[ $_LNG = ita ]]; then
 			echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
