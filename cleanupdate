@@ -1236,14 +1236,14 @@ function main {
 			8)
 				clear
 				if [[ $_LNG = ita ]]; then
-					if ! man -L it cleanupdate 2> >(print_errors); then
+					if ! man -L it -E UTF-8 cleanupdate 2> >(print_errors); then
 						echo "Controllare le impostazioni di lingua del"\
 							"sistema." | print_errors
 						echo -n "Premi un tasto qualsiasi per continuare."
 						read -rs -n1
 					fi
 				else
-					if ! man -L en cleanupdate 2> >(print_errors); then
+					if ! man -L en -E UTF-8 cleanupdate 2> >(print_errors); then
 						echo "Check the system's locale setting." | print_errors
 						echo -n "Press any key to continue. "
 						read -rs -n1
