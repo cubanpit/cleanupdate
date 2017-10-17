@@ -349,8 +349,8 @@ function sys_update {
 			fi
 			read -r sure
 			if [[ $sure != "n" && $sure != "N" ]]; then
-				/bin/sudo /bin/pacman-mirrors --sync --fasttrack 10 \
-					2> >(print_errors)
+				/bin/sudo /bin/pacman-mirrors --fasttrack 10 2> >(print_errors)
+				/bin/sudo /bin/pacman -Syy 2> >(print_errors)
 			else
 				/bin/sudo /bin/pacman -Sy 2> >(print_errors)
 			fi
