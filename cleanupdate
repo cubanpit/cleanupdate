@@ -62,7 +62,7 @@ trap exit_trap EXIT
 
 # Initialise logfile with current date and time
 logfile="/tmp/cleanupdate.log"
-echo -e "\n$(date -R) --- Cleanupdate errors log\n" >> $logfile
+echo -e "\\n$(date -R) --- Cleanupdate errors log\\n" >> $logfile
 
 # Define little function to print errors in stderr and in a logfile
 function print_errors {
@@ -249,7 +249,7 @@ function check_args {
 		else
 			echo "Error! Some arguments have been provided:" | print_errors
 		fi
-		echo -en "\t" | print_errors ; for i in "$@" ; \
+		echo -en "\\t" | print_errors ; for i in "$@" ; \
 		do echo -n "$i" | print_errors ; echo -n " " | print_errors ; done ; \
 		echo | print_errors ; echo | print_errors
 		if [[ $_LNG = ita ]]; then
@@ -668,14 +668,14 @@ function clean_file {
 		fi
 		local log_size
 		log_size=$(journalctl --disk-usage | sed -e "s/[a-z]//g" | \
-			sed -e "s/\s\+/ /g" | cut -d" " -f 2)
+			sed -e "s/\\s\\+/ /g" | cut -d" " -f 2)
 		if echo "$log_size" | grep -q G ; then
 			log_size=1000
 		else
 			log_size=1
 		fi
 		log_size=$(echo "$log_size*$(journalctl --disk-usage | \
-			sed -e "s/[A-Za-z ]//g" | sed -e "s/\..*$//g")" | bc)
+			sed -e "s/[A-Za-z ]//g" | sed -e "s/\\..*$//g")" | bc)
 		if [[ $log_size -ge 200 ]]; then
 			if [[ $_LNG = ita ]]; then
 				qst_msg "yes" "Potrebbe essere utile ripulire i file di log, vuoi procedere"
@@ -825,8 +825,10 @@ function clean_file {
 		done | /bin/column -x
 		# Calculate space taken by residual files
 		local residsize=0
+    local filesize=0
 		for i in "${residfiles[@]}"; do
-			residsize=$( echo "$residsize+$( /bin/du -b "$i" | /bin/cut -f 1 )" | bc )
+      filesize=$( /bin/du -b "$i" | /bin/cut -f 1 )
+			residsize=$( echo "$residsize+$filesize" | bc )
 		done
 		residsize=$(human_size "$residsize")
 		if [[ $_LNG = ita ]]; then
@@ -877,14 +879,14 @@ function clean_file {
 		#  file name next to the file size.
 		local trashsize=0
 		if [[ -n ${trashfiles[0]} ]]; then
+			local filename=""
+			local filesize=0
 			for i in "${trashfiles[@]}"; do
-				local filename
 				filename=$( basename "$i" )
-				local filesize
 				filesize=$( /bin/du -bs "$i" | /bin/cut -f 1 )
 				trashsize=$( echo "$trashsize+$filesize" | bc )
 				filesize=$( human_size "$filesize" )
-				echo -ne "   $filesize   \t"
+				echo -ne "   $filesize   \\t"
 				if [[ -d "$i" ]]; then
 					filename+="/"
 					echo "${_BOLD}$filename${_NORMAL}"
@@ -945,7 +947,7 @@ while [[ $again = true ]]; do
 	clear
 	if [[ $_LNG = ita ]]; then
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Indicare quale di"\
-			"questi messaggi restituisce il gestore di pacchetti:\n${_NORMAL}"\
+			"questi messaggi restituisce il gestore di pacchetti:\\n${_NORMAL}"\
 			| fmt -w "$twidth"
 		echo "${_BOLD}[1] ->${_NORMAL} errore: impossibile eseguire"\
 			"l'operazione richiesta (file in conflitto)" | fmt -w "$twidth"
@@ -956,11 +958,11 @@ while [[ $again = true ]]; do
 			"pacchetto '...' da ..." | fmt -w "$twidth"
 		echo "${_BOLD}[4] ->${_NORMAL} errore: impossibile bloccare il"\
 			"database: File già esistente" | fmt -w "$twidth"
-		echo -e "\nSe il problema non è qui elencato si consiglia di chiedere"\
+		echo -e "\\nSe il problema non è qui elencato si consiglia di chiedere"\
 			"aiuto sul forum online della propria distribuzione."\
 			| fmt -w "$twidth"
 		echo "${_BOLD}[q|0] ->${_NORMAL} Torna al menù principale"
-		echo -en "\n${_BOLD}Opzione: ${_NORMAL}"
+		echo -en "\\n${_BOLD}Opzione: ${_NORMAL}"
 		read -r -n1 sure
 		case $sure in
 			q|0) 	again=false
@@ -1044,7 +1046,7 @@ while [[ $again = true ]]; do
 		esac
 	else
 		echo -e "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD} Select the error"\
-			"message printed by the package manager:\n${_NORMAL}"\
+			"message printed by the package manager:\\n${_NORMAL}"\
 			| fmt -w "$twidth"
 		echo "${_BOLD}[1] ->${_NORMAL} error: failed to commit transaction"\
 			"(conflicting files)" | fmt -w "$twidth"
@@ -1054,10 +1056,10 @@ while [[ $again = true ]]; do
 			"from ..." | fmt -w "$twidth"
 		echo "${_BOLD}[4] ->${_NORMAL} error: failed to init transaction"\
 			"(unable to lock database)" | fmt -w "$twidth"
-		echo -e "\nIf the problem is not listed here ask to your"\
+		echo -e "\\nIf the problem is not listed here ask to your"\
 			"distribution's online forum for help." | fmt -w "$twidth"
 		echo "${_BOLD}[q|0] ->${_NORMAL} Return to main menu"
-		echo -en "\n${_BOLD}Option: ${_NORMAL}"
+		echo -en "\\n${_BOLD}Option: ${_NORMAL}"
 		read -r -n1 sure
 		case $sure in
 			q|0) 	again=false
@@ -1261,7 +1263,7 @@ function main {
 				# Clear trap rules
 				trap - EXIT
 				# Clear terminal, scrollback included
-				clear && echo -en "\e[3J"
+				clear && echo -en "\\e[3J"
 				exit 0
 				;;
 			*)
