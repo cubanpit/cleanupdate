@@ -6,7 +6,7 @@
 # Menu taken from a script by Chrysostomus.
 #
 # This script should help you to maintain an ArchLinux-based system.
-# Report issue at github.com/cubanpit/cleanupdate
+# Report issues at github.com/cubanpit/cleanupdate
 #
 ################################################################################
 #
@@ -421,9 +421,9 @@ function sys_update {
 	read -r sure
 	if [[ $sure != "n" && $sure != "N" ]]; then
 		orph_pkgs
-		# Check if pacaur or yaourt are installed
-		if [[ -x /bin/pacaur ]]; then
-			/bin/pacaur -Syua --color always 2> >(print_errors)
+		# Check if trizen, pacaur or yaourt are installed
+		if [[ -x /bin/trizen ]]; then
+			/bin/trizen -Syua 2> >(print_errors)
 			if [[ $_LNG = ita ]]; then
 				end_msg "ok" "Aggiornamento AUR"
 			else
@@ -436,14 +436,21 @@ function sys_update {
 			else
 				end_msg "ok" "AUR upgrade"
 			fi
+		elif [[ -x /bin/pacaur ]]; then
+			/bin/pacaur -Syua --color always 2> >(print_errors)
+			if [[ $_LNG = ita ]]; then
+				end_msg "ok" "Aggiornamento AUR"
+			else
+				end_msg "ok" "AUR upgrade"
+			fi
 		else
 			if [[ $_LNG = ita ]]; then
-				echo "Non risulta installato né 'yaourt' né 'pacaur', non è"\
+				echo "Non risulta installato 'trizen', 'yaourt' né 'pacaur', non è"\
 					"possibile accedere agli aggiornamenti AUR tramite questo"\
 					"script."
 				end_msg "skip" "Aggiornamento AUR"
 			else
-				echo "You don't have neither 'yaourt' nor 'pacaur' installed,"\
+				echo "You don't have 'trizen', 'yaourt' or 'pacaur' installed,"\
 					"you can't access AUR updates through this script."
 				end_msg "skip" "AUR upgrade"
 			fi
