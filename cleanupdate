@@ -678,41 +678,27 @@ function clean_file {
     log_size=$(/bin/journalctl --disk-usage | sed -e "s/[a-z]//g" | \
       sed -e "s/\\s\\+/ /g" | cut -d" " -f 2)
     if echo "$log_size" | grep -q G ; then
-      log_size=1000000
-    else
       log_size=1000
+    else
+      log_size=1
     fi
     log_size=$(echo "$log_size*$(/bin/journalctl --disk-usage | \
       sed -e "s/[A-Za-z ]//g" | sed -e "s/\\..*$//g")" | bc)
-    
-    if [[ $_LNG = ita ]]; then
-      echo "Controllo dei log obsoleti in corso..."
-    else
-      echo "Checking obsolete log files..."
-    fi
-    # Check classic log files, they are considered a thousand time heavier
-    # because they are also obsolete if older than 90 days.
-    log_size=$(echo "$log_size+$(/bin/find /var/log -name journal -prune -o \
-      \( -type f -ctime +90 -print0 \) 2>/dev/null | /bin/du --files0-from=- \
-      -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
 
-    if [[ $log_size -ge 200000 ]]; then
+    if [[ $log_size -ge 200 ]]; then
       if [[ $_LNG = ita ]]; then
-        qst_msg "yes" "Potrebbe essere utile ripulire i file di log, vuoi procedere"
+        qst_msg "yes" "Potrebbe essere utile restringere il journal log, vuoi procedere"
       else
-        qst_msg "yes" "It may be useful to clean log files, do you want to continue"
+        qst_msg "yes" "It may be useful to trim journal log, do you want to continue"
       fi
       read -r sure
       if [[ $sure != "n" && $sure != "N" ]]; then
         /bin/sudo /bin/journalctl --vacuum-size=200M \
           --vacuum-time=2weeks | /bin/tail -n 1 2> >(print_errors)
-        /bin/find /var/log -name 'pacaur' -prune -o \( -type f -ctime +90 \
-          -print0 \) 2>/dev/null | xargs -0 /bin/sudo /bin/rm -f \
-          2> >(print_errors)
         if [[ $_LNG = ita ]]; then
-          end_msg "ok" "Pulizia file di log"
+          end_msg "ok" "Pulizia journal log"
         else
-          end_msg "ok" "Log files cleaning"
+          end_msg "ok" "Journal log trimming"
         fi
       else
         if [[ $_LNG = ita ]]; then
@@ -733,6 +719,57 @@ function clean_file {
   fi
   echo
   if [[ $_LNG = ita ]]; then
+    echo "Controllo dei log obsoleti in corso..."
+  else
+    echo "Checking obsolete log files..."
+  fi
+  # Check classic log files, they are considered a thousand time heavier
+  # because they are also obsolete if older than 90 days.
+  local i=0
+  local -a obsoletelogs=""
+  while IFS= read -r -d '' file; do
+    obsoletelogs[i++]="$file"
+  done < <(/bin/find /var/log -name journal -prune -o \( -type f -ctime +90 \
+    -print0 \) 2>/dev/null)
+  if [[ -n ${obsoletelogs[0]} ]]; then
+    # Print every obsolete log file
+    for i in "${obsoletelogs[@]}"; do
+      echo "$i"
+    done | /bin/column -x
+    if [[ $_LNG = ita ]]; then
+      qst_msg "no" "Ci sono ${#obsoletelogs[@]} file di log obsoleti, desideri rimuoverli"
+    else
+      qst_msg "no" "There are ${#obsoletelogs[@]} obsolete log files, do you want to remove them"
+    fi
+    read -r sure
+    if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
+      # Remove every residual file
+      for i in "${obsoletelogs[@]}"; do
+        /bin/rm -f "$i" 2> >(print_errors)
+      done
+      if [[ $_LNG = ita ]]; then
+        end_msg "ok" "Pulizia file di log obsoleti"
+      else
+        end_msg "ok" "Obsolete log files cleaning"
+      fi
+    else
+      if [[ $_LNG = ita ]]; then
+        end_msg "no" "Pulizia file di log obsoleti"
+      else
+        end_msg "no" "Obsolete log files cleaning"
+      fi
+    fi
+  else
+    if [[ $_LNG = ita ]]; then
+      echo "Non sono presenti file di log obsoleti."
+      end_msg "skip" "Pulizia file di log obsoleti"
+    else
+      echo "There are no obsolete log files."
+      end_msg "skip" "Obsolete log files cleaning"
+    fi
+  fi
+  echo
+  if [[ $_LNG = ita ]]; then
     echo "Stima dello spazio occupato da cache e miniature poco recenti in"\
       "corso..."
   else
@@ -749,7 +786,7 @@ function clean_file {
       -atime +30 -print0 2>/dev/null | /bin/du --files0-from=- -cb |\
       /bin/tail -1 | /bin/cut -f 1 )" | bc)
   fi
-  if [[ -d "$HOME/.thumbnails" ]]; then
+  if [[ -d "$HOME/.cache" ]]; then
     oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
       -prune -o \( -type f -atime +30 -print0 \) 2>/dev/null | /bin/du\
       --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
@@ -818,15 +855,15 @@ function clean_file {
   done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
-    -o -path "*/.git" -prune -o -name "*~" -user "$USER" -print0\
-    2>/dev/null)
+    -o -path "*/.git" -prune -o \( -type f -atime +1 -name "*~"\
+    -user "$USER" -print0 \) 2>/dev/null)
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
   done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
-    -o -path "*/.git" -prune -o -name ".*.swp" -user "$USER" -print0\
-    2>/dev/null)
+    -o -path "*/.git" -prune -o \( -type f -atime +1 -name ".*.swp"\
+    -user "$USER" -print0 \) 2>/dev/null)
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
   done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
