@@ -371,6 +371,7 @@ function sys_update {
         set +o pipefail
         if /bin/sudo /bin/pacman -Su 2>&1 | \
           /bin/grep -q "is newer than"; then
+          wait
           echo
           if [[ $_LNG = ita ]]; then
             qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
