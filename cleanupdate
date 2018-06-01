@@ -549,58 +549,6 @@ function clean_pkg {
     fi
   fi
   echo
-  # This part of the script try to check if the disk containing
-  #  pacman database is a solid state drive.
-  local rotat=false
-  if [[ -d /var/lib/pacman ]]; then
-    # Find disk on which database is located
-    local disk
-    disk=$(/bin/df -P /var/lib/pacman | /bin/tail -n 1 | \
-      /bin/cut -d' ' -f 1 | /bin/sed -E 's/(\/dev\/|[0-9])//g')
-    # Discover if database disk exist as device and is rotational
-    [[ -n $disk && -b "/dev/$disk" && \
-      -e "/sys/block/$disk/queue/rotational" && \
-      $(/bin/cat "/sys/block/$disk/queue/rotational") -eq 1 ]] \
-      && rotat=true
-  else
-    if [[ $_LNG = ita ]]; then
-      end_msg "warn" "Il database di pacman non è stato trovato al percorso predefinito, se non è stato spostato manualmente sussiste un problema."
-    else
-      end_msg "warn" "It is impossible to find pacman database at default path, if you have not changed it manually there is a problem in this system."
-    fi
-  fi
-  if [[ "$rotat" = true ]]; then
-    if [[ $_LNG = ita ]]; then
-      qst_msg "yes" "Desideri ottimizzare (deframmentare) il database di pacman"
-    else
-      qst_msg "yes" "Do you want to optimize (defragment) pacman database"
-    fi
-    read -r sure
-    if [[ $sure != "n" && $sure != "N" ]]; then
-      /bin/sudo /bin/pacman-optimize --nocolor 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Ottimizzazione database"
-      else
-        end_msg "ok" "Database optimization"
-      fi
-    else
-      if [[ $_LNG = ita ]]; then
-        end_msg "no" "Ottimizzazione database"
-      else
-        end_msg "no" "Database optimization"
-      fi
-    fi
-  else
-    if [[ $_LNG = ita ]]; then
-      echo "Il database di pacman non risiede su un disco"\
-        "rotazionale, non è necessario eseguire la deframmentazione."
-      end_msg "skip" "Ottimizzazione database"
-    else
-      echo "The pacman database lives on a non"\
-        "rotational disk, defragmentation is not needed."
-      end_msg "skip" "Database optimization"
-    fi
-  fi
   # Here we'll check for '.pacnew' files, then catch '.pacnew' files that are
   #  useless (there is 'foo.conf.pacnew' and not 'foo.conf'), finally warn the
   #  user about it.
