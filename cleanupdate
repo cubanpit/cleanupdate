@@ -422,8 +422,15 @@ function sys_update {
   read -r sure
   if [[ $sure != "n" && $sure != "N" ]]; then
     orph_pkgs
-    # Check if trizen, pacaur or yaourt are installed
-    if [[ -x /bin/trizen ]]; then
+    # Check if aurman, trizen, pacaur or yaourt are installed
+    if [[ -x /bin/aurman ]]; then
+      /bin/aurman -Syu --aur 2> >(print_errors)
+      if [[ $_LNG = ita ]]; then
+        end_msg "ok" "Aggiornamento AUR"
+      else
+        end_msg "ok" "AUR upgrade"
+      fi
+    elif [[ -x /bin/trizen ]]; then
       /bin/trizen -Syua 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Aggiornamento AUR"
@@ -438,6 +445,7 @@ function sys_update {
         end_msg "ok" "AUR upgrade"
       fi
     elif [[ -x /bin/pacaur ]]; then
+      end_msg "warn" "pacaur is no more actively mantained, it is reccomended to install another AUR helper: https://wiki.archlinux.org/index.php/AUR_helpers"
       /bin/pacaur -Syua --color always 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Aggiornamento AUR"
@@ -446,12 +454,12 @@ function sys_update {
       fi
     else
       if [[ $_LNG = ita ]]; then
-        echo "Non risulta installato 'trizen', 'yaourt' né 'pacaur', non è"\
+        echo "Non risulta installato 'aurman', 'trizen', 'yaourt' né 'pacaur', non è"\
           "possibile accedere agli aggiornamenti AUR tramite questo"\
           "script."
         end_msg "skip" "Aggiornamento AUR"
       else
-        echo "You don't have 'trizen', 'yaourt' or 'pacaur' installed,"\
+        echo "You don't have 'aurman', 'trizen', 'yaourt' or 'pacaur' installed,"\
           "you can't access AUR updates through this script."
         end_msg "skip" "AUR upgrade"
       fi

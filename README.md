@@ -8,7 +8,7 @@ The script can switch between Italian and English languages.
 ### Features
 
  - update packages from repositories;
- - update packages from AUR (with `trizen`, `yaourt` or `pacaur`);
+ - update packages from AUR (with `aurman`, `trizen`, `yaourt` or `pacaur`);
  - search and uninstall orphaned packages;
  - clean pacman cache;
  - optimize (defragment) pacman database;
@@ -27,9 +27,10 @@ Other needed dependencies are:
  - `bash`: obviously;
  - `sudo`: in order to obtain administrative privileges;
  - `ncurses`: used to obtain terminal size or color codes (`/bin/tput`);
- - `trizen`: optional, to enable AUR update feature, preferred over `yaourt` and `pacaur`;
- - `yaourt`: optional, same as `trizen`, preferred over `pacaur`;
- - `pacaur`: optional, same as `trizen`.
+ - `aurman`: optional, to enable AUR update feature, preferred over all the others AUR helpers;
+ - `trizen`: optional, same as `aurman`, preferred over `yaourt` and `pacaur`;
+ - `yaourt`: optional, same as `aurman`, preferred over `pacaur`;
+ - `pacaur`: optional, same as `aurman`.
 
 Some features should work on any modern Linux system, you can copy those part and create your own script (remember to check the license).
 
