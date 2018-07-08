@@ -445,7 +445,11 @@ function sys_update {
         end_msg "ok" "AUR upgrade"
       fi
     elif [[ -x /bin/pacaur ]]; then
-      end_msg "warn" "pacaur is no more actively mantained, it is reccomended to install another AUR helper: https://wiki.archlinux.org/index.php/AUR_helpers"
+      if [[ $_LNG = ita ]]; then
+        end_msg "warn" "'pacaur' non è più mantenuto, si consiglia di installare un altro gestore per AUR: https://wiki.archlinux.org/index.php/AUR_helpers"
+      else
+        end_msg "warn" "'pacaur' is no longer mantained, it is reccomended to install another AUR helper: https://wiki.archlinux.org/index.php/AUR_helpers"
+      fi
       /bin/pacaur -Syua --color always 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Aggiornamento AUR"
