@@ -26,6 +26,7 @@ Other needed dependencies are:
 
  - `bash`: obviously;
  - `sudo`: in order to obtain administrative privileges;
+ - `pacman-contrib`: provides `paccache`, for cleaning package manager cache;
  - `ncurses`: used to obtain terminal size or color codes (`/bin/tput`);
  - `aurman`: optional, to enable AUR update feature, preferred over all the others AUR helpers;
  - `trizen`: optional, same as `aurman`, preferred over `yaourt` and `pacaur`;
