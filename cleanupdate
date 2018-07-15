@@ -268,8 +268,6 @@ function check_args {
 #  wants to remove them.
 #
 function orph_pkgs {
-  # Look for orphan packages, they could be pkgs removed from repositories
-  #  and moved to AUR, better not to upgrade them silently.
   echo
   if [[ $_LNG = ita ]]; then
     echo "Ricerca pacchetti orfani in corso..."
@@ -349,7 +347,13 @@ function sys_update {
       fi
       read -r sure
       if [[ $sure != "n" && $sure != "N" ]]; then
-        /bin/sudo /bin/pacman-mirrors --fasttrack 10 2> >(print_errors)
+        if ! /bin/sudo /bin/pacman-mirrors --fasttrack 10 2> >(print_errors) ; then
+          if [[ $_LNG = ita ]]; then
+            end_msg "no" "Aggiornamento mirrorlist"
+          else
+            end_msg "no" "Mirrorlist refresh"
+          fi
+        fi
         /bin/sudo /bin/pacman -Syy 2> >(print_errors)
       else
         /bin/sudo /bin/pacman -Sy 2> >(print_errors)
@@ -424,37 +428,65 @@ function sys_update {
     orph_pkgs
     # Check if aurman, trizen, pacaur or yaourt are installed
     if [[ -x /bin/aurman ]]; then
-      /bin/aurman -Syu --aur 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Aggiornamento AUR"
+      if /bin/aurman -Syu --aur 2> >(print_errors) ; then
+        if [[ $_LNG = ita ]]; then
+          end_msg "ok" "Aggiornamento AUR"
+        else
+          end_msg "ok" "AUR upgrade"
+        fi
       else
-        end_msg "ok" "AUR upgrade"
+        if [[ $_LNG = ita ]]; then
+          end_msg "no" "Aggiornamento AUR"
+        else
+          end_msg "no" "AUR upgrade"
+        fi
       fi
     elif [[ -x /bin/trizen ]]; then
-      /bin/trizen -Syua 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Aggiornamento AUR"
+      if /bin/trizen -Syua 2> >(print_errors) ; then
+        if [[ $_LNG = ita ]]; then
+          end_msg "ok" "Aggiornamento AUR"
+        else
+          end_msg "ok" "AUR upgrade"
+        fi
       else
-        end_msg "ok" "AUR upgrade"
+        if [[ $_LNG = ita ]]; then
+          end_msg "no" "Aggiornamento AUR"
+        else
+          end_msg "no" "AUR upgrade"
+        fi
       fi
     elif [[ -x /bin/yaourt ]]; then
-      /bin/yaourt -Sua --color 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Aggiornamento AUR"
+      if /bin/yaourt -Sua --color 2> >(print_errors) ; then
+        if [[ $_LNG = ita ]]; then
+          end_msg "ok" "Aggiornamento AUR"
+        else
+          end_msg "ok" "AUR upgrade"
+        fi
       else
-        end_msg "ok" "AUR upgrade"
+        if [[ $_LNG = ita ]]; then
+          end_msg "no" "Aggiornamento AUR"
+        else
+          end_msg "no" "AUR upgrade"
+        fi
       fi
     elif [[ -x /bin/pacaur ]]; then
       if [[ $_LNG = ita ]]; then
         end_msg "warn" "'pacaur' non è più mantenuto, si consiglia di installare un altro gestore per AUR: https://wiki.archlinux.org/index.php/AUR_helpers"
       else
-        end_msg "warn" "'pacaur' is no longer mantained, it is reccomended to install another AUR helper: https://wiki.archlinux.org/index.php/AUR_helpers"
+        end_msg "warn" "'pacaur' is no longer maintained, it is reccomended to install another AUR helper: https://wiki.archlinux.org/index.php/AUR_helpers"
       fi
-      /bin/pacaur -Syua --color always 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Aggiornamento AUR"
+      if /bin/pacaur -Syua --color always 2> >(print_errors) ; then
+        if [[ $_LNG = ita ]]; then
+          end_msg "ok" "Aggiornamento AUR"
+        else
+          end_msg "ok" "AUR upgrade"
+        fi
       else
-        end_msg "ok" "AUR upgrade"
+        if [[ $_LNG = ita ]]; then
+          end_msg "ok" "Aggiornamento AUR"
+        else
+          end_msg "ok" "AUR upgrade"
+        fi
       fi
     else
       if [[ $_LNG = ita ]]; then
