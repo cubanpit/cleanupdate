@@ -62,11 +62,11 @@ trap exit_trap EXIT
 
 # Initialise logfile with current date and time
 logfile="/tmp/cleanupdate.log"
-echo -e "\\n$(date -R) --- Cleanupdate errors log\\n" >> $logfile
+echo -e "\\n$(/bin/date -R) --- Cleanupdate errors log\\n" >> $logfile
 
 # Define little function to print errors in stderr and in a logfile
 function print_errors {
-  tee --append $logfile 1>&2
+  /bin/tee --append $logfile 1>&2
 }
 
 # Check if /bin/tput is installed, otherwise some commands can't work
@@ -268,6 +268,7 @@ function check_args {
 #  wants to remove them.
 #
 function orph_pkgs {
+  echo -e "\\nStart orph_pkgs()\\n" >> $logfile
   echo
   if [[ $_LNG = ita ]]; then
     echo "Ricerca pacchetti orfani in corso..."
@@ -324,6 +325,7 @@ function orph_pkgs {
 # Database sync, package upgrade, AUR upgrade.
 #
 function sys_update {
+  echo -e "\\nStart sys_update()\\n" >> $logfile
   if [[ $_LNG = ita ]]; then
     echo " ${_BOLD}::Aggiornamento del sistema::${_NORMAL} "
   else
@@ -514,6 +516,7 @@ function sys_update {
 # Orphaned packages cleaning, cache cleaning, database optimization.
 #
 function clean_pkg {
+  echo -e "\\nStart clean_pkg()\\n" >> $logfile
   if [[ $_LNG = ita ]]; then
     echo " ${_BOLD}::Pulizia pacchetti::${_NORMAL} "
   else
@@ -596,11 +599,14 @@ function clean_pkg {
   # Here we'll check for '.pacnew' files, then catch '.pacnew' files that are
   #  useless (there is 'foo.conf.pacnew' and not 'foo.conf'), finally warn the
   #  user about it.
+  # Temporarely disable pipefail option, find often reports non critical errors.
+  set +o pipefail
   local i=0
   local -a pacnews=""
   while IFS= read -r -d '' file; do
     pacnews[i++]="$file"
-  done < <(/bin/find /etc -name "*.pacnew" -print0 2>/dev/null)
+  done < <(/bin/find /etc -name "*.pacnew" -print0 2>>$logfile)
+  set -o pipefail
   local -a orphan_pacnews=""
   if [[ -n ${pacnews[0]} ]]; then
     local -i j=0
@@ -654,6 +660,7 @@ function clean_pkg {
 # Cache & thumbs cleaning, residual file cleaning, trash cleaning.
 #
 function clean_file {
+  echo -e "\\nStart clean_file()\\n" >> $logfile
   if [[ $_LNG = ita ]]; then
     echo " ${_BOLD}::Pulizia file::${_NORMAL} "
   else
@@ -718,12 +725,15 @@ function clean_file {
   fi
   # Check classic log files, they are considered a thousand time heavier
   # because they are also obsolete if older than 90 days.
+  # Temporarely disable pipefail option, find often reports non critical errors.
+  set +o pipefail
   local i=0
   local -a obsoletelogs=""
   while IFS= read -r -d '' file; do
     obsoletelogs[i++]="$file"
   done < <(/bin/find /var/log -name journal -prune -o \( -type f -ctime +90 \
-    -print0 \) 2>/dev/null)
+    -print0 \) 2>>$logfile)
+  set -o pipefail
   if [[ -n ${obsoletelogs[0]} ]]; then
     # Print every obsolete log file
     for i in "${obsoletelogs[@]}"; do
@@ -770,23 +780,27 @@ function clean_file {
   fi
   # This part checks the existence of thumbnails and cache folders, then
   #  calculate the total space they take.
+  # Disable pipefail option, because 'find' often exits with errors,
+  #  but these are not critical.
+  set +o pipefail
   local oldsize=0
   if [[ -d "$HOME/.thumbnails" ]]; then
     oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -type f\
-      -atime +30 -print0 2>/dev/null | /bin/du --files0-from=- -cb |\
+      -atime +30 -print0 2>>$logfile | /bin/du --files0-from=- -cb |\
       /bin/tail -1 | /bin/cut -f 1 )" | bc)
     oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -empty -type d\
-      -atime +30 -print0 2>/dev/null | /bin/du --files0-from=- -cb |\
+      -atime +30 -print0 2>>$logfile | /bin/du --files0-from=- -cb |\
       /bin/tail -1 | /bin/cut -f 1 )" | bc)
   fi
   if [[ -d "$HOME/.cache" ]]; then
     oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
-      -prune -o \( -type f -atime +30 -print0 \) 2>/dev/null | /bin/du\
+      -prune -o \( -type f -atime +30 -print0 \) 2>>$logfile | /bin/du\
       --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
     oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
-      -prune -o \( -empty -type d -atime +30 -print0 \) 2>/dev/null | /bin/du\
+      -prune -o \( -empty -type d -atime +30 -print0 \) 2>>$logfile | /bin/du\
       --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
   fi
+  set -o pipefail
   if [[ $oldsize -gt 0 ]]; then
     oldsize=$(human_size "$oldsize")
     if [[ $_LNG = ita ]]; then
@@ -796,6 +810,8 @@ function clean_file {
     fi
     read -r sure
     if [[ $sure != "n" && $sure != "N" ]]; then
+      # Disable pipefail option because 'find' often report not critical errors
+      set +o pipefail
       if [[ -d "$HOME/.thumbnails" ]]; then
         /bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 2>/dev/null |\
           xargs -0 /bin/rm -f 2> >(print_errors)
@@ -810,6 +826,7 @@ function clean_file {
           \( -empty -type d -atime +30 -print0 \) 2>/dev/null | xargs -0\
           /bin/rm -rf 2> >(print_errors)
       fi
+      set -o pipefail
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia cache e miniature"
       else
@@ -841,6 +858,8 @@ function clean_file {
   fi
   # Null separated output will be used just to have less problem with
   #  strange characters.
+  # Bash pipefail option is disabled temporarly, see previous comments.
+  set +o pipefail
   local i=0
   local -a residfiles=""
   while IFS= read -r -d '' file; do
@@ -849,28 +868,29 @@ function clean_file {
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
     -o -path "*/.git" -prune -o \( -type f -atime +1 -name "*~"\
-    -user "$USER" -print0 \) 2>/dev/null)
+    -user "$USER" -print0 \) 2>>$logfile)
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
   done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
     -o -path "*/.git" -prune -o \( -type f -atime +1 -name ".*.swp"\
-    -user "$USER" -print0 \) 2>/dev/null)
+    -user "$USER" -print0 \) 2>>$logfile)
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
   done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
     -o -path "*/.git" -prune -o -name "Desktop.ini" -user "$USER"\
-    -print0 2>/dev/null)
+    -print0 2>>$logfile)
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
   done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
     -o -path "*/.git" -prune -o -name "Thumbs.db" -user "$USER" -print0\
-    2>/dev/null)
+    2>>$logfile)
+  set -o pipefail
   if [[ -n ${residfiles[0]} ]]; then
     # Print every residual file
     for i in "${residfiles[@]}"; do
@@ -923,11 +943,15 @@ function clean_file {
     echo "Checking trash files size..."
   fi
   if [[ -d "$HOME/.local/share/Trash/files" ]]; then
+    # Bash pipefail option is disabled temporarly, see previous comments.
+    set +o pipefail
     local i=0
     local -a trashfiles=""
     while IFS= read -r -d '' file; do
       trashfiles[i++]="$file"
-    done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
+    done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1\
+      -maxdepth 1 -print0 2>>$logfile)
+    set -o pipefail
     local trashsize=0
     if [[ -n ${trashfiles[0]} ]]; then
       local filename=""
@@ -993,6 +1017,7 @@ function clean_file {
 # Function containing pacman troubleshooting
 #
 function trouble_shoot {
+  echo -e "\\nStart trouble_shoot()\\n" >> $logfile
   local again=true
   local twidth
   twidth=$(tput cols)
@@ -1345,10 +1370,12 @@ check_args "$@"
 # Launch the long search for residual file and put everything in background,
 #  this way the second execution will be faster on hard disk, because everything
 #  is already in cache.
-/bin/find "$HOME" -name "*Steam*" -prune -o -path "$HOME/.cache" -prune -o\
+if ! (/bin/find "$HOME" -name "*Steam*" -prune -o -path "$HOME/.cache" -prune -o\
   -path "$HOME/.thumbnails" -prune -o -path "$HOME/.mozilla" -prune -o\
   -path "$HOME/.thunderbird" -prune -o -path "*/.git" -prune -o\
-  -print >/dev/null 2>&1 &
+  -print >/dev/null 2>>$logfile &) ; then
+  echo "Errors running initial background 'find' job." >> $logfile
+fi
 
 main
 
