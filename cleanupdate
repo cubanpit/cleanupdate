@@ -428,9 +428,9 @@ function sys_update {
   read -r sure
   if [[ $sure != "n" && $sure != "N" ]]; then
     orph_pkgs
-    # Check if aurman, trizen, pacaur or yaourt are installed
-    if [[ -x /bin/aurman ]]; then
-      if /bin/aurman -Syu --aur 2> >(print_errors) ; then
+    # Check if yay, trizen, pacaur or yaourt are installed
+    if [[ -x /bin/yay ]]; then
+      if /bin/yay -Syua 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento AUR"
         else
@@ -492,12 +492,12 @@ function sys_update {
       fi
     else
       if [[ $_LNG = ita ]]; then
-        echo "Non risulta installato 'aurman', 'trizen', 'yaourt' né 'pacaur', non è"\
+        echo "Non risulta installato 'yay', 'trizen', 'yaourt' né 'pacaur', non è"\
           "possibile accedere agli aggiornamenti AUR tramite questo"\
           "script."
         end_msg "skip" "Aggiornamento AUR"
       else
-        echo "You don't have 'aurman', 'trizen', 'yaourt' or 'pacaur' installed,"\
+        echo "You don't have 'yay', 'trizen', 'yaourt' or 'pacaur' installed,"\
           "you can't access AUR updates through this script."
         end_msg "skip" "AUR upgrade"
       fi

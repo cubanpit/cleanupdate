@@ -8,7 +8,7 @@ The script can switch between Italian and English languages.
 ### Features
 
  - update packages from repositories;
- - update packages from AUR (with `aurman`, `trizen`, `yaourt` or `pacaur`);
+ - update packages from AUR (with `yay`, `trizen` or `yaourt`);
  - search and uninstall orphaned packages;
  - clean pacman cache;
  - optimize (defragment) pacman database;
