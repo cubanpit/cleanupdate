@@ -1048,7 +1048,7 @@ while [[ $again = true ]]; do
       1)  echo ; echo
         echo "Questo messaggio di errore compare quando il gestore"\
           "di pacchetti si accorge che per installare un determinato"\
-          "pacchetto sarebbe neccessario sovrascrivere un file già"\
+          "pacchetto sarebbe necessario sovrascrivere un file già"\
           "presente nel sistema. Il nome del file in questione viene"\
           "stampato insieme al messaggio di errore." | fmt -w "$twidth"
         echo "Ci sono due possibili soluzioni:" | fmt -w "$twidth"
