@@ -419,7 +419,7 @@ function sys_update {
     orph_pkgs
     # Check if yay, trizen, pacaur or yaourt are installed
     if [[ -x /bin/yay ]]; then
-      if /bin/yay -Syua 2> >(print_errors) ; then
+      if /bin/yay -Sua 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento AUR"
         else
@@ -433,7 +433,7 @@ function sys_update {
         fi
       fi
     elif [[ -x /bin/trizen ]]; then
-      if /bin/trizen -Syua 2> >(print_errors) ; then
+      if /bin/trizen -Sua 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento AUR"
         else
@@ -466,7 +466,7 @@ function sys_update {
       else
         end_msg "warn" "'pacaur' is no longer maintained, it is reccomended to install another AUR helper: https://wiki.archlinux.org/index.php/AUR_helpers"
       fi
-      if /bin/pacaur -Syua --color always 2> >(print_errors) ; then
+      if /bin/pacaur -Sua --color always 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento AUR"
         else
