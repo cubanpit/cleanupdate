@@ -28,10 +28,9 @@ Other needed dependencies are:
  - `sudo`: in order to obtain administrative privileges;
  - `pacman-contrib`: provides `paccache`, for cleaning package manager cache;
  - `ncurses`: used to obtain terminal size or color codes (`/bin/tput`);
- - `aurman`: optional, to enable AUR update feature, first in priority;
+ - `yay`: optional, to enable AUR update feature, first in priority;
  - `trizen`: optional, same as `aurman`, second in priority;
  - `yaourt`: optional, same as `aurman`, third in priority;
- - `pacaur`: optional, same as `aurman`, fourth in priority.
 
 Some features should work on any modern Linux system, you can copy those part and create your own script (remember to check the license).
 
