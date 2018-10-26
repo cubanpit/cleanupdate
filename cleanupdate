@@ -284,7 +284,7 @@ function orph_pkgs {
     fi
     read -r sure
     if [[ $sure != "n" && $sure != "N" ]]; then
-      /bin/sudo /bin/pacman --color always --noconfirm -Rs \
+      /bin/pkexec /bin/pacman --color always --noconfirm -Rs \
         "${orphans[@]}" 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pacchetti orfani"
@@ -338,19 +338,19 @@ function sys_update {
       fi
       read -r sure
       if [[ $sure != "n" && $sure != "N" ]]; then
-        if ! /bin/sudo /bin/pacman-mirrors --fasttrack 10 2> >(print_errors) ; then
+        if ! /bin/pkexec /bin/pacman-mirrors --fasttrack 10 2> >(print_errors) ; then
           if [[ $_LNG = ita ]]; then
             end_msg "no" "Aggiornamento mirrorlist"
           else
             end_msg "no" "Mirrorlist refresh"
           fi
         fi
-        /bin/sudo /bin/pacman -Syy 2> >(print_errors)
+        /bin/pkexec /bin/pacman -Syy 2> >(print_errors)
       else
-        /bin/sudo /bin/pacman -Sy 2> >(print_errors)
+        /bin/pkexec /bin/pacman -Sy 2> >(print_errors)
       fi
     else
-      /bin/sudo /bin/pacman -Sy 2> >(print_errors)
+      /bin/pkexec /bin/pacman -Sy 2> >(print_errors)
     fi
     if [[ $_LNG = ita ]]; then
       echo "Ricerca aggiornamenti in corso..."
@@ -360,11 +360,11 @@ function sys_update {
     if [[ -n $(/bin/pacman -Qu 2> /dev/null) ]]; then
       # This way any pacman error during update doesn't stop the script
       #  at least it doesn't check the updates as done.
-      if /bin/sudo /bin/pacman -Su --color always 2> >(print_errors); then
+      if /bin/pkexec /bin/pacman -Su --color always 2> >(print_errors); then
         # Temporary disable 'pipefail' option, otherwise this condition
         #  does not work, maybe there is a better solution. TODO
         set +o pipefail
-        if /bin/sudo /bin/pacman -Su 2>&1 | \
+        if /bin/pkexec /bin/pacman -Su 2>&1 | \
           /bin/grep -q "is newer than"; then
           wait
           echo
@@ -375,7 +375,7 @@ function sys_update {
           fi
           read -r sure
           if [[ $sure != "n" && $sure != "N" ]]; then
-            /bin/sudo /bin/pacman -Suu --color always --noconfirm \
+            /bin/pkexec /bin/pacman -Suu --color always --noconfirm \
               2> >(print_errors)
           fi
         fi
@@ -534,7 +534,7 @@ function clean_pkg {
     fi
     read -r sure
     if [[ $sure != "n" && $sure != "N" ]]; then
-      /bin/sudo /bin/paccache -rk2 --nocolor 2> >(print_errors)
+      /bin/pkexec /bin/paccache -rk2 --nocolor 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia cache pacchetti installati"
       else
@@ -570,7 +570,7 @@ function clean_pkg {
     fi
     read -r sure
     if [[ $sure != "n" && $sure != "N" ]]; then
-      /bin/sudo /bin/paccache -ruk0 --nocolor 2> >(print_errors)
+      /bin/pkexec /bin/paccache -ruk0 --nocolor 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia cache pacchetti disinstallati"
       else
@@ -619,7 +619,7 @@ function clean_pkg {
     read -r sure
     if [[ $sure != "n" && $sure != "N" ]]; then
       for i in "${orphan_pacnews[@]}"; do
-        /bin/sudo /bin/rm -f "$i" 2> >(print_errors)
+        /bin/pkexec /bin/rm -f "$i" 2> >(print_errors)
       done
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "File di configurazione orfani"
@@ -682,7 +682,7 @@ function clean_file {
       fi
       read -r sure
       if [[ $sure != "n" && $sure != "N" ]]; then
-        /bin/sudo /bin/journalctl --vacuum-size=200M \
+        /bin/pkexec /bin/journalctl --vacuum-size=200M \
           --vacuum-time=2weeks | /bin/tail -n 1 2> >(print_errors)
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Pulizia journal log"
@@ -737,7 +737,7 @@ function clean_file {
     if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
       # Remove every residual file
       for i in "${obsoletelogs[@]}"; do
-        /bin/sudo /bin/rm -f "$i" 2> >(print_errors)
+        /bin/pkexec /bin/rm -f "$i" 2> >(print_errors)
       done
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia file di log obsoleti"
