@@ -1050,8 +1050,10 @@ while [[ $again = true ]]; do
           "opzione va utilizzata il meno possibile perché può avere"\
           "effetti collaterali anche gravi, per utilizzarla bisogna"\
           "lanciare il seguente comando di installazione fornendo il"\
-          "nome del pacchetto che causa il problema 'sudo pacman -S"\
-          "--force nomepacchetto'." | fmt -w "$twidth"
+          "nome del pacchetto che causa il problema e il percorso dei"\
+          "file che causano il conflitto 'sudo pacman -S --overwrite"\
+          "percorsofile nomepacchetto'. Per maggiori informazioni"\
+          "consultare il manuale di 'pacman'." | fmt -w "$twidth"
         echo
         echo -n "Premi un tasto qualsiasi per continuare. "
         read -rs -n1
@@ -1144,8 +1146,9 @@ while [[ $again = true ]]; do
           "give pacman permission to overwrite them; however this"\
           "option can be dangerous and should be used only when"\
           "necessary; to use it read from the error message the name"\
-          "of the package in question and execute 'sudo pacman -S"\
-          "--force packagename'." | fmt -w "$twidth"
+          "of the package and the path to conflicting files, then"\
+          "execute 'sudo pacman -S --overwrite pathtofile packagename'."\
+          "More information in 'pacman' manual." | fmt -w "$twidth"
         echo
         echo -n "Press any key to continue. "
         read -rs -n1
