@@ -370,27 +370,7 @@ function sys_update {
     fi
     if [[ -n $(/bin/pacman -Qu 2> /dev/null) ]]; then
       # This way any pacman error during update doesn't stop the script
-      #  at least it doesn't check the updates as done.
       if $_SUDO /bin/pacman -Su --color always 2> >(print_errors); then
-        # Temporary disable 'pipefail' option, otherwise this condition
-        #  does not work, maybe there is a better solution. TODO
-        set +o pipefail
-        if $_SUDO /bin/pacman -Su 2>&1 | \
-          /bin/grep -q "is newer than"; then
-          wait
-          echo
-          if [[ $_LNG = ita ]]; then
-            qst_msg "yes" "Sono presenti pacchetti con versione più recente di quelli presenti nei repository, desideri abbassarli di versione"
-          else
-            qst_msg "yes" "There are packages with newer version than those in repository, do you want to downgrade them"
-          fi
-          read -r sure
-          if [[ $sure != "n" && $sure != "N" ]]; then
-            $_SUDO /bin/pacman -Suu --color always --noconfirm \
-              2> >(print_errors)
-          fi
-        fi
-        set -o pipefail
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento pacchetti ufficiali"
         else
@@ -1036,6 +1016,8 @@ while [[ $again = true ]]; do
       "pacchetto '...' da ..." | fmt -w "$twidth"
     echo "${_BOLD}[4] ->${_NORMAL} errore: impossibile bloccare il"\
       "database: File già esistente" | fmt -w "$twidth"
+    echo "${_BOLD}[5] ->${_NORMAL} warning: pkgname: local (1.15.3-2) is newer"\
+      "than reponame (1.15.3-1)" | fmt -w "$twidth"
     echo -e "\\nSe il problema non è qui elencato si consiglia di chiedere"\
       "aiuto sul forum online della propria distribuzione."\
       | fmt -w "$twidth"
@@ -1067,7 +1049,7 @@ while [[ $again = true ]]; do
         echo -n "Premi un tasto qualsiasi per continuare. "
         read -rs -n1
         ;;
-      2)   echo ; echo
+      2)  echo ; echo
         echo "Questo messaggio di errore segnala l'impossibilità di"\
           "verificare correttamente la provenienza di un pacchetto."\
           | fmt -w "$twidth"
@@ -1082,7 +1064,7 @@ while [[ $again = true ]]; do
         echo -n "Premi un tasto qualsiasi per continuare. "
         read -rs -n1
         ;;
-      3)   echo ; echo
+      3)  echo ; echo
         echo "Questo messaggio di errore compare quando il gestore"\
           "di pacchetti non riesce a scaricare dai repository online"\
           "i database o i pacchetti richiesti." | fmt -w "$twidth"
@@ -1101,7 +1083,7 @@ while [[ $again = true ]]; do
         echo -n "Premi un tasto qualsiasi per continuare. "
         read -rs -n1
         ;;
-      4)   echo ; echo
+      4)  echo ; echo
         echo "Questo messaggio di errore segnala la presenza di un"\
           "file di lock, che indica un'operazione in corso da parte"\
           "del gestore di pacchetti, a volte questo file non viene"\
@@ -1112,6 +1094,20 @@ while [[ $again = true ]]; do
           "pacman sia da parte dei gestori software da interfaccia"\
           "grafica) è possibile eliminare il file di lock lanciando"\
           "il comando 'sudo rm /var/lib/pacman/db.lck'."\
+          | fmt -w "$twidth"
+        echo
+        echo -n "Premi un tasto qualsiasi per continuare. "
+        read -rs -n1
+        ;;
+      5)  echo ; echo
+        echo "Questo messaggio avverte l'utente che un pacchetto tra"\
+          "quelli installati è ad una versione più recente di quella"\
+          "presente nei repository di riferimento della propria"\
+          "distribuzione. La scelta migliore è di reinstallare il"\
+          "pacchetto indicato nel messaggio, se i pacchetti sono più"\
+          "di uno è possibile reinstallarli manualmente uno per volta"\
+          "oppure eseguire una sincronizzazione automatica con le versioni"\
+          "nei repository attraverso il comando 'sudo pacman -Syuu'."\
           | fmt -w "$twidth"
         echo
         echo -n "Premi un tasto qualsiasi per continuare. "
@@ -1134,6 +1130,8 @@ while [[ $again = true ]]; do
       "from ..." | fmt -w "$twidth"
     echo "${_BOLD}[4] ->${_NORMAL} error: failed to init transaction"\
       "(unable to lock database)" | fmt -w "$twidth"
+    echo "${_BOLD}[5] ->${_NORMAL} warning: pkgname: local (1.15.3-2) is newer"\
+      "than reponame (1.15.3-1)" | fmt -w "$twidth"
     echo -e "\\nIf the problem is not listed here ask to your"\
       "distribution's online forum for help." | fmt -w "$twidth"
     echo "${_BOLD}[q|0] ->${_NORMAL} Return to main menu"
@@ -1161,7 +1159,7 @@ while [[ $again = true ]]; do
         echo -n "Press any key to continue. "
         read -rs -n1
         ;;
-      2)   echo ; echo
+      2)  echo ; echo
         echo "This error message appears if pacman fails to verify the"\
           "source of a package." | fmt -w "$twidth"
         echo "These commands should solve the problem:"
@@ -1174,7 +1172,7 @@ while [[ $again = true ]]; do
         echo -n "Press any key to continue. "
         read -rs -n1
         ;;
-      3)   echo ; echo
+      3)  echo ; echo
         echo "This error message appears if pacman fails to download"\
           "needed packages or database from online repository."\
           | fmt -w "$twidth"
@@ -1192,7 +1190,7 @@ while [[ $again = true ]]; do
         echo -n "Press any key to continue. "
         read -rs -n1
         ;;
-      4)   echo ; echo
+      4)  echo ; echo
         echo "This error message appears when pacman finds a lock"\
           "file, which indicates that a package management"\
           "transaction is in progress; however sometimes such files"\
@@ -1202,6 +1200,19 @@ while [[ $again = true ]]; do
           "(from pacman or from any graphical package management"\
           "software) is in progress, then the lock file can be"\
           "removed launching 'sudo rm /var/lib/pacman/db.lck'."\
+          | fmt -w "$twidth"
+        echo
+        echo -n "Press any key to continue. "
+        read -rs -n1
+        ;;
+      5)  echo ; echo
+        echo "This warning message appears when an installed package"\
+          "has a version newer than the one in your distribution's"\
+          "repository. The simplest solution is to reinstall the"\
+          "package mentioned in the warning message, if there are"\
+          "multiple packages in this situation you can reinstall them"\
+          "one by one manually or launch an automatic synchronization"\
+          "with the repository with the command 'sudo pacman -Syuu'."\
           | fmt -w "$twidth"
         echo
         echo -n "Press any key to continue. "
