@@ -34,14 +34,7 @@ Other needed dependencies are:
 
 Some features should work on any modern Linux system, you can copy those part and create your own script (remember to check the license).
 
-This script is available on AUR as `cleanupdate-git`, so you can install it manually or with your favourite `pacman` helper
-```
-yaourt -S cleanupdate-git
-```
-or
-```
-pacaur -S cleanupdate-git
-```
+This script is available on AUR as `cleanupdate-git`, so you can install it manually or with your favourite `pacman` helper.
 Installing from AUR adds a `.desktop` file in your system, this way the script should be available as `cleanupdate` in your application menu, obviously you can also launch it from the command line.
 
 Otherwise, you can simply download the `cleanupdate` file from this repository and make it executable
