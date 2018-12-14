@@ -278,12 +278,12 @@ function orph_pkgs {
       echo "$i"
     done | /bin/column -x
     if [[ $_LNG = ita ]]; then
-      qst_msg "yes" "Sono presenti ${#orphans[@]} pacchetti orfani, desideri rimuoverli"
+      qst_msg "no" "Sono presenti ${#orphans[@]} pacchetti orfani, desideri rimuoverli"
     else
-      qst_msg "yes" "There are ${#orphans[@]} orphaned packages, do you want to remove them"
+      qst_msg "no" "There are ${#orphans[@]} orphaned packages, do you want to remove them"
     fi
     read -r sure
-    if [[ $sure != "n" && $sure != "N" ]]; then
+    if [[ ( $_LNG != ita && ( $sure = y || $sure = Y ) ) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
       /bin/sudo /bin/pacman --color always --noconfirm -Rs \
         "${orphans[@]}" 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
