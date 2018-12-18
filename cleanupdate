@@ -655,16 +655,14 @@ function clean_file {
     fi
     local log_size
     # Check journal log files, consider realistic cases only order of MB and GB.
-    log_size=$(/bin/journalctl --disk-usage | sed -e "s/[a-z]//g" | \
-      sed -e "s/\\s\\+/ /g" | cut -d" " -f 2)
+    log_size=$($_SUDO /bin/journalctl --disk-usage 2>>"$logfile" | \
+      sed -e "s/[a-z]//g" | sed -e "s/\\s\\+/ /g" | cut -d" " -f 2)
     if echo "$log_size" | grep -q G ; then
-      log_size=1000
+      log_size=$(echo "1000*${log_size/[A-Z]/}" | bc)
     else
-      log_size=1
+      log_size=${log_size/[A-Z]/}
     fi
-    log_size=$(echo "$log_size*$(/bin/journalctl --disk-usage | \
-      sed -e "s/[A-Za-z ]//g" | sed -e "s/\\..*$//g")" | bc)
-
+    log_size=${log_size/\.*/}
     if [[ $log_size -ge 200 ]]; then
       if [[ $_LNG = ita ]]; then
         qst_msg "yes" "Potrebbe essere utile restringere il journal log, vuoi procedere"
