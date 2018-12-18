@@ -11,7 +11,6 @@ The script can switch between Italian and English languages.
  - update packages from AUR (with `yay`, `trizen` or `yaourt`);
  - search and uninstall orphaned packages;
  - clean pacman cache;
- - optimize (defragment) pacman database;
  - clean temporary or unuseful files;
  - clean old journald logs;
  - suggest solution to most common pacman errors;
@@ -25,7 +24,7 @@ This script has been created for an Arch-based system, you need to have `pacman`
 Other needed dependencies are:
 
  - `bash`: obviously;
- - `sudo`: in order to obtain administrative privileges;
+ - `polkit` or `sudo`: in order to obtain administrative privileges;
  - `pacman-contrib`: provides `paccache`, for cleaning package manager cache;
  - `ncurses`: used to obtain terminal size or color codes (`/bin/tput`);
  - `yay`: optional, to enable AUR update feature, first in priority;
