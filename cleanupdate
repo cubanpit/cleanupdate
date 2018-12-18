@@ -217,13 +217,31 @@ function qst_msg {
       echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
         "$msg [Y/n]?${_NORMAL} "
     fi
+    read -r sure
+    if [[ $sure = n || $sure = N ]]; then
+      return 1
+    else
+      return 0
+    fi
   elif [[ $mod = no ]]; then
     if [[ $_LNG = ita ]]; then
       echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
         "$msg [s/N]?${_NORMAL} "
+      read -r sure
+      if [[ $sure = s || $sure = S ]]; then
+        return 0
+      else
+        return 1
+      fi
     else
       echo -n "${_BOLD}${_YELLOW}>>${_NORMAL}${_BOLD}"\
         "$msg [y/N]?${_NORMAL} "
+      read -r sure
+      if [[ $sure = y || $sure = Y ]]; then
+        return 0
+      else
+        return 1
+      fi
     fi
   else
     if [[ $_LNG = ita ]]; then
@@ -289,12 +307,11 @@ function orph_pkgs {
       echo "$i"
     done | /bin/column -x
     if [[ $_LNG = ita ]]; then
-      qst_msg "no" "Sono presenti ${#orphans[@]} pacchetti orfani, desideri rimuoverli"
+      qst_msg "no" "Sono presenti ${#orphans[@]} pacchetti orfani, desideri rimuoverli" && sure=yes || sure=no
     else
-      qst_msg "no" "There are ${#orphans[@]} orphaned packages, do you want to remove them"
+      qst_msg "no" "There are ${#orphans[@]} orphaned packages, do you want to remove them" && sure=yes || sure=no
     fi
-    read -r sure
-    if [[ ( $_LNG != ita && ( $sure = y || $sure = Y ) ) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
+    if [[ $sure != no ]]; then
       $_SUDO /bin/pacman --color always --noconfirm -Rs \
         "${orphans[@]}" 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
@@ -333,22 +350,20 @@ function sys_update {
   fi
   echo
   if [[ $_LNG = ita ]]; then
-    qst_msg "yes" "Desideri aggiornare i pacchetti ufficiali"
+    qst_msg "yes" "Desideri aggiornare i pacchetti ufficiali" && sure=yes || sure=no
   else
-    qst_msg "yes" "Do you want to upgrade official packages"
+    qst_msg "yes" "Do you want to upgrade official packages" && sure=yes || sure=no
   fi
-  read -r sure
-  if [[ $sure != "n" && $sure != "N" ]]; then
+  if [[ $sure != no ]]; then
     if [[ -x /bin/pacman-mirrors && \
       $( /bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
       /bin/cut -d' ' -f2 ) != $( /bin/date +%Y-%m-%d ) ]]; then
       if [[ $_LNG = ita ]]; then
-        qst_msg "yes" "La lista dei mirror non viene aggiornata da più di un giorno, desideri aggiornarla"
+        qst_msg "yes" "La lista dei mirror non viene aggiornata da più di un giorno, desideri aggiornarla" && sure=yes || sure=no
       else
-        qst_msg "yes" "The mirror list is more than one day old, do you want to refresh it"
+        qst_msg "yes" "The mirror list is more than one day old, do you want to refresh it" && sure=yes || sure=no
       fi
-      read -r sure
-      if [[ $sure != "n" && $sure != "N" ]]; then
+      if [[ $sure != no ]]; then
         if ! $_SUDO /bin/pacman-mirrors --fasttrack 10 2> >(print_errors) ; then
           if [[ $_LNG = ita ]]; then
             end_msg "no" "Aggiornamento mirrorlist"
@@ -401,12 +416,11 @@ function sys_update {
   fi
   echo
   if [[ $_LNG = ita ]]; then
-    qst_msg "yes" "Desideri aggiornare i pacchetti di AUR"
+    qst_msg "yes" "Desideri aggiornare i pacchetti di AUR" && sure=yes || sure=no
   else
-    qst_msg "yes" "Do you want to upgrade AUR packages"
+    qst_msg "yes" "Do you want to upgrade AUR packages" && sure=yes || sure=no
   fi
-  read -r sure
-  if [[ $sure != "n" && $sure != "N" ]]; then
+  if [[ $sure != no ]]; then
     orph_pkgs
     # Check if yay, trizen, pacaur or yaourt are installed
     if [[ -x /bin/yay ]]; then
@@ -519,12 +533,11 @@ function clean_pkg {
     fi
   else
     if [[ $_LNG = ita ]]; then
-      qst_msg "yes" "Desideri pulire la cache dei pacchetti installati (conservando le ultime 2 versioni)"
+      qst_msg "yes" "Desideri pulire la cache dei pacchetti installati (conservando le ultime 2 versioni)" && sure=yes || sure=no
     else
-      qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)"
+      qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)" && sure=yes || sure=no
     fi
-    read -r sure
-    if [[ $sure != "n" && $sure != "N" ]]; then
+    if [[ $sure != no ]]; then
       $_SUDO /bin/paccache -rk2 --nocolor 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia cache pacchetti installati"
@@ -555,12 +568,11 @@ function clean_pkg {
     fi
   else
     if [[ $_LNG = ita ]]; then
-      qst_msg "yes" "Desideri pulire completamente la cache dei pacchetti disinstallati"
+      qst_msg "yes" "Desideri pulire completamente la cache dei pacchetti disinstallati" && sure=yes || sure=no
     else
-      qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages"
+      qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages" && sure=yes || sure=no
     fi
-    read -r sure
-    if [[ $sure != "n" && $sure != "N" ]]; then
+    if [[ $sure != no ]]; then
       $_SUDO /bin/paccache -ruk0 --nocolor 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia cache pacchetti disinstallati"
@@ -603,12 +615,11 @@ function clean_pkg {
       echo "$i"
     done
     if [[ $_LNG = ita ]]; then
-      qst_msg "yes" "Sono presenti questi ${#orphan_pacnews[@]} file '.pacnew' orfani (consultare la documentazione [8] per maggiori informazioni), vuoi eliminarli"
+      qst_msg "yes" "Sono presenti questi ${#orphan_pacnews[@]} file '.pacnew' orfani (consultare la documentazione [8] per maggiori informazioni), vuoi eliminarli" && sure=yes || sure=no
     else
-      qst_msg "yes" "These are ${#orphan_pacnews[@]} orphan '.pacnew' files (read documentation [8] for further information), do you want to erase them"
+      qst_msg "yes" "These are ${#orphan_pacnews[@]} orphan '.pacnew' files (read documentation [8] for further information), do you want to erase them" && sure=yes || sure=no
     fi
-    read -r sure
-    if [[ $sure != "n" && $sure != "N" ]]; then
+    if [[ $sure != no ]]; then
       for i in "${orphan_pacnews[@]}"; do
         $_SUDO /bin/rm -f "$i" 2> >(print_errors)
       done
@@ -665,12 +676,11 @@ function clean_file {
     log_size=${log_size/\.*/}
     if [[ $log_size -ge 200 ]]; then
       if [[ $_LNG = ita ]]; then
-        qst_msg "yes" "Potrebbe essere utile restringere il journal log, vuoi procedere"
+        qst_msg "yes" "Potrebbe essere utile restringere il journal log, vuoi procedere" && sure=yes || sure=no
       else
-        qst_msg "yes" "It may be useful to trim journal log, do you want to continue"
+        qst_msg "yes" "It may be useful to trim journal log, do you want to continue" && sure=yes || sure=no
       fi
-      read -r sure
-      if [[ $sure != "n" && $sure != "N" ]]; then
+      if [[ $sure != no ]]; then
         $_SUDO /bin/journalctl --vacuum-size=200M \
           --vacuum-time=2weeks | /bin/tail -n 1 2> >(print_errors)
         if [[ $_LNG = ita ]]; then
@@ -718,12 +728,11 @@ function clean_file {
       echo "$i"
     done | /bin/column -x
     if [[ $_LNG = ita ]]; then
-      qst_msg "no" "Ci sono ${#obsoletelogs[@]} file di log obsoleti, desideri rimuoverli"
+      qst_msg "no" "Ci sono ${#obsoletelogs[@]} file di log obsoleti, desideri rimuoverli" && sure=yes || sure=no
     else
-      qst_msg "no" "There are ${#obsoletelogs[@]} obsolete log files, do you want to remove them"
+      qst_msg "no" "There are ${#obsoletelogs[@]} obsolete log files, do you want to remove them" && sure=yes || sure=no
     fi
-    read -r sure
-    if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
+    if [[ $sure != no ]]; then
       # Remove every residual file
       for i in "${obsoletelogs[@]}"; do
         $_SUDO /bin/rm -f "$i" 2> >(print_errors)
@@ -782,12 +791,11 @@ function clean_file {
   if [[ $oldsize -gt 0 ]]; then
     oldsize=$(human_size "$oldsize")
     if [[ $_LNG = ita ]]; then
-      qst_msg "yes" "L'eliminazione di questi file libererà $oldsize di spazio su disco, vuoi procedere"
+      qst_msg "yes" "L'eliminazione di questi file libererà $oldsize di spazio su disco, vuoi procedere" && sure=yes || sure=no
     else
-      qst_msg "yes" "The deletion of these files frees $oldsize of disk space, do you want to continue"
+      qst_msg "yes" "The deletion of these files frees $oldsize of disk space, do you want to continue" && sure=yes || sure=no
     fi
-    read -r sure
-    if [[ $sure != "n" && $sure != "N" ]]; then
+    if [[ $sure != no ]]; then
       # Disable pipefail option because 'find' often report not critical errors
       set +o pipefail
       if [[ -d "$HOME/.thumbnails" ]]; then
@@ -883,12 +891,12 @@ function clean_file {
     done
     residsize=$(human_size "$residsize")
     if [[ $_LNG = ita ]]; then
-      qst_msg "no" "Ci sono ${#residfiles[@]} file residui che occupano $residsize di spazio su disco, desideri rimuoverli"
+      qst_msg "no" "Ci sono ${#residfiles[@]} file residui che occupano $residsize di spazio su disco, desideri rimuoverli" && sure=yes || sure=no
     else
-      qst_msg "no" "There are ${#residfiles[@]} residual files that take $residsize of disk space, do you want to remove them"
+      qst_msg "no" "There are ${#residfiles[@]} residual files that take $residsize of disk space, do you want to remove them" && sure=yes || sure=no
     fi
     read -r sure
-    if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
+    if [[ $sure != no ]]; then
       # Remove every residual file
       for i in "${residfiles[@]}"; do
         /bin/rm -f "$i" 2> >(print_errors)
@@ -951,12 +959,11 @@ function clean_file {
       done
       trashsize=$(human_size "$trashsize")
       if [[ $_LNG = ita ]]; then
-        qst_msg "no" "Sono presenti ${#trashfiles[@]} elementi che occupano $trashsize di spazio sul disco, desideri eliminarli definitivamente"
+        qst_msg "no" "Sono presenti ${#trashfiles[@]} elementi che occupano $trashsize di spazio sul disco, desideri eliminarli definitivamente" && sure=yes || sure=no
       else
-        qst_msg "no" "There are ${#trashfiles[@]} items that take $trashsize of disk space, do you want do definetely delete them"
+        qst_msg "no" "There are ${#trashfiles[@]} items that take $trashsize of disk space, do you want do definetely delete them" && sure=yes || sure=no
       fi
-      read -r sure
-      if [[ ( $_LNG != ita && ( $sure = y || $sure = Y ) ) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
+      if [[ $sure != no ]]; then
         /bin/rm -rf "$HOME/.local/share/Trash/files" 2> >(print_errors)
         /bin/rm -rf "$HOME/.local/share/Trash/info" 2> >(print_errors)
         if [[ $_LNG = ita ]]; then
