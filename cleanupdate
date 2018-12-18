@@ -197,7 +197,8 @@ function end_msg {
 
 #
 # Function to print a question, setting the default answer.
-# Usage: qst_msg "yes|no" "question"
+# Returns 0 for positive answer, 1 for negative answer.
+# Usage: qst_msg "yes|no" "question" && answer=yes || answer=no
 #
 function qst_msg {
   local mod=$1
