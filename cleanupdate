@@ -43,36 +43,36 @@ if [[ "$(id -u)" = "0" ]]; then
   exit 126
 fi
 
-# Check if /bin/tput is installed, otherwise some commands can't work
-if [[ ! -x /bin/tput ]]; then
+# Check if tput is installed, otherwise some commands can't work
+if [[ ! $(command -v tput) ]]; then
   if [[ $_LNG = ita ]]; then
-    echo "ERRORE: /bin/tput non è presente sul sistema, verificare che la"\
+    echo "ERRORE: tput non è presente sul sistema, verificare che la"\
       "libreria 'ncurses' sia installata correttamente." 1>&2
   else
-    echo "ERROR: /bin/tput is not present in the system, verify that"\
+    echo "ERROR: tput is not present in the system, verify that"\
       "verify that 'ncurses' library is properly installed." 1>&2
   fi
   exit 1
 fi
 
 # Define some useful text style and color
-_BOLD=$(/bin/tput bold)
-_NORMAL=$(/bin/tput sgr0)
-_RED=$(/bin/tput setaf 1)
-_GREEN=$(/bin/tput setaf 2)
-_YELLOW=$(/bin/tput setaf 3)
-_AQUA=$(/bin/tput setaf 6)
+_BOLD=$(tput bold)
+_NORMAL=$(tput sgr0)
+_RED=$(tput setaf 1)
+_GREEN=$(tput setaf 2)
+_YELLOW=$(tput setaf 3)
+_AQUA=$(tput setaf 6)
 readonly _BOLD _NORMAL _RED _GREEN _YELLOW _AQUA
 
 # Define TTY, in order to tell if we are on TTY or PTS
-TTY=$(/bin/tty)
+TTY=$(tty)
 export TTY
 
 # Choose 'sudo' or 'pkexec' based on env variables
-if [[ "$TTY" =~ tty || ! -x /bin/pkexec ]]; then
-  _SUDO="/bin/sudo"
+if [[ "$TTY" =~ tty || ! $(command -v pkexec) ]]; then
+  _SUDO="sudo"
 else
-  _SUDO="/bin/pkexec"
+  _SUDO="pkexec"
 fi
 readonly _SUDO
 
@@ -114,7 +114,7 @@ trap exit_trap EXIT
 
 # Define little function to print errors in stderr and in a logfile
 function print_errors {
-  /bin/tee --append "$logfile" 1>&2
+  tee --append "$logfile" 1>&2
 }
 
 #
@@ -295,8 +295,8 @@ function orph_pkgs {
     echo "Looking for orphan packages..."
   fi
   local -a orphans=""
-  if /bin/pacman -Qdtq >/dev/null ; then
-    readarray -t orphans < <( /bin/pacman -Qdtq )
+  if pacman -Qdtq >/dev/null ; then
+    readarray -t orphans < <( pacman -Qdtq )
   fi
   if [[ -n ${orphans[0]} ]]; then
     if [[ $_LNG = ita ]]; then
@@ -306,14 +306,14 @@ function orph_pkgs {
     fi
     for i in "${orphans[@]}"; do
       echo "$i"
-    done | /bin/column -x
+    done | column -x
     if [[ $_LNG = ita ]]; then
       qst_msg "no" "Sono presenti ${#orphans[@]} pacchetti orfani, desideri rimuoverli" && sure=yes || sure=no
     else
       qst_msg "no" "There are ${#orphans[@]} orphaned packages, do you want to remove them" && sure=yes || sure=no
     fi
     if [[ $sure != no ]]; then
-      $_SUDO /bin/pacman --color always --noconfirm -Rs \
+      $_SUDO pacman --color always --noconfirm -Rs \
         "${orphans[@]}" 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pacchetti orfani"
@@ -356,37 +356,38 @@ function sys_update {
     qst_msg "yes" "Do you want to upgrade official packages" && sure=yes || sure=no
   fi
   if [[ $sure != no ]]; then
-    if [[ -x /bin/pacman-mirrors && \
-      $( /bin/stat /etc/pacman.d/mirrorlist | /bin/grep 'Modify' | \
-      /bin/cut -d' ' -f2 ) != $( /bin/date +%Y-%m-%d ) ]]; then
+    # compute age of mirrorlist in days from last modification
+    local ml_age=$(( ($(date +%s) - \
+      $(stat --format %Y /etc/pacman.d/mirrorlist)) / 86400 ))
+    if [[ $(command -v pacman-mirrors) && $ml_age -gt 0 ]]; then
       if [[ $_LNG = ita ]]; then
-        qst_msg "yes" "La lista dei mirror non viene aggiornata da più di un giorno, desideri aggiornarla" && sure=yes || sure=no
+        qst_msg "yes" "La lista dei mirror non viene aggiornata da $ml_age giorno(i), desideri aggiornarla" && sure=yes || sure=no
       else
-        qst_msg "yes" "The mirror list is more than one day old, do you want to refresh it" && sure=yes || sure=no
+        qst_msg "yes" "The mirror list is $ml_age day(s) old, do you want to refresh it" && sure=yes || sure=no
       fi
       if [[ $sure != no ]]; then
-        if ! $_SUDO /bin/pacman-mirrors --fasttrack 10 2> >(print_errors) ; then
+        if ! $_SUDO pacman-mirrors --fasttrack 10 2> >(print_errors) ; then
           if [[ $_LNG = ita ]]; then
             end_msg "no" "Aggiornamento mirrorlist"
           else
             end_msg "no" "Mirrorlist refresh"
           fi
         fi
-        $_SUDO /bin/pacman -Syy 2> >(print_errors)
+        $_SUDO pacman -Syy 2> >(print_errors)
       else
-        $_SUDO /bin/pacman -Sy 2> >(print_errors)
+        $_SUDO pacman -Sy 2> >(print_errors)
       fi
     else
-      $_SUDO /bin/pacman -Sy 2> >(print_errors)
+      $_SUDO pacman -Sy 2> >(print_errors)
     fi
     if [[ $_LNG = ita ]]; then
       echo "Ricerca aggiornamenti in corso..."
     else
       echo "Looking for updates..."
     fi
-    if [[ -n $(/bin/pacman -Qu 2> /dev/null) ]]; then
+    if [[ -n $(pacman -Qu 2> /dev/null) ]]; then
       # This way any pacman error during update doesn't stop the script
-      if $_SUDO /bin/pacman -Su --color always 2> >(print_errors); then
+      if $_SUDO pacman -Su --color always 2> >(print_errors); then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento pacchetti ufficiali"
         else
@@ -424,8 +425,8 @@ function sys_update {
   if [[ $sure != no ]]; then
     orph_pkgs
     # Check if yay, trizen, pacaur or yaourt are installed
-    if [[ -x /bin/yay ]]; then
-      if /bin/yay -Sua 2> >(print_errors) ; then
+    if [[ $(command -v yay) ]]; then
+      if yay -Sua 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento AUR"
         else
@@ -438,8 +439,8 @@ function sys_update {
           end_msg "no" "AUR upgrade"
         fi
       fi
-    elif [[ -x /bin/trizen ]]; then
-      if /bin/trizen -Sua 2> >(print_errors) ; then
+    elif [[ $(command -v trizen) ]]; then
+      if trizen -Sua 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento AUR"
         else
@@ -452,8 +453,8 @@ function sys_update {
           end_msg "no" "AUR upgrade"
         fi
       fi
-    elif [[ -x /bin/yaourt ]]; then
-      if /bin/yaourt -Sua --color 2> >(print_errors) ; then
+    elif [[ $(command -v yaourt) ]]; then
+      if yaourt -Sua --color 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento AUR"
         else
@@ -466,13 +467,13 @@ function sys_update {
           end_msg "no" "AUR upgrade"
         fi
       fi
-    elif [[ -x /bin/pacaur ]]; then
+    elif [[ $(command -v pacaur) ]]; then
       if [[ $_LNG = ita ]]; then
         end_msg "warn" "'pacaur' non è più mantenuto, si consiglia di installare un altro gestore per AUR: https://wiki.archlinux.org/index.php/AUR_helpers"
       else
         end_msg "warn" "'pacaur' is no longer maintained, it is reccomended to install another AUR helper: https://wiki.archlinux.org/index.php/AUR_helpers"
       fi
-      if /bin/pacaur -Sua --color always 2> >(print_errors) ; then
+      if pacaur -Sua --color always 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Aggiornamento AUR"
         else
@@ -524,7 +525,7 @@ function clean_pkg {
   else
     echo "Checking installed package cache..."
   fi
-  if /bin/paccache -dk2 | /bin/grep -q "no candidate packages found for pruning"; then
+  if paccache -dk2 | grep -q "no candidate packages found for pruning"; then
     if [[ $_LNG = ita ]]; then
       echo "Pulizia cache non necessaria."
       end_msg "skip" "Pulizia cache pacchetti installati"
@@ -539,7 +540,7 @@ function clean_pkg {
       qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)" && sure=yes || sure=no
     fi
     if [[ $sure != no ]]; then
-      $_SUDO /bin/paccache -rk2 --nocolor 2> >(print_errors)
+      $_SUDO paccache -rk2 --nocolor 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia cache pacchetti installati"
       else
@@ -559,7 +560,7 @@ function clean_pkg {
   else
     echo "Checking uninstalled package cache..."
   fi
-  if /bin/paccache -duk0 | /bin/grep -q "no candidate packages found for pruning"; then
+  if paccache -duk0 | grep -q "no candidate packages found for pruning"; then
     if [[ $_LNG = ita ]]; then
       echo "Pulizia cache non necessaria."
       end_msg "skip" "Pulizia cache pacchetti disinstallati"
@@ -574,7 +575,7 @@ function clean_pkg {
       qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages" && sure=yes || sure=no
     fi
     if [[ $sure != no ]]; then
-      $_SUDO /bin/paccache -ruk0 --nocolor 2> >(print_errors)
+      $_SUDO paccache -ruk0 --nocolor 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia cache pacchetti disinstallati"
       else
@@ -598,7 +599,7 @@ function clean_pkg {
   local -a pacnews=""
   while IFS= read -r -d '' file; do
     pacnews[i++]="$file"
-  done < <(/bin/find /etc -name "*.pacnew" -print0 2>>"$logfile")
+  done < <(find /etc -name "*.pacnew" -print0 2>>"$logfile")
   set -o pipefail
   local -a orphan_pacnews=""
   if [[ -n ${pacnews[0]} ]]; then
@@ -622,7 +623,7 @@ function clean_pkg {
     fi
     if [[ $sure != no ]]; then
       for i in "${orphan_pacnews[@]}"; do
-        $_SUDO /bin/rm -f "$i" 2> >(print_errors)
+        $_SUDO rm -f "$i" 2> >(print_errors)
       done
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "File di configurazione orfani"
@@ -658,7 +659,7 @@ function clean_file {
   else
     echo " ${_BOLD}::Files cleaning::${_NORMAL} "
   fi
-  if [[ "$(/bin/cat /proc/1/comm)" = systemd ]]; then
+  if [[ "$(cat /proc/1/comm)" = systemd ]]; then
     echo
     if [[ $_LNG = ita ]]; then
       echo "Controllo della dimensione dei journal log in corso..."
@@ -667,7 +668,7 @@ function clean_file {
     fi
     local log_size
     # Check journal log files, consider realistic cases only order of MB and GB.
-    log_size=$($_SUDO /bin/journalctl --disk-usage 2>>"$logfile" | \
+    log_size=$($_SUDO journalctl --disk-usage 2>>"$logfile" | \
       sed -e "s/[a-z]//g" | sed -e "s/\\s\\+/ /g" | cut -d" " -f 2)
     if echo "$log_size" | grep -q G ; then
       log_size=$(echo "1000*${log_size/[A-Z]/}" | bc)
@@ -682,8 +683,8 @@ function clean_file {
         qst_msg "yes" "It may be useful to trim journal log, do you want to continue" && sure=yes || sure=no
       fi
       if [[ $sure != no ]]; then
-        $_SUDO /bin/journalctl --vacuum-size=200M \
-          --vacuum-time=2weeks | /bin/tail -n 1 2> >(print_errors)
+        $_SUDO journalctl --vacuum-size=200M \
+          --vacuum-time=2weeks | tail -n 1 2> >(print_errors)
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Pulizia journal log"
         else
@@ -720,14 +721,14 @@ function clean_file {
   local -a obsoletelogs=""
   while IFS= read -r -d '' file; do
     obsoletelogs[i++]="$file"
-  done < <(/bin/find /var/log -name journal -prune -o \( -type f -ctime +90 \
+  done < <(find /var/log -name journal -prune -o \( -type f -ctime +90 \
     -print0 \) 2>>"$logfile")
   set -o pipefail
   if [[ -n ${obsoletelogs[0]} ]]; then
     # Print every obsolete log file
     for i in "${obsoletelogs[@]}"; do
       echo "$i"
-    done | /bin/column -x
+    done | column -x
     if [[ $_LNG = ita ]]; then
       qst_msg "no" "Ci sono ${#obsoletelogs[@]} file di log obsoleti, desideri rimuoverli" && sure=yes || sure=no
     else
@@ -736,7 +737,7 @@ function clean_file {
     if [[ $sure != no ]]; then
       # Remove every residual file
       for i in "${obsoletelogs[@]}"; do
-        $_SUDO /bin/rm -f "$i" 2> >(print_errors)
+        $_SUDO rm -f "$i" 2> >(print_errors)
       done
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia file di log obsoleti"
@@ -773,20 +774,20 @@ function clean_file {
   set +o pipefail
   local oldsize=0
   if [[ -d "$HOME/.thumbnails" ]]; then
-    oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -type f\
-      -atime +30 -print0 2>>"$logfile" | /bin/du --files0-from=- -cb |\
-      /bin/tail -1 | /bin/cut -f 1 )" | bc)
-    oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.thumbnails" -empty -type d\
-      -atime +30 -print0 2>>"$logfile" | /bin/du --files0-from=- -cb |\
-      /bin/tail -1 | /bin/cut -f 1 )" | bc)
+    oldsize=$(echo "$oldsize+$( find "$HOME/.thumbnails" -type f\
+      -atime +30 -print0 2>>"$logfile" | du --files0-from=- -cb |\
+      tail -1 | cut -f 1 )" | bc)
+    oldsize=$(echo "$oldsize+$( find "$HOME/.thumbnails" -empty -type d\
+      -atime +30 -print0 2>>"$logfile" | du --files0-from=- -cb |\
+      tail -1 | cut -f 1 )" | bc)
   fi
   if [[ -d "$HOME/.cache" ]]; then
-    oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
-      -prune -o \( -type f -atime +30 -print0 \) 2>>"$logfile" | /bin/du\
-      --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
-    oldsize=$(echo "$oldsize+$( /bin/find "$HOME/.cache" -name pacaur\
-      -prune -o \( -empty -type d -atime +30 -print0 \) 2>>"$logfile" | /bin/du\
-      --files0-from=- -cb | /bin/tail -1 | /bin/cut -f 1 )" | bc)
+    oldsize=$(echo "$oldsize+$( find "$HOME/.cache" -name pacaur\
+      -prune -o \( -type f -atime +30 -print0 \) 2>>"$logfile" | du\
+      --files0-from=- -cb | tail -1 | cut -f 1 )" | bc)
+    oldsize=$(echo "$oldsize+$( find "$HOME/.cache" -name pacaur\
+      -prune -o \( -empty -type d -atime +30 -print0 \) 2>>"$logfile" | du\
+      --files0-from=- -cb | tail -1 | cut -f 1 )" | bc)
   fi
   set -o pipefail
   if [[ $oldsize -gt 0 ]]; then
@@ -800,18 +801,18 @@ function clean_file {
       # Disable pipefail option because 'find' often report not critical errors
       set +o pipefail
       if [[ -d "$HOME/.thumbnails" ]]; then
-        /bin/find "$HOME/.thumbnails" -type f -atime +30 -print0 2>/dev/null |\
-          xargs -0 /bin/rm -f 2> >(print_errors)
-        /bin/find "$HOME/.thumbnails" -empty -type d -atime +30\
-          -print0 2>/dev/null | xargs -0 /bin/rm -rf 2> >(print_errors)
+        find "$HOME/.thumbnails" -type f -atime +30 -print0 2>/dev/null |\
+          xargs -0 rm -f 2> >(print_errors)
+        find "$HOME/.thumbnails" -empty -type d -atime +30\
+          -print0 2>/dev/null | xargs -0 rm -rf 2> >(print_errors)
       fi
       if [[ -d "$HOME/.cache" ]]; then
-        /bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
-          \( -type f -atime +30 -print0 \) 2>/dev/null | xargs -0 /bin/rm -f \
+        find "$HOME/.cache" -name 'pacaur' -prune -o\
+          \( -type f -atime +30 -print0 \) 2>/dev/null | xargs -0 rm -f \
           2> >(print_errors)
-        /bin/find "$HOME/.cache" -name 'pacaur' -prune -o\
+        find "$HOME/.cache" -name 'pacaur' -prune -o\
           \( -empty -type d -atime +30 -print0 \) 2>/dev/null | xargs -0\
-          /bin/rm -rf 2> >(print_errors)
+          rm -rf 2> >(print_errors)
       fi
       set -o pipefail
       if [[ $_LNG = ita ]]; then
@@ -851,28 +852,28 @@ function clean_file {
   local -a residfiles=""
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
-  done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+  done < <(find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
     -o -path "*/.git" -prune -o \( -type f -atime +1 -name "*~"\
     -user "$USER" -print0 \) 2>>"$logfile")
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
-  done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+  done < <(find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
     -o -path "*/.git" -prune -o \( -type f -atime +1 -name ".*.swp"\
     -user "$USER" -print0 \) 2>>"$logfile")
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
-  done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+  done < <(find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
     -o -path "*/.git" -prune -o -name "Desktop.ini" -user "$USER"\
     -print0 2>>"$logfile")
   while IFS= read -r -d '' file; do
     residfiles[i++]="$file"
-  done < <(/bin/find "$HOME" -name "*Steam*" -prune -o -path\
+  done < <(find "$HOME" -name "*Steam*" -prune -o -path\
     "$HOME/.cache" -prune -o -path "$HOME/.thumbnails" -prune -o\
     -path "$HOME/.mozilla" -prune -o -path "$HOME/.thunderbird" -prune\
     -o -path "*/.git" -prune -o -name "Thumbs.db" -user "$USER" -print0\
@@ -882,12 +883,12 @@ function clean_file {
     # Print every residual file
     for i in "${residfiles[@]}"; do
       echo "$i"
-    done | /bin/column -x
+    done | column -x
     # Calculate space taken by residual files
     local residsize=0
     local filesize=0
     for i in "${residfiles[@]}"; do
-      filesize=$( /bin/du -b "$i" | /bin/cut -f 1 )
+      filesize=$( du -b "$i" | cut -f 1 )
       residsize=$( echo "$residsize+$filesize" | bc )
     done
     residsize=$(human_size "$residsize")
@@ -900,7 +901,7 @@ function clean_file {
     if [[ $sure != no ]]; then
       # Remove every residual file
       for i in "${residfiles[@]}"; do
-        /bin/rm -f "$i" 2> >(print_errors)
+        rm -f "$i" 2> >(print_errors)
       done
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia file residui"
@@ -936,7 +937,7 @@ function clean_file {
     local -a trashfiles=""
     while IFS= read -r -d '' file; do
       trashfiles[i++]="$file"
-    done < <(/bin/find "$HOME/.local/share/Trash/files" -mindepth 1\
+    done < <(find "$HOME/.local/share/Trash/files" -mindepth 1\
       -maxdepth 1 -print0 2>>"$logfile")
     set -o pipefail
     local trashsize=0
@@ -947,7 +948,7 @@ function clean_file {
       #  file name next to the file size.
       for i in "${trashfiles[@]}"; do
         filename=$( basename "$i" )
-        filesize=$( /bin/du -bs "$i" | /bin/cut -f 1 )
+        filesize=$( du -bs "$i" | cut -f 1 )
         trashsize=$( echo "$trashsize+$filesize" | bc )
         filesize=$( human_size "$filesize" )
         echo -ne "   $filesize   \\t"
@@ -965,8 +966,8 @@ function clean_file {
         qst_msg "no" "There are ${#trashfiles[@]} items that take $trashsize of disk space, do you want do definetely delete them" && sure=yes || sure=no
       fi
       if [[ $sure != no ]]; then
-        /bin/rm -rf "$HOME/.local/share/Trash/files" 2> >(print_errors)
-        /bin/rm -rf "$HOME/.local/share/Trash/info" 2> >(print_errors)
+        rm -rf "$HOME/.local/share/Trash/files" 2> >(print_errors)
+        rm -rf "$HOME/.local/share/Trash/info" 2> >(print_errors)
         if [[ $_LNG = ita ]]; then
           end_msg "ok" "Pulizia cestino"
         else
@@ -1386,14 +1387,14 @@ function main {
 
 # Initialise logfile with current date and time.
 logfile="/tmp/cleanupdate.log"
-echo -e "\\n$(/bin/date -R) --- Cleanupdate errors log\\n" >> "$logfile"
+echo -e "\\n$(date -R) --- Cleanupdate errors log\\n" >> "$logfile"
 
 check_args "$@"
 
 # Launch the long search for residual file and put everything in background,
 #  this way the second execution will be faster on hard disk, because everything
 #  is already in cache.
-if ! (/bin/find "$HOME" -name "*Steam*" -prune -o -path "$HOME/.cache" -prune -o\
+if ! (find "$HOME" -name "*Steam*" -prune -o -path "$HOME/.cache" -prune -o\
   -path "$HOME/.thumbnails" -prune -o -path "$HOME/.mozilla" -prune -o\
   -path "$HOME/.thunderbird" -prune -o -path "*/.git" -prune -o\
   -print >/dev/null 2>>"$logfile" &) ; then
