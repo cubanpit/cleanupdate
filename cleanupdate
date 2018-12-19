@@ -207,6 +207,7 @@ function qst_msg {
   # question just pressing enter N times when the script begins.
   local discard
   set +e
+  # shellcheck disable=SC2034
   read -r -t 0.1 -n 1000 discard
   set -e
   unset discard
@@ -424,7 +425,7 @@ function sys_update {
   fi
   if [[ $sure != no ]]; then
     orph_pkgs
-    # Check if yay, trizen, pacaur or yaourt are installed
+    # Check if yay, trizen or yaourt are installed
     if [[ $(command -v yay) ]]; then
       if yay -Sua 2> >(print_errors) ; then
         if [[ $_LNG = ita ]]; then
@@ -467,33 +468,14 @@ function sys_update {
           end_msg "no" "AUR upgrade"
         fi
       fi
-    elif [[ $(command -v pacaur) ]]; then
-      if [[ $_LNG = ita ]]; then
-        end_msg "warn" "'pacaur' non è più mantenuto, si consiglia di installare un altro gestore per AUR: https://wiki.archlinux.org/index.php/AUR_helpers"
-      else
-        end_msg "warn" "'pacaur' is no longer maintained, it is reccomended to install another AUR helper: https://wiki.archlinux.org/index.php/AUR_helpers"
-      fi
-      if pacaur -Sua --color always 2> >(print_errors) ; then
-        if [[ $_LNG = ita ]]; then
-          end_msg "ok" "Aggiornamento AUR"
-        else
-          end_msg "ok" "AUR upgrade"
-        fi
-      else
-        if [[ $_LNG = ita ]]; then
-          end_msg "ok" "Aggiornamento AUR"
-        else
-          end_msg "ok" "AUR upgrade"
-        fi
-      fi
     else
       if [[ $_LNG = ita ]]; then
-        echo "Non risulta installato 'yay', 'trizen', 'yaourt' né 'pacaur', non è"\
+        echo "Non risulta installato 'yay', 'trizen' né 'yaourt', non è"\
           "possibile accedere agli aggiornamenti AUR tramite questo"\
           "script."
         end_msg "skip" "Aggiornamento AUR"
       else
-        echo "You don't have 'yay', 'trizen', 'yaourt' or 'pacaur' installed,"\
+        echo "You don't have 'yay', 'trizen' or 'yaourt' installed,"\
           "you can't access AUR updates through this script."
         end_msg "skip" "AUR upgrade"
       fi
@@ -774,20 +756,23 @@ function clean_file {
   set +o pipefail
   local oldsize=0
   if [[ -d "$HOME/.thumbnails" ]]; then
+    # shellcheck disable=SC2216
     oldsize=$(echo "$oldsize+$( find "$HOME/.thumbnails" -type f\
       -atime +30 -print0 2>>"$logfile" | du --files0-from=- -cb |\
       tail -1 | cut -f 1 )" | bc)
+    # shellcheck disable=SC2216
     oldsize=$(echo "$oldsize+$( find "$HOME/.thumbnails" -empty -type d\
       -atime +30 -print0 2>>"$logfile" | du --files0-from=- -cb |\
       tail -1 | cut -f 1 )" | bc)
   fi
   if [[ -d "$HOME/.cache" ]]; then
-    oldsize=$(echo "$oldsize+$( find "$HOME/.cache" -name pacaur\
-      -prune -o \( -type f -atime +30 -print0 \) 2>>"$logfile" | du\
-      --files0-from=- -cb | tail -1 | cut -f 1 )" | bc)
-    oldsize=$(echo "$oldsize+$( find "$HOME/.cache" -name pacaur\
-      -prune -o \( -empty -type d -atime +30 -print0 \) 2>>"$logfile" | du\
-      --files0-from=- -cb | tail -1 | cut -f 1 )" | bc)
+    # shellcheck disable=SC2216
+    oldsize=$(echo "$oldsize+$( find "$HOME/.cache" -type f -atime +30 -print0 \
+      2>>"$logfile" | du --files0-from=- -cb | tail -1 | cut -f 1 )" | bc)
+    # shellcheck disable=SC2216
+    oldsize=$(echo "$oldsize+$( find "$HOME/.cache" -empty -type d -atime +30 \
+      -print0 2>>"$logfile" | du --files0-from=- -cb | tail -1 | cut -f 1 )" \
+      | bc)
   fi
   set -o pipefail
   if [[ $oldsize -gt 0 ]]; then
@@ -807,12 +792,10 @@ function clean_file {
           -print0 2>/dev/null | xargs -0 rm -rf 2> >(print_errors)
       fi
       if [[ -d "$HOME/.cache" ]]; then
-        find "$HOME/.cache" -name 'pacaur' -prune -o\
-          \( -type f -atime +30 -print0 \) 2>/dev/null | xargs -0 rm -f \
-          2> >(print_errors)
-        find "$HOME/.cache" -name 'pacaur' -prune -o\
-          \( -empty -type d -atime +30 -print0 \) 2>/dev/null | xargs -0\
-          rm -rf 2> >(print_errors)
+        find "$HOME/.cache" -type f -atime +30 -print0 2>/dev/null | \
+          xargs -0 rm -f 2> >(print_errors)
+        find "$HOME/.cache" -empty -type d -atime +30 -print0 2>/dev/null | \
+          xargs -0 rm -rf 2> >(print_errors)
       fi
       set -o pipefail
       if [[ $_LNG = ita ]]; then
