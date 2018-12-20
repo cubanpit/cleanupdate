@@ -384,8 +384,16 @@ function sys_update {
           else
             end_msg "no" "Mirrorlist refresh"
           fi
+          $_SUDO pacman -Sy 2> >(print_errors)
         fi
-        $_SUDO pacman -Syy 2> >(print_errors)
+        if ! $_SUDO pacman -Syy 2> >(print_errors); then
+          if [[ $_LNG = ita ]]; then
+            end_msg "warn" "La lista dei mirror è stata aggiornata, si raccomanda un aggiornamento manuale dei database locali di pacman."
+          else
+            end_msg "warn" "Mirrorlist refreshed, it is reccomended to manual refresh pacman local databases."
+          fi
+          exit 1
+        fi
       else
         if ! $_SUDO pacman -Sy 2> >(print_errors); then
           if [[ $_LNG = ita ]]; then
