@@ -604,6 +604,7 @@ function clean_pkg {
       qst_msg "yes" "These are ${#orphan_pacnews[@]} orphan '.pacnew' files (read documentation [8] for further information), do you want to erase them" && sure=yes || sure=no
     fi
     if [[ $sure != no ]]; then
+      # shellcheck disable=SC2068
       $_SUDO rm -f ${orphan_pacnews[@]} 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "File di configurazione orfani"
@@ -716,6 +717,7 @@ function clean_file {
     fi
     if [[ $sure != no ]]; then
       # Remove every residual file
+      # shellcheck disable=SC2068
       $_SUDO rm -f ${obsoletelogs[@]} 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia file di log obsoleti"
