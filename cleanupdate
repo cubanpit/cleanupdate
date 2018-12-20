@@ -290,6 +290,13 @@ function check_args {
 function orph_pkgs {
   echo -e "\\nStart orph_pkgs()\\n" >> "$logfile"
   echo
+  function end_orph {
+    if [[ $_LNG = ita ]]; then
+      end_msg "$1" "Pacchetti orfani"
+    else
+      end_msg "$1" "Orphan packages"
+    fi
+  }
   if [[ $_LNG = ita ]]; then
     echo "Ricerca pacchetti orfani in corso..."
   else
@@ -314,26 +321,23 @@ function orph_pkgs {
       qst_msg "no" "There are ${#orphans[@]} orphaned packages, do you want to remove them" && sure=yes || sure=no
     fi
     if [[ $sure != no ]]; then
-      $_SUDO pacman --color always --noconfirm -Rs \
-        "${orphans[@]}" 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Pacchetti orfani"
+      if $_SUDO pacman --color always --noconfirm -Rs \
+          "${orphans[@]}" 2> >(print_errors); then
+        end_orph "ok"
       else
-        end_msg "ok" "Orphan packages"
+        end_orph "no"
       fi
     else
-      if [[ $_LNG = ita ]]; then
-        end_msg "no" "Pacchetti orfani"
-      else
-        end_msg "no" "Orphan packages"
-      fi
+      end_orph "no"
     fi
     echo
   else
     if [[ $_LNG = ita ]]; then
-      end_msg "skip" "Non sono presenti pacchetti orfani."
+      echo "Non sono presenti pacchetti orfani."
+      end_orph "skip"
     else
-      end_msg "skip" "There are no orphan packages."
+      echo "There are no orphan packages."
+      end_orph "skip"
     fi
     echo
   fi
@@ -351,6 +355,13 @@ function sys_update {
     echo " ${_BOLD}::System update::${_NORMAL} "
   fi
   echo
+  function end_sysup {
+    if [[ $_LNG = ita ]]; then
+      end_msg "$1" "Aggiornamento pacchetti ufficiali"
+    else
+      end_msg "$1" "Official packages upgrade"
+    fi
+  }
   if [[ $_LNG = ita ]]; then
     qst_msg "yes" "Desideri aggiornare i pacchetti ufficiali" && sure=yes || sure=no
   else
@@ -376,10 +387,22 @@ function sys_update {
         fi
         $_SUDO pacman -Syy 2> >(print_errors)
       else
-        $_SUDO pacman -Sy 2> >(print_errors)
+        if ! $_SUDO pacman -Sy 2> >(print_errors); then
+          if [[ $_LNG = ita ]]; then
+            end_msg "no" "Aggiornamento database locali"
+          else
+            end_msg "no" "Local database refresh"
+          fi
+        fi
       fi
     else
-      $_SUDO pacman -Sy 2> >(print_errors)
+      if ! $_SUDO pacman -Sy 2> >(print_errors); then
+        if [[ $_LNG = ita ]]; then
+          end_msg "no" "Aggiornamento database locali"
+        else
+          end_msg "no" "Local database refresh"
+        fi
+      fi
     fi
     if [[ $_LNG = ita ]]; then
       echo "Ricerca aggiornamenti in corso..."
@@ -389,35 +412,30 @@ function sys_update {
     if [[ -n $(pacman -Qu 2> /dev/null) ]]; then
       # This way any pacman error during update doesn't stop the script
       if $_SUDO pacman -Su --color always 2> >(print_errors); then
-        if [[ $_LNG = ita ]]; then
-          end_msg "ok" "Aggiornamento pacchetti ufficiali"
-        else
-          end_msg "ok" "Official packages upgrade"
-        fi
+        end_sysup "ok"
       else
-        if [[ $_LNG = ita ]]; then
-          end_msg "no" "Aggiornamento pacchetti ufficiali"
-        else
-          end_msg "no" "Official packages upgrade"
-        fi
+        end_sysup "no"
       fi
     else
       if [[ $_LNG = ita ]]; then
         echo "Non sono disponibili nuovi aggiornamenti."
-        end_msg "skip" "Aggiornamento pacchetti ufficiali"
+        end_sysup "skip"
       else
         echo "There isn't any available update."
-        end_msg "skip" "Official packages upgrade"
+        end_sysup "skip"
       fi
     fi
   else
-    if [[ $_LNG = ita ]]; then
-      end_msg "no" "Aggiornamento pacchetti ufficiali"
-    else
-      end_msg "no" "Official packages upgrade"
-    fi
+    end_sysup "no"
   fi
   echo
+  function end_aurup {
+    if [[ $_LNG = ita ]]; then
+      end_msg "$1" "Aggiornamento AUR"
+    else
+      end_msg "$1" "AUR upgrade"
+    fi
+  }
   if [[ $_LNG = ita ]]; then
     qst_msg "yes" "Desideri aggiornare i pacchetti di AUR" && sure=yes || sure=no
   else
@@ -428,64 +446,36 @@ function sys_update {
     # Check if yay, trizen or yaourt are installed
     if [[ $(command -v yay) ]]; then
       if yay -Sua 2> >(print_errors) ; then
-        if [[ $_LNG = ita ]]; then
-          end_msg "ok" "Aggiornamento AUR"
-        else
-          end_msg "ok" "AUR upgrade"
-        fi
+        end_aurup "ok"
       else
-        if [[ $_LNG = ita ]]; then
-          end_msg "no" "Aggiornamento AUR"
-        else
-          end_msg "no" "AUR upgrade"
-        fi
+        end_aurup "no"
       fi
     elif [[ $(command -v trizen) ]]; then
       if trizen -Sua 2> >(print_errors) ; then
-        if [[ $_LNG = ita ]]; then
-          end_msg "ok" "Aggiornamento AUR"
-        else
-          end_msg "ok" "AUR upgrade"
-        fi
+        end_aurup "ok"
       else
-        if [[ $_LNG = ita ]]; then
-          end_msg "no" "Aggiornamento AUR"
-        else
-          end_msg "no" "AUR upgrade"
-        fi
+        end_aurup "no"
       fi
     elif [[ $(command -v yaourt) ]]; then
       if yaourt -Sua --color 2> >(print_errors) ; then
-        if [[ $_LNG = ita ]]; then
-          end_msg "ok" "Aggiornamento AUR"
-        else
-          end_msg "ok" "AUR upgrade"
-        fi
+        end_aurup "ok"
       else
-        if [[ $_LNG = ita ]]; then
-          end_msg "no" "Aggiornamento AUR"
-        else
-          end_msg "no" "AUR upgrade"
-        fi
+        end_aurup "no"
       fi
     else
       if [[ $_LNG = ita ]]; then
         echo "Non risulta installato 'yay', 'trizen' né 'yaourt', non è"\
           "possibile accedere agli aggiornamenti AUR tramite questo"\
           "script."
-        end_msg "skip" "Aggiornamento AUR"
+        end_aurup "skip"
       else
         echo "You don't have 'yay', 'trizen' or 'yaourt' installed,"\
           "you can't access AUR updates through this script."
-        end_msg "skip" "AUR upgrade"
+        end_aurup "skip"
       fi
     fi
   else
-    if [[ $_LNG = ita ]]; then
-      end_msg "no" "Aggiornamento AUR"
-    else
-      end_msg "no" "AUR upgrade"
-    fi
+    end_aurup "no"
   fi
 }
 
@@ -507,13 +497,20 @@ function clean_pkg {
   else
     echo "Checking installed package cache..."
   fi
+  function end_pacc {
+    if [[ $_LNG = ita ]]; then
+      end_msg "$1" "Pulizia cache pacchetti installati"
+    else
+      end_msg "$1" "Installed packages cache cleaning"
+    fi
+  }
   if paccache -dk2 | grep -q "no candidate packages found for pruning"; then
     if [[ $_LNG = ita ]]; then
       echo "Pulizia cache non necessaria."
-      end_msg "skip" "Pulizia cache pacchetti installati"
+      end_pacc "skip"
     else
       echo "Cache cleaning not required."
-      end_msg "skip" "Installed packages cache cleaning"
+      end_pacc "skip"
     fi
   else
     if [[ $_LNG = ita ]]; then
@@ -522,18 +519,13 @@ function clean_pkg {
       qst_msg "yes" "Do you want to clean the cache of installed packages (keeping 2 versions)" && sure=yes || sure=no
     fi
     if [[ $sure != no ]]; then
-      $_SUDO paccache -rk2 --nocolor 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Pulizia cache pacchetti installati"
+      if $_SUDO paccache -rk2 --nocolor 2> >(print_errors); then
+        end_pacc "ok"
       else
-        end_msg "ok" "Installed packages cache cleaning"
+        end_pacc "no"
       fi
     else
-      if [[ $_LNG = ita ]]; then
-        end_msg "no" "Pulizia cache pacchetti installati"
-      else
-        end_msg "no" "Installed packages cache cleaning"
-      fi
+      end_pacc "no"
     fi
   fi
   echo
@@ -542,13 +534,20 @@ function clean_pkg {
   else
     echo "Checking uninstalled package cache..."
   fi
+  function end_pacc {
+    if [[ $_LNG = ita ]]; then
+      end_msg "$1" "Pulizia cache pacchetti disinstallati"
+    else
+      end_msg "$1" "Uninstalled packages cache cleaning"
+    fi
+  }
   if paccache -duk0 | grep -q "no candidate packages found for pruning"; then
     if [[ $_LNG = ita ]]; then
       echo "Pulizia cache non necessaria."
-      end_msg "skip" "Pulizia cache pacchetti disinstallati"
+      end_pacc "skip"
     else
       echo "Cache cleaning not required."
-      end_msg "skip" "Uninstalled packages cache cleaning"
+      end_pacc "skip"
     fi
   else
     if [[ $_LNG = ita ]]; then
@@ -557,18 +556,13 @@ function clean_pkg {
       qst_msg "yes" "Do you want to completely clean the cache of uninstalled packages" && sure=yes || sure=no
     fi
     if [[ $sure != no ]]; then
-      $_SUDO paccache -ruk0 --nocolor 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Pulizia cache pacchetti disinstallati"
+      if $_SUDO paccache -ruk0 --nocolor 2> >(print_errors); then
+        end_pacc "ok"
       else
-        end_msg "ok" "Uninstalled packages cache cleaning"
+        end_pacc "no"
       fi
     else
-      if [[ $_LNG = ita ]]; then
-        end_msg "no" "Pulizia cache pacchetti disinstallati"
-      else
-        end_msg "no" "Uninstalled packages cache cleaning"
-      fi
+      end_pacc "no"
     fi
   fi
   echo
@@ -603,20 +597,22 @@ function clean_pkg {
     else
       qst_msg "yes" "These are ${#orphan_pacnews[@]} orphan '.pacnew' files (read documentation [8] for further information), do you want to erase them" && sure=yes || sure=no
     fi
+    function end_pnew {
+      if [[ $_LNG = ita ]]; then
+        end_msg "$1" "File di configurazione orfani"
+      else
+        end_msg "$1" "Orphan configuration files"
+      fi
+    }
     if [[ $sure != no ]]; then
       # shellcheck disable=SC2068
-      $_SUDO rm -f ${orphan_pacnews[@]} 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "File di configurazione orfani"
+      if $_SUDO rm -f ${orphan_pacnews[@]} 2> >(print_errors); then
+        end_pnew "ok"
       else
-        end_msg "ok" "Orphan configuration files"
+        end_pnew "no"
       fi
     else
-      if [[ $_LNG = ita ]]; then
-        end_msg "no" "File di configurazione orfani"
-      else
-        end_msg "no" "Orphan configuration files"
-      fi
+      end_pnew "no"
     fi
   fi
   if [[ -n ${pacnews[0]} && ( ${#pacnews[@]} -gt ${#orphan_pacnews[@]} || -z ${orphan_pacnews[0]} ) ]]; then
@@ -642,50 +638,64 @@ function clean_file {
   fi
   if [[ "$(cat /proc/1/comm)" = systemd ]]; then
     echo
+    function end_journal {
+      if [[ $_LNG = ita ]]; then
+        end_msg "$1" "Pulizia file di log"
+      else
+        end_msg "$1" "Log files cleaning"
+      fi
+    }
     if [[ $_LNG = ita ]]; then
-      echo "Controllo della dimensione dei journal log in corso..."
+      qst_msg "yes" "Desideri controllare la dimensione del journal log" && sure=yes || sure=no
     else
-      echo "Checking journal log disk usage..."
+      qst_msg "yes" "Do you want to check journal log disk usage" && sure=yes || sure=no
     fi
-    local log_size
-    # Check journal log files, consider realistic cases only order of MB and GB.
-    log_size=$($_SUDO journalctl --disk-usage 2>>"$logfile" | \
-      sed -e "s/[a-z]//g" | sed -e "s/\\s\\+/ /g" | cut -d" " -f 2)
-    if echo "$log_size" | grep -q G ; then
-      log_size=$(echo "1000*${log_size/[A-Z]/}" | bc)
-    else
-      log_size=${log_size/[A-Z]/}
-    fi
-    log_size=${log_size/\.*/}
-    if [[ $log_size -ge 200 ]]; then
+    if [[ $sure != no ]]; then
       if [[ $_LNG = ita ]]; then
-        qst_msg "yes" "Potrebbe essere utile restringere il journal log, vuoi procedere" && sure=yes || sure=no
+        echo "Controllo della dimensione del journal log in corso..."
       else
-        qst_msg "yes" "It may be useful to trim journal log, do you want to continue" && sure=yes || sure=no
+        echo "Checking journal log disk usage..."
       fi
-      if [[ $sure != no ]]; then
-        $_SUDO journalctl --vacuum-size=200M \
-          --vacuum-time=2weeks | tail -n 1 2> >(print_errors)
-        if [[ $_LNG = ita ]]; then
-          end_msg "ok" "Pulizia journal log"
+      local log_size
+      # Check journal log files, consider realistic cases only order of MB and GB.
+      if log_size=$($_SUDO journalctl --disk-usage 2>>"$logfile" | \
+        sed -e "s/[a-z]//g" | sed -e "s/\\s\\+/ /g" | cut -d" " -f 2); then
+        if echo "$log_size" | grep -q G ; then
+          log_size=$(echo "1000*${log_size/[A-Z]/}" | bc)
         else
-          end_msg "ok" "Journal log trimming"
+          log_size=${log_size/[A-Z]/}
+        fi
+        log_size=${log_size/\.*/}
+        if [[ $log_size -ge 200 ]]; then
+          if [[ $_LNG = ita ]]; then
+            qst_msg "yes" "Potrebbe essere utile restringere il journal log, vuoi procedere" && sure=yes || sure=no
+          else
+            qst_msg "yes" "It may be useful to trim journal log, do you want to continue" && sure=yes || sure=no
+          fi
+          if [[ $sure != no ]]; then
+            if $_SUDO journalctl --vacuum-size=200M \
+              --vacuum-time=2weeks | tail -n 1 2> >(print_errors); then
+              end_journal "ok"
+            else
+              end_journal "no"
+            fi
+          else
+            end_journal "no"
+          fi
+        else
+          if [[ $_LNG = ita ]]; then
+            echo "I file di log non occupano eccessivo spazio su disco."
+            end_journal "skip"
+          else
+            echo "Log files do not use significant disk space."
+            end_journal "skip"
+          fi
         fi
       else
-        if [[ $_LNG = ita ]]; then
-          end_msg "no" "Pulizia file di log"
-        else
-          end_msg "no" "Log files cleaning"
-        fi
+        end_journal "no"
       fi
     else
-      if [[ $_LNG = ita ]]; then
-        echo "I file di log non occupano eccessivo spazio su disco."
-        end_msg "skip" "Pulizia file di log"
-      else
-        echo "Log files do not use significant disk space."
-        end_msg "skip" "Log files cleaning"
-      fi
+      end_journal "no"
     fi
   fi
   echo
@@ -694,6 +704,13 @@ function clean_file {
   else
     echo "Checking obsolete log files..."
   fi
+  function end_log {
+    if [[ $_LNG = ita ]]; then
+      end_msg "$1" "Pulizia file di log obsoleti"
+    else
+      end_msg "$1" "Obsolete log files cleaning"
+    fi
+  }
   # Check classic log files, they are considered a thousand time heavier
   # because they are also obsolete if older than 90 days.
   # Temporarely disable pipefail option, find often reports non critical errors.
@@ -718,26 +735,21 @@ function clean_file {
     if [[ $sure != no ]]; then
       # Remove every residual file
       # shellcheck disable=SC2068
-      $_SUDO rm -f ${obsoletelogs[@]} 2> >(print_errors)
-      if [[ $_LNG = ita ]]; then
-        end_msg "ok" "Pulizia file di log obsoleti"
+      if $_SUDO rm -f ${obsoletelogs[@]} 2> >(print_errors); then
+        end_log "ok"
       else
-        end_msg "ok" "Obsolete log files cleaning"
+        end_log "no"
       fi
     else
-      if [[ $_LNG = ita ]]; then
-        end_msg "no" "Pulizia file di log obsoleti"
-      else
-        end_msg "no" "Obsolete log files cleaning"
-      fi
+      end_log "no"
     fi
   else
     if [[ $_LNG = ita ]]; then
       echo "Non sono presenti file di log obsoleti."
-      end_msg "skip" "Pulizia file di log obsoleti"
+      end_log "skip"
     else
       echo "There are no obsolete log files."
-      end_msg "skip" "Obsolete log files cleaning"
+      end_log "skip"
     fi
   fi
   echo
