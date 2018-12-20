@@ -609,9 +609,7 @@ function clean_pkg {
     fi
     read -r sure
     if [[ $sure != "n" && $sure != "N" ]]; then
-      for i in "${orphan_pacnews[@]}"; do
-        $_SUDO /bin/rm -f "$i" 2> >(print_errors)
-      done
+      $_SUDO /bin/rm -f ${orphan_pacnews[@]} 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "File di configurazione orfani"
       else
@@ -725,9 +723,7 @@ function clean_file {
     read -r sure
     if [[ ( $_LNG != ita && ( $sure = y || $sure = Y )) || ( $_LNG = ita && ( $sure = s || $sure = S ) ) ]]; then
       # Remove every residual file
-      for i in "${obsoletelogs[@]}"; do
-        $_SUDO /bin/rm -f "$i" 2> >(print_errors)
-      done
+      $_SUDO /bin/rm -f ${obsoletelogs[@]} 2> >(print_errors)
       if [[ $_LNG = ita ]]; then
         end_msg "ok" "Pulizia file di log obsoleti"
       else
