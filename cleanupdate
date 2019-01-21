@@ -68,8 +68,14 @@ readonly _BOLD _NORMAL _RED _GREEN _YELLOW _AQUA
 TTY=$(tty)
 export TTY
 
+# check if env variable is set in the right way
+# https://stackoverflow.com/questions/3601515
+if [ -z ${CU_PKEXEC+x} ]; then
+  CU_PKEXEC="false"
+fi
+
 # Choose 'sudo' or 'pkexec' based on env variables
-if [[ "$TTY" =~ tty || ! $(command -v pkexec) ]]; then
+if [[ "$TTY" =~ tty || ! $(command -v pkexec) || $CU_PKEXEC != "true" ]]; then
   _SUDO="sudo"
 else
   _SUDO="pkexec"
@@ -898,7 +904,6 @@ function clean_file {
     else
       qst_msg "no" "There are ${#residfiles[@]} residual files that take $residsize of disk space, do you want to remove them" && sure=yes || sure=no
     fi
-    read -r sure
     if [[ $sure != no ]]; then
       # Remove every residual file
       for i in "${residfiles[@]}"; do

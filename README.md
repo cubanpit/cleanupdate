@@ -15,6 +15,8 @@ The script can switch between Italian and English languages.
  - clean old journald logs;
  - suggest solution to most common pacman errors;
 
+If the [environment variable](https://wiki.archlinux.org/index.php/Environment_variables) `CU_PKEXEC` is set to `true` and [you are not in a TTY](https://gitlab.freedesktop.org/polkit/polkit/issues/17) the authentication is done with `pkexec` instead of `sudo`.
+
 Further details are available within the manual page, in Italian or English.
 
 
