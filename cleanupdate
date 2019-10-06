@@ -457,7 +457,7 @@ function sys_update {
   fi
   if [[ $sure != no ]]; then
     orph_pkgs
-    # Check if yay, trizen or yaourt are installed
+    # Check if yay, trizen or pamac are installed
     if [[ $(command -v yay) ]]; then
       if yay -Sua 2> >(print_errors) ; then
         end_aurup "ok"
@@ -470,20 +470,29 @@ function sys_update {
       else
         end_aurup "no"
       fi
-    elif [[ $(command -v yaourt) ]]; then
-      if yaourt -Sua --color 2> >(print_errors) ; then
+    elif [[ $(command -v pamac) ]]; then
+      if [[ $_LNG = ita ]]; then
+        echo "Verrà utilizzato Pamac per eseguire l'aggiornamento dei"\
+          "pacchetti di AUR, date le caratteristiche di questo strumento"\
+          "verrà anche avviato l'aggiornamento dei pacchetti ufficiali."
+      else
+        echo "Pamac is used to upgrade AUR packages, because of the"\
+          "tool's characteristics an upgrade of official packages will"\
+          "also be triggered."
+      fi
+      if pamac update --aur 2> >(print_errors) ; then
         end_aurup "ok"
       else
         end_aurup "no"
       fi
     else
       if [[ $_LNG = ita ]]; then
-        echo "Non risulta installato 'yay', 'trizen' né 'yaourt', non è"\
+        echo "Non risulta installato 'yay', 'trizen' né 'pamac', non è"\
           "possibile accedere agli aggiornamenti AUR tramite questo"\
           "script."
         end_aurup "skip"
       else
-        echo "You don't have 'yay', 'trizen' or 'yaourt' installed,"\
+        echo "You don't have 'yay', 'trizen' or 'pamac' installed,"\
           "you can't access AUR updates through this script."
         end_aurup "skip"
       fi
