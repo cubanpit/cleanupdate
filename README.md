@@ -8,7 +8,7 @@ The script can switch between Italian and English languages.
 ### Features
 
  - update packages from repositories;
- - update packages from AUR (with `yay`, `trizen` or `yaourt`);
+ - update packages from AUR (with `yay`, `trizen` or `pamac`);
  - search and uninstall orphaned packages;
  - clean pacman cache;
  - clean temporary or unuseful files;
@@ -31,7 +31,7 @@ Other needed dependencies are:
  - `ncurses`: used to obtain terminal size or color codes (`/bin/tput`);
  - `yay`: optional, to enable AUR update feature, first in priority;
  - `trizen`: optional, to enable AUR update feature, second in priority;
- - `yaourt`: optional, to enable AUR update feature, third in priority;
+ - `pamac`: optional, to enable AUR update feature, third in priority;
 
 Some features should work on any modern Linux system, you can copy those part and create your own script (remember to check the license).
 
