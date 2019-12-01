@@ -390,7 +390,6 @@ function sys_update {
           else
             end_msg "no" "Mirrorlist refresh"
           fi
-          $_SUDO pacman -Sy 2> >(print_errors)
         fi
         if ! $_SUDO pacman -Syy 2> >(print_errors); then
           if [[ $_LNG = ita ]]; then
