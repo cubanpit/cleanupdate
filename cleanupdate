@@ -75,10 +75,17 @@ if [ -z ${CU_PKEXEC+x} ]; then
 fi
 
 # Choose 'sudo' or 'pkexec' based on env variables
-if [[ "$TTY" =~ tty || ! $(command -v pkexec) || $CU_PKEXEC != "true" ]]; then
+if [[ ! $(command -v pkexec) || ! $(command -v pkttyagent) || "$CU_PKEXEC" != true ]]; then
   _SUDO="sudo"
 else
   _SUDO="pkexec"
+
+  # start pkttyagent for this shell, so pkexec is able to ask for authentication
+  _SHPID=$BASHPID
+  pkttyagent -p "$_SHPID" &
+  unset _SHPID
+  _PKPID=$!
+  readonly _SHPID
 fi
 readonly _SUDO
 
@@ -99,6 +106,10 @@ fi
 #  terminates unexpectedly.
 #
 function exit_trap {
+  if [[ "$_SUDO" = pkexec ]]; then
+    # Kill pkttyagent process
+    kill "$_PKPID"
+  fi
   echo 1>&2
   echo 1>&2
   if [[ $_LNG = ita ]]; then
@@ -1377,6 +1388,10 @@ function main {
         trap - EXIT
         # Clear terminal, scrollback included
         clear && echo -en "\\e[3J"
+        if [[ "$_SUDO" = pkexec ]]; then
+          # Kill pkttyagent process
+          kill "$_PKPID"
+        fi
         exit 0
         ;;
       *)
@@ -1397,7 +1412,7 @@ function main {
 # Here begins the "main script"
 
 # Enable debug
-#set -x
+# set -x
 
 # Initialise logfile with current date and time.
 logfile="/tmp/cleanupdate.log"
@@ -1418,6 +1433,6 @@ fi
 main
 
 # Disable debug
-#set +x
+# set +x
 
 exit 1
