@@ -82,7 +82,7 @@ else
 
   # start pkttyagent for this shell, so pkexec is able to ask for authentication
   _SHPID=$BASHPID
-  pkttyagent -p "$_SHPID" &
+  pkttyagent -p "$_SHPID" --fallback &
   unset _SHPID
   _PKPID=$!
   readonly _SHPID
@@ -689,43 +689,47 @@ function clean_file {
       else
         echo "Checking journal log disk usage..."
       fi
-      local log_size
       # Check journal log files, consider realistic cases only order of MB and GB.
-      if log_size=$($_SUDO journalctl --disk-usage 2>>"$logfile" | \
-        sed -e "s/[a-z]//g" | sed -e "s/\\s\\+/ /g" | cut -d" " -f 2); then
-        if echo "$log_size" | grep -q G ; then
-          log_size=$(echo "1000*${log_size/[A-Z]/}" | bc)
+      local log_size
+      local -a size_arr
+      # Assign variable without spawning subshell using a FIFO
+      # https://stackoverflow.com/questions/21632126
+      mkfifo /tmp/cu_fifo; exec 3<> /tmp/cu_fifo; unlink /tmp/cu_fifo
+      $_SUDO journalctl --disk-usage 2>>"$logfile" | sed -e "s/[a-z]//g" | \
+        sed -e "s/\\s\\+/ /g" | cut -d" " -f 2 >&3
+      read -r -u3 size_arr
+      exec 3>&-
+      log_size=${size_arr[0]}
+      if echo "$log_size" | grep -q G ; then
+        log_size=$(echo "1000*${log_size/[A-Z]/}" | bc)
+      else
+        log_size=${log_size/[A-Z]/}
+      fi
+      log_size=${log_size/\.*/}
+      if [[ $log_size -ge 200 ]]; then
+        if [[ $_LNG = ita ]]; then
+          qst_msg "yes" "Potrebbe essere utile restringere il journal log, vuoi procedere" && sure=yes || sure=no
         else
-          log_size=${log_size/[A-Z]/}
+          qst_msg "yes" "It may be useful to trim journal log, do you want to continue" && sure=yes || sure=no
         fi
-        log_size=${log_size/\.*/}
-        if [[ $log_size -ge 200 ]]; then
-          if [[ $_LNG = ita ]]; then
-            qst_msg "yes" "Potrebbe essere utile restringere il journal log, vuoi procedere" && sure=yes || sure=no
-          else
-            qst_msg "yes" "It may be useful to trim journal log, do you want to continue" && sure=yes || sure=no
-          fi
-          if [[ $sure != no ]]; then
-            if $_SUDO journalctl --vacuum-size=200M \
-              --vacuum-time=2weeks | tail -n 1 2> >(print_errors); then
-              end_journal "ok"
-            else
-              end_journal "no"
-            fi
+        if [[ $sure != no ]]; then
+          if $_SUDO journalctl --vacuum-size=200M \
+            --vacuum-time=2weeks | tail -n 1 2> >(print_errors); then
+            end_journal "ok"
           else
             end_journal "no"
           fi
         else
-          if [[ $_LNG = ita ]]; then
-            echo "I file di log non occupano eccessivo spazio su disco."
-            end_journal "skip"
-          else
-            echo "Log files do not use significant disk space."
-            end_journal "skip"
-          fi
+          end_journal "no"
         fi
       else
-        end_journal "no"
+        if [[ $_LNG = ita ]]; then
+          echo "I file di log non occupano eccessivo spazio su disco."
+          end_journal "skip"
+        else
+          echo "Log files do not use significant disk space."
+          end_journal "skip"
+        fi
       fi
     else
       end_journal "no"
