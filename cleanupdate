@@ -291,7 +291,7 @@ function check_args {
     echo | print_errors ; echo | print_errors
     if [[ $_LNG = ita ]]; then
       echo "Cleanupdate non ha bisogno di alcun argomento. Per maggiori"\
-        "leggere il manuale cleanupdate(7)." | print_errors
+        "informazioni leggere il manuale cleanupdate(7)." | print_errors
     else
       echo "Cleanupdate doesn't need any argument. For further"\
         "information read the manual page cleanupdate(7)."| print_errors
