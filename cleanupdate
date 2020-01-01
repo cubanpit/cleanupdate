@@ -1279,7 +1279,7 @@ function main {
     echo "                ┌─── ┐   ┐"
     echo "                │    │   │"
     echo "                └────└───┘"
-    echo "            cleanupdate v0.8.1"
+    echo "            cleanupdate v0.8.2"
     if [[ $_LNG = ita ]]; then
       echo " ┌────────────────────────────────────────┐"
       echo " │    1.  Aggiorna e pulisci tutto        │"
