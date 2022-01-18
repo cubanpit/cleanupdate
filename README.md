@@ -1,5 +1,7 @@
 # cleanupdate
 
+**WARNING:** I do not actively use this script anymore (because I moved to NixOS), so it can be considered unmantained. Feel free to open issues or pull requests though, I am happy if it can still be useful to anyone.
+
 Simple script to update and clean an Arch-based system.
 
 The script can switch between Italian and English languages.
